@@ -80,7 +80,7 @@ async function init() {
   try {
     const [vintages, prices] = await Promise.all([
       get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date"),
-      get("/prices_public?select=symbol,date,c&order=symbol,date")
+      get("/prices_public?select=symbol,date,c&order=symbol,date&limit=20000")
     ]);
     vintages.forEach(r => {
       (D[r.ticker] = D[r.ticker] || {v: [], p: []}).v.push([r.date, r.bear, r.base, r.bull, r]);

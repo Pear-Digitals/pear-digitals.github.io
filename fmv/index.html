@@ -78,10 +78,15 @@ let curRange = "1W";
 
 async function init() {
   try {
-    const [vintages, prices] = await Promise.all([
-      get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date"),
-      get("/prices_public?select=symbol,date,c&order=symbol,date&limit=20000")
+    const [vintages] = await Promise.all([
+      get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")
     ]);
+    // prices are fetched per ticker: Supabase caps a single response at 1,000 rows
+    const syms = [...new Set(vintages.map(r => r.ticker))];
+    const priceBatches = await Promise.all(syms.map(s =>
+      get(`/prices_public?select=symbol,date,c&symbol=eq.${s}&order=date&limit=1000`)
+    ));
+    const prices = priceBatches.flat();
     vintages.forEach(r => {
       (D[r.ticker] = D[r.ticker] || {v: [], p: []}).v.push([r.date, r.bear, r.base, r.bull, r]);
     });

@@ -25,7 +25,6 @@ footer{margin-top:28px;padding-top:12px;border-top:1px solid #eef1f3;font-size:1
 </style></head><body>
 <header>
 <h1>Mag 7 &middot; Fair Value</h1>
-<p>Price vs. probability-weighted fair-value estimates, updated daily. Personal research &mdash; not investment advice.</p>
 </header>
 <div id="loading">Loading data&hellip;</div>
 <div id="err" hidden></div>
@@ -34,7 +33,7 @@ footer{margin-top:28px;padding-top:12px;border-top:1px solid #eef1f3;font-size:1
 <div id="tickerrow"><select id="sel"></select> <span id="zone"></span></div>
 <div class="ranges" id="ranges"></div>
 <div class="legend">
-<span><span class="sw" style="border-color:#00C805"></span>FMV vintage (bear&ndash;bull range, dot = base)</span>
+<span><span class="sw" style="border-color:#00C805"></span>FMV (bear&ndash;bull range, dot = base)</span>
 <span><span class="sw" style="border-color:#111"></span>stock price</span>
 </div>
 <div id="chart"><svg id="svg" width="1040" height="440"></svg><div id="tip"></div></div>
@@ -109,9 +108,7 @@ async function init() {
   });
   const dates = Object.values(LATEST).map(x => x.pxd).sort();
   document.getElementById('foot').textContent =
-    "Data as of " + dates[dates.length-1] + " · FMV vintages " +
-    [...new Set(Object.values(LATEST).map(x => x.fm.date))].sort().join(", ") +
-    " · Personal valuation estimates, not investment advice.";
+    "Data as of " + dates[dates.length-1] + " · Personal valuation estimates, not investment advice.";
   sel.addEventListener('change', draw);
   draw();
 }

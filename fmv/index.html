@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mag 7 FMV</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;max-width:1080px;margin:24px auto;padding:0 16px;color:#111;background:#fff}
+header h1{font-size:22px;margin:0 0 2px}
+header p{font-size:13px;color:#666;margin:0 0 18px}
+#loading{font-size:14px;color:#666;padding:40px 0;text-align:center}
+#err{font-size:14px;color:#b00;padding:40px 0;text-align:center}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-bottom:22px}
+th,td{text-align:right;padding:7px 10px;border-bottom:1px solid #eef1f3;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#888;font-weight:600}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#f7f9fa}
+.zb{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;color:#fff}
+#px{font-size:34px;font-weight:600;margin:14px 0 2px}
+#zone{margin-bottom:4px}
+#chg{font-size:14px;margin-bottom:6px}
+#fmvline{font-size:13px;color:#555;margin-bottom:4px}
+select{font-size:15px;padding:6px 10px;margin:8px 0;border:1px solid #ddd;border-radius:8px}
+.ranges button{border:1px solid #e3e9ed;background:#fff;border-radius:16px;padding:5px 14px;margin:0 4px 10px 0;font-size:13px;cursor:pointer;color:#111}
+.ranges button.on{background:#111;color:#fff;border-color:#111}
+.legend{display:flex;gap:16px;font-size:12px;color:#555;margin:4px 0 8px;flex-wrap:wrap}
+.sw{display:inline-block;width:22px;height:0;border-top:3px solid;margin-right:6px;vertical-align:middle}
+#chart{position:relative}
+#chart svg{max-width:100%;height:auto;display:block}
+#tip{position:absolute;display:none;background:#111;color:#fff;font-size:11px;padding:6px 9px;border-radius:6px;pointer-events:none;white-space:nowrap;z-index:5}
+footer{margin-top:28px;padding-top:12px;border-top:1px solid #eef1f3;font-size:11px;color:#999}
+</style></head><body>
+<header>
+<h1>Mag 7 &middot; Fair Value</h1>
+<p>Price vs. probability-weighted fair-value estimates, updated daily. Personal research &mdash; not investment advice.</p>
+</header>
+<div id="loading">Loading data&hellip;</div>
+<div id="err" hidden></div>
+<div id="app" hidden>
+<table id="summary">
+<thead><tr><th>Ticker</th><th>Price</th><th>Bear</th><th>Base</th><th>Bull</th><th>Wtd FMV</th><th>Zone</th></tr></thead>
+<tbody id="sumbody"></tbody>
+</table>
+<div id="px">&mdash;</div><div id="zone"></div><div id="chg">&mdash;</div><div id="fmvline"></div>
+<div><select id="sel"></select></div>
+<div class="ranges" id="ranges"></div>
+<div class="legend">
+<span><span class="sw" style="border-color:#00C805"></span>FMV vintage (bear&ndash;bull range, dot = base)</span>
+<span><span class="sw" style="border-color:#111"></span>stock price</span>
+</div>
+<div id="chart"><svg id="svg" width="1040" height="440"></svg><div id="tip"></div></div>
+</div>
+<footer id="foot"></footer>
+<script>
+const SUPABASE_URL = "https://exzkanvrboytydrvwcwv.supabase.co/rest/v1";
+const ANON_KEY = "sb_publishable_i1mvt6QvDAsxIbOidUvCmg_XrVaizj4";
+const UP = "#00C805", DOWN = "#FF5000";
+const sel = document.getElementById('sel'), svg = document.getElementById('svg'),
+      tip = document.getElementById('tip'), pxEl = document.getElementById('px'),
+      chgEl = document.getElementById('chg'), zoneEl = document.getElementById('zone'),
+      fmvEl = document.getElementById('fmvline'), rangesEl = document.getElementById('ranges');
+
+async function get(path) {
+  const r = await fetch(SUPABASE_URL + path, {headers: {apikey: ANON_KEY}});
+  if (!r.ok) throw new Error("supabase " + r.status);
+  return r.json();
+}
+function zoneOf(px, fm) {
+  if (fm.sb_below && px < fm.sb_below) return ["Strong Buy", "#00C805"];
+  if (fm.fb_hi && px <= fm.fb_hi) return ["Fair Buy", "#1a7f37"];
+  const pct = (px / fm.weighted - 1) * 100;
+  return [pct.toFixed(0) + "% above FMV", pct > 25 ? "#FF5000" : "#b7791f"];
+}
+const money = v => "$" + (v >= 100 ? v.toFixed(0) : v.toFixed(1));
+
+let D = {}, LATEST = {};
+const RANGES = [["1W",5],["1M",21],["3M",63],["6M",126],["1Y",252],["ALL",1e9]];
+let curRange = "1W";
+
+async function init() {
+  try {
+    const [vintages, prices] = await Promise.all([
+      get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date"),
+      get("/prices_public?select=symbol,date,c&order=symbol,date")
+    ]);
+    vintages.forEach(r => {
+      (D[r.ticker] = D[r.ticker] || {v: [], p: []}).v.push([r.date, r.bear, r.base, r.bull, r]);
+    });
+    prices.forEach(r => {
+      (D[r.symbol] = D[r.symbol] || {v: [], p: []}).p.push([r.date, r.c]);
+    });
+    Object.keys(D).forEach(t => {
+      const J = D[t];
+      if (J.v.length && J.p.length) LATEST[t] = {fm: J.v[J.v.length-1][4], px: J.p[J.p.length-1][1], pxd: J.p[J.p.length-1][0]};
+    });
+  } catch (e) {
+    document.getElementById('loading').hidden = true;
+    const er = document.getElementById('err');
+    er.hidden = false; er.textContent = "Could not load data: " + e.message;
+    return;
+  }
+  document.getElementById('loading').hidden = true;
+  document.getElementById('app').hidden = false;
+
+  // summary table
+  const tb = document.getElementById('sumbody');
+  Object.keys(LATEST).sort().forEach(t => {
+    const {fm, px} = LATEST[t], [label, col] = zoneOf(px, fm);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${t}</b></td><td>${money(px)}</td><td>${money(fm.bear)}</td>` +
+      `<td>${money(fm.base)}</td><td>${money(fm.bull)}</td><td>${money(fm.weighted)}</td>` +
+      `<td><span class="zb" style="background:${col}">${label}</span></td>`;
+    tr.onclick = () => { sel.value = t; draw(); window.scrollTo({top: pxEl.offsetTop - 20, behavior: "smooth"}); };
+    tb.appendChild(tr);
+  });
+
+  Object.keys(D).sort().forEach(t => {
+    if (!LATEST[t]) return;
+    const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o);
+  });
+  RANGES.forEach(([label]) => {
+    const b = document.createElement('button'); b.textContent = label;
+    if (label === curRange) b.classList.add('on');
+    b.onclick = () => { curRange = label;
+      [...rangesEl.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); draw(); };
+    rangesEl.appendChild(b);
+  });
+  const dates = Object.values(LATEST).map(x => x.pxd).sort();
+  document.getElementById('foot').textContent =
+    "Data as of " + dates[dates.length-1] + " · FMV vintages " +
+    [...new Set(Object.values(LATEST).map(x => x.fm.date))].sort().join(", ") +
+    " · Personal valuation estimates, not investment advice.";
+  sel.addEventListener('change', draw);
+  draw();
+}
+
+const dayNum = d => new Date(d + "T00:00:00").getTime() / 86400000;
+function draw() {
+  const t = sel.value, J = D[t];
+  const n = RANGES.find(r => r[0] === curRange)[1];
+  const p = J.p.slice(-n);
+  const d0 = dayNum(p[0][0]), d1 = dayNum(p[p.length-1][0]);
+  const W = 1040, H = 440, PL = 8, PR = 64, PT = 10, PB = 30;
+  const X = d => PL + (dayNum(d) - d0) / Math.max(d1 - d0, 1) * (W - PL - PR);
+  const v = J.v.filter(r => dayNum(r[0]) >= d0 - 2);
+  const vals = p.map(r => r[1]);
+  v.forEach(r => { if (r[1]) vals.push(r[1], r[3]); vals.push(r[2]); });
+  const lo = Math.min(...vals) * 0.96, hi = Math.max(...vals) * 1.04;
+  const Y = vv => PT + (1 - (vv - lo) / (hi - lo)) * (H - PT - PB);
+  const p0 = p[0][1], p1 = p[p.length-1][1], pRet = p1 / p0 - 1;
+  const lineCol = pRet >= 0 ? UP : DOWN;
+  let s = "";
+  for (let g = 0; g <= 4; g++) {
+    const vv = lo + (hi - lo) * g / 4, y = Y(vv);
+    s += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#f0f3f5"/>`;
+    s += `<text x="${W-PR+8}" y="${y+4}" font-size="11" fill="#888">$${vv>=100?vv.toFixed(0):vv.toFixed(1)}</text>`;
+  }
+  const span = d1 - d0;
+  const step = span > 400 ? 90 : span > 150 ? 30 : span > 25 ? 7 : 1;
+  const fmt = step >= 30 ? dt => dt.toISOString().slice(0,7) : dt => dt.toISOString().slice(5,10);
+  for (let dd = Math.ceil(d0 / step) * step; dd <= d1; dd += step) {
+    const dt = new Date(dd * 86400000);
+    s += `<text x="${X(dt.toISOString().slice(0,10))}" y="${H-8}" font-size="11" fill="#888" text-anchor="middle">${fmt(dt)}</text>`;
+  }
+  v.forEach(r => {
+    const x = X(r[0]);
+    if (r[1] && r[3])
+      s += `<line x1="${x.toFixed(1)}" y1="${Y(r[3]).toFixed(1)}" x2="${x.toFixed(1)}" y2="${Y(r[1]).toFixed(1)}" stroke="${UP}" stroke-width="5" opacity="0.45"/>`;
+    s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[2]).toFixed(1)}" r="5" fill="${UP}" stroke="#fff" stroke-width="1.5">`
+       + `<title>${r[0]} bear $${r[1]?r[1].toFixed(0):"—"} / base $${r[2].toFixed(0)} / bull $${r[3]?r[3].toFixed(0):"—"}</title></circle>`;
+  });
+  s += `<polyline fill="none" stroke="#111" stroke-width="1.6" points="${
+    p.map(r => X(r[0]).toFixed(1)+','+Y(r[1]).toFixed(1)).join(' ')}"/>`;
+  svg.innerHTML = s;
+  pxEl.textContent = "$" + p1.toFixed(2);
+  const d = p1 - p0, pct = pRet * 100;
+  chgEl.innerHTML = `<span style="color:${lineCol}">${d>=0?"+":""}${d.toFixed(2)} (${pct>=0?"+":""}${pct.toFixed(1)}%)</span> <span style="color:#888">past ${curRange}</span>`;
+  const {fm} = LATEST[t], [label, col] = zoneOf(p1, fm);
+  zoneEl.innerHTML = `<span class="zb" style="background:${col};font-size:13px">${label}</span>`;
+  fmvEl.textContent = `FMV ${fm.date}: bear ${money(fm.bear)} · base ${money(fm.base)} · bull ${money(fm.bull)} · weighted ${money(fm.weighted)}`;
+  const vv = J.v;
+  svg.onmousemove = ev => {
+    const rect = svg.getBoundingClientRect(), mx = ev.clientX - rect.left;
+    const sx = rect.width / W;
+    let bi = -1, bd = 1e9;
+    vv.forEach((r, i) => { const dd = Math.abs(X(r[0]) * sx - mx); if (dd < bd) { bd = dd; bi = i; } });
+    if (bi < 0 || bd > 30) { tip.style.display = "none"; return; }
+    const r = vv[bi];
+    tip.style.display = "block";
+    tip.innerHTML = `${r[0]}<br>bear $${r[1]?r[1].toFixed(0):"—"} · base $${r[2].toFixed(0)} · bull $${r[3]?r[3].toFixed(0):"—"}`;
+    let lx = X(r[0]) * sx + 12;
+    if (lx + tip.offsetWidth > rect.width) lx = X(r[0]) * sx - tip.offsetWidth - 12;
+    if (lx < 0) lx = 4;
+    tip.style.left = lx + "px"; tip.style.top = "12px";
+  };
+  svg.onmouseleave = () => tip.style.display = "none";
+}
+init();
+</script></body></html>

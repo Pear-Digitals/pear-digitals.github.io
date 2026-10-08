@@ -3,21 +3,126 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pear Digitals LLC</title>
+<title>Pear Digitals LLC — Options trading for everyone</title>
+<meta name="description" content="Pear Digitals builds tools that democratize options trading. Maker of Options Ledger for iPhone.">
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-         line-height: 1.6; color: #1c1c1e; background: #f7f8f5; margin: 0; padding: 0; }
-  main { max-width: 680px; margin: 0 auto; padding: 96px 24px; text-align: center; }
-  h1 { font-size: 2rem; }
-  p { color: #3a3d3a; }
-  a { color: #14532d; }
+  :root { --ink:#0f1f17; --muted:#4a5650; --bg:#f7f8f5; --card:#fff; --line:#e2e4e0; --green:#14532d; --accent:#00c805; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Helvetica,Arial,sans-serif;
+         line-height:1.6; color:var(--ink); background:var(--bg); }
+  a { color:var(--green); }
+  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; }
+  nav { display:flex; justify-content:space-between; align-items:center; padding:20px 0; }
+  nav .brand { font-weight:700; letter-spacing:-.01em; color:var(--ink); text-decoration:none; font-size:1.05rem; }
+  nav .links a { margin-left:22px; text-decoration:none; color:var(--muted); font-size:.95rem; }
+  nav .links a:hover { color:var(--ink); }
+  .hero { padding:72px 0 56px; max-width:760px; }
+  .eyebrow { color:var(--green); font-weight:600; font-size:.85rem; letter-spacing:.08em; text-transform:uppercase; }
+  h1 { font-size:clamp(2.2rem,6vw,3.6rem); line-height:1.08; letter-spacing:-.03em; margin:.3em 0 .4em; }
+  .lead { font-size:1.2rem; color:var(--muted); max-width:620px; }
+  .btns { margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; }
+  .btn { display:inline-block; padding:12px 22px; border-radius:999px; font-weight:600; text-decoration:none; font-size:.98rem; }
+  .btn.primary { background:var(--green); color:#fff; }
+  .btn.ghost { border:1px solid var(--line); color:var(--ink); background:var(--card); }
+  section { padding:56px 0; border-top:1px solid var(--line); }
+  h2 { font-size:clamp(1.5rem,3.5vw,2.1rem); letter-spacing:-.02em; margin:0 0 .5em; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
+  .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; }
+  .card h3 { margin:0 0 .3em; font-size:1.05rem; }
+  .card p { margin:0; color:var(--muted); font-size:.96rem; }
+  .shots { display:flex; gap:20px; overflow-x:auto; padding:8px 24px 20px; margin:28px -24px 0; scroll-snap-type:x mandatory; }
+  .shot { flex:0 0 240px; scroll-snap-align:start; margin:0; }
+  .shot img { width:100%; height:auto; display:block; border-radius:26px; border:1px solid var(--line); box-shadow:0 8px 24px rgba(15,31,23,.08); }
+  .shot figcaption { font-size:.88rem; color:var(--muted); margin-top:10px; text-align:center; }
+  .note { font-size:.85rem; color:var(--muted); }
+  footer { border-top:1px solid var(--line); padding:32px 0 48px; color:var(--muted); font-size:.9rem; }
+  footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  footer a { margin-right:18px; }
+  @media (max-width:760px){ .two{grid-template-columns:1fr;gap:16px} .cards{grid-template-columns:1fr} .hero{padding-top:40px} .links a:not(:last-child){display:none} }
 </style>
 </head>
 <body>
-<main>
-  <h1>Pear Digitals LLC</h1>
-  <p>Maker of <strong>Options Ledger</strong> &mdash; a private, manual journal for options traders.</p>
-  <p><a href="/options-ledger/privacy.html">Options Ledger Privacy Policy</a></p>
-</main>
+<div class="wrap">
+  <nav>
+    <a class="brand" href="/">Pear Digitals</a>
+    <div class="links"><a href="#mission">Mission</a><a href="#options-ledger">Options Ledger</a><a href="#contact">Contact</a></div>
+  </nav>
+
+  <header class="hero">
+    <div class="eyebrow">Pear Digitals LLC</div>
+    <h1>Options trading, for everyone.</h1>
+    <p class="lead">We build clear, approachable tools that put options trading within reach of everyday investors, not just professionals.</p>
+    <div class="btns">
+      <a class="btn primary" href="#options-ledger">Meet Options Ledger</a>
+      <a class="btn ghost" href="/fmv/">View FMV analysis</a>
+    </div>
+  </header>
+
+  <section id="mission">
+    <div class="two">
+      <div>
+        <div class="eyebrow">Our mission</div>
+        <h2>Democratize options trading.</h2>
+      </div>
+      <div>
+        <p>Options have long been treated as a specialist's game, wrapped in jargon and scattered across spreadsheets. We believe anyone willing to learn should be able to understand their trades and keep a clear record of them.</p>
+        <p>Pear Digitals builds software that makes options simple to follow: honest numbers, plain language, and your data kept in your hands.</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card"><h3>Accessible</h3><p>Plain-language tools designed for people at every level of experience.</p></div>
+      <div class="card"><h3>Transparent</h3><p>You see exactly what was recorded and how results are calculated.</p></div>
+      <div class="card"><h3>Private</h3><p>Your journal lives on your device. No ads, no selling your data.</p></div>
+    </div>
+  </section>
+
+  <section id="options-ledger">
+    <div class="eyebrow">Our product</div>
+    <h2>Options Ledger for iPhone</h2>
+    <p class="lead" style="max-width:680px">A private, manual journal for options traders. Record contracts, partial closes and fees, then see income, returns and cash flow over time.</p>
+    <div class="shots" aria-label="Options Ledger screenshots">
+      <figure class="shot"><img src="assets/options-ledger/01-open-positions.jpg" alt="Open positions list" loading="lazy"><figcaption>Your open positions</figcaption></figure>
+      <figure class="shot"><img src="assets/options-ledger/02-position-detail.jpg" alt="Position detail with contracts and notes" loading="lazy"><figcaption>Contracts, shares and notes</figcaption></figure>
+      <figure class="shot"><img src="assets/options-ledger/03-quill-chat.jpg" alt="Quill portfolio review chat" loading="lazy"><figcaption>Quill, on-device assistant</figcaption></figure>
+      <figure class="shot"><img src="assets/options-ledger/04-trade-journal.jpg" alt="Trade journal of openings and closings" loading="lazy"><figcaption>Openings, partial closes and fees</figcaption></figure>
+      <figure class="shot"><img src="assets/options-ledger/05-performance.jpg" alt="Performance statistics and charts" loading="lazy"><figcaption>Income, returns and cash flow</figcaption></figure>
+    </div>
+    <p class="note">Screenshots show a sample portfolio with synthetic data.</p>
+    <div class="cards">
+      <div class="card"><h3>Track every contract</h3><p>Log openings, partial closes and fees across all your positions.</p></div>
+      <div class="card"><h3>Understand performance</h3><p>Charts and statistics for income, returns and cash flow.</p></div>
+      <div class="card"><h3>Ask Quill</h3><p>An on-device assistant powered by Apple Intelligence to review your portfolio.</p></div>
+    </div>
+    <div class="btns">
+      <a class="btn ghost" href="/options-ledger/privacy.html">Privacy Policy</a>
+    </div>
+  </section>
+
+  <section id="fmv">
+    <div class="eyebrow">Research</div>
+    <h2>FMV analysis</h2>
+    <p>Our fair market value dashboard compares each Magnificent 7 stock's price against a bear-to-bull fair value range.</p>
+    <div class="btns"><a class="btn primary" href="/fmv/">Open the FMV dashboard</a></div>
+  </section>
+
+  <section id="contact">
+    <div class="eyebrow">About the company</div>
+    <h2>Pear Digitals LLC</h2>
+    <p>Pear Digitals LLC is an independent software company and the developer of Options Ledger for iPhone.</p>
+    <p>Questions or support: <a href="mailto:support@peardigitals.com">support@peardigitals.com</a></p>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <div>&copy; 2026 Pear Digitals LLC. All rights reserved.</div>
+      <div><a href="/options-ledger/privacy.html">Privacy Policy</a><a href="/fmv/">FMV</a><a href="mailto:support@peardigitals.com">Contact</a></div>
+    </div>
+    <p class="note" style="margin-top:16px">Options Ledger is a journaling tool and does not provide investment advice. Options involve risk and are not suitable for all investors. FMV analysis is for informational purposes only.</p>
+  </div>
+</footer>
 </body>
 </html>

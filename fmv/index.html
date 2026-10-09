@@ -23,22 +23,28 @@
   #loading { color:var(--muted); padding:40px 0; text-align:center; }
   #err { color:#b00; padding:40px 0; text-align:center; }
   .zb { display:inline-block; font-size:11px; font-weight:700; padding:2px 9px; border-radius:10px; color:#fff; }
-  #px { font-size:2.4rem; font-weight:700; letter-spacing:-.02em; margin:4px 0 0; line-height:1.2; }
+  #px { font-size:clamp(1.9rem,7vw,2.4rem); font-weight:700; letter-spacing:-.02em; margin:4px 0 0; line-height:1.2; }
   #tickerrow { display:flex; align-items:center; gap:10px; margin:8px 0; }
   #chg { font-size:.95rem; margin-bottom:6px; }
   select { font:inherit; font-size:.95rem; padding:7px 12px; margin:4px 0; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--ink); }
+  #tickerrow, .ranges { max-width:100%; }
+  .ranges { display:flex; flex-wrap:wrap; }
   .ranges button { border:1px solid var(--line); background:var(--card); border-radius:999px; padding:6px 14px; margin:0 6px 10px 0; font:inherit; font-size:.85rem; cursor:pointer; color:var(--ink); }
   .ranges button.on { background:var(--green); color:#fff; border-color:var(--green); }
   .legend { display:flex; gap:16px; font-size:.82rem; color:var(--muted); margin:4px 0 8px; flex-wrap:wrap; }
-  .sw { display:inline-block; width:22px; height:0; border-top:3px solid; margin-right:6px; vertical-align:middle; }
-  #chart { position:relative; }
-  #chart svg { max-width:100%; height:auto; display:block; }
+  .sw { display:inline-block; width:22px; height:0; border-top:3px solid; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  #chart { position:relative; width:100%; }
+  #chart svg { width:100%; height:auto; display:block; touch-action:pan-y; user-select:none; -webkit-user-select:none; }
+  #cmsg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.75); color:var(--muted); font-size:.95rem; border-radius:12px; }
+  #cmsg[hidden] { display:none; }
+  .bx { display:inline-block; width:22px; height:10px; border-radius:3px; margin-right:6px; vertical-align:middle; background:rgba(224,168,0,.28); border-top:2px dashed #E0A800; }
+  #foot { margin:10px 0 0; }
   #tip { position:absolute; display:none; background:var(--ink); color:#fff; font-size:11px; padding:6px 9px; border-radius:6px; pointer-events:none; white-space:nowrap; z-index:5; }
   footer { border-top:1px solid var(--line); padding:32px 0 48px; color:var(--muted); font-size:.9rem; }
   footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
   footer a { margin-right:18px; }
   .note { font-size:.85rem; color:var(--muted); }
-  @media (max-width:760px){ .panel{padding:14px} .links a:not(:last-child){display:none} }
+  @media (max-width:760px){ .ranges button{padding:6px 11px;margin-right:4px} .wrap{padding:0 16px} .panel{padding:14px 12px; border-radius:14px; margin-bottom:40px} .legend{gap:10px} .gh{padding:8px 16px} .links a:not(:last-child){display:none} }
 </style></head><body>
 <div class="wrap">
   <nav>
@@ -60,10 +66,11 @@
       <div id="tickerrow"><select id="sel"></select> <span id="zone"></span></div>
       <div class="ranges" id="ranges"></div>
       <div class="legend">
-        <span><span class="sw" style="border-color:#00C805"></span>FMV (bear&ndash;bull range, dot = base)</span>
-        <span><span class="sw" style="border-color:#0f1f17"></span>stock price</span>
+        <span><span class="sw" id="pxsw" style="border-color:#00C805"></span>stock price</span>
+        <span><span class="bx"></span>FMV bear&ndash;bull range, dashed = base</span>
       </div>
-      <div id="chart"><svg id="svg" width="1040" height="440"></svg><div id="tip"></div></div>
+      <div id="chart"><svg id="svg"></svg><div id="tip"></div><div id="cmsg" hidden>Loading&hellip;</div></div>
+      <p class="note" id="foot"></p>
     </div>
   </div>
 </div>
@@ -73,17 +80,17 @@
       <div>&copy; 2026 Pear Digitals LLC. All rights reserved.</div>
       <div><a href="/">Home</a><a href="/options-ledger/privacy.html">Privacy Policy</a><a href="mailto:support@peardigitals.com">Contact</a></div>
     </div>
-    <p class="note" id="foot" style="margin-top:16px"></p>
   </div>
 </footer>
 <script>
 const SUPABASE_URL = "https://exzkanvrboytydrvwcwv.supabase.co/rest/v1";
 const ANON_KEY = "sb_publishable_i1mvt6QvDAsxIbOidUvCmg_XrVaizj4";
-const UP = "#00C805", DOWN = "#FF5000";
+const UP = "#00C805", DOWN = "#FF5000", GOLD = "#E0A800", INK = "#0f1f17";
 const sel = document.getElementById('sel'), svg = document.getElementById('svg'),
       tip = document.getElementById('tip'), pxEl = document.getElementById('px'),
       chgEl = document.getElementById('chg'), zoneEl = document.getElementById('zone'),
-      rangesEl = document.getElementById('ranges');
+      rangesEl = document.getElementById('ranges'), chartEl = document.getElementById('chart'),
+      msgEl = document.getElementById('cmsg'), pxsw = document.getElementById('pxsw');
 
 async function get(path) {
   const r = await fetch(SUPABASE_URL + path, {headers: {apikey: ANON_KEY}, cache: "no-store"});
@@ -97,31 +104,37 @@ function zoneOf(px, fm) {
   const pct = (px / fm.weighted - 1) * 100;
   return [pct.toFixed(0) + "% above FMV", pct > 25 ? "#FF5000" : "#b7791f"];
 }
-let D = {}, LATEST = {};
+let D = {}, LATEST = {}, FULL = {};
 const RANGES = [["1W",5],["1M",21],["3M",63],["6M",126],["1Y",252],["ALL",1e9]];
 let curRange = "1W";
 
+const priceRows = rows => rows.filter(r => !isWeekend(r.date)).map(r => [r.date, r.c]);
+
+// Load the full price history for one ticker in the background.
+function loadFull(t) {
+  if (!FULL[t]) FULL[t] = get(`/prices_public?select=symbol,date,c&symbol=eq.${t}&order=date&limit=1000`)
+    .then(rows => { D[t].p = priceRows(rows); D[t].full = true; });
+  return FULL[t];
+}
+
 async function init() {
   try {
-    const [vintages] = await Promise.all([
-      get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")
+    // First paint needs only the last ~week of prices plus the FMV vintages.
+    const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+    const [vintages, week] = await Promise.all([
+      get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date"),
+      get(`/prices_public?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`)
     ]);
-    // prices are fetched per ticker: Supabase caps a single response at 1,000 rows
-    const syms = [...new Set(vintages.map(r => r.ticker))];
-    const priceBatches = await Promise.all(syms.map(s =>
-      get(`/prices_public?select=symbol,date,c&symbol=eq.${s}&order=date&limit=1000`)
-    ));
-    const prices = priceBatches.flat();
     vintages.forEach(r => {
       if (isWeekend(r.date)) return;  // safety net: DB should never hold weekend rows
       (D[r.ticker] = D[r.ticker] || {v: [], p: []}).v.push([r.date, r.bear, r.base, r.bull, r]);
     });
-    prices.forEach(r => {
+    week.forEach(r => {
       if (isWeekend(r.date)) return;
       (D[r.symbol] = D[r.symbol] || {v: [], p: []}).p.push([r.date, r.c]);
     });
     Object.keys(D).forEach(t => {
-      const J = D[t];
+      const J = D[t]; J.p = J.p.slice(-5);
       if (J.v.length && J.p.length) LATEST[t] = {fm: J.v[J.v.length-1][4], px: J.p[J.p.length-1][1], pxd: J.p[J.p.length-1][0]};
     });
   } catch (e) {
@@ -149,67 +162,121 @@ async function init() {
     "Data as of " + dates[dates.length-1] + " · Personal valuation estimates, not investment advice.";
   sel.addEventListener('change', draw);
   draw();
+
+  // Everything else loads asynchronously, selected ticker first.
+  const order = [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)];
+  order.forEach(t => loadFull(t).catch(() => {}));
+  let lastW = chartEl.clientWidth, raf;
+  new ResizeObserver(() => {
+    if (chartEl.clientWidth === lastW) return;
+    lastW = chartEl.clientWidth;
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(draw);
+  }).observe(chartEl);
+}
+
+// Smooth path through points using quadratic curves between midpoints.
+function smooth(pts) {
+  const f = q => q[0].toFixed(1) + "," + q[1].toFixed(1);
+  if (pts.length < 3) return "M" + pts.map(f).join("L");
+  let d = "M" + f(pts[0]);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const m = [(pts[i][0] + pts[i+1][0]) / 2, (pts[i][1] + pts[i+1][1]) / 2];
+    d += "Q" + f(pts[i]) + " " + f(m);
+  }
+  return d + "L" + f(pts[pts.length-1]);
 }
 
 function draw() {
   const t = sel.value, J = D[t];
   const n = RANGES.find(r => r[0] === curRange)[1];
+  if (n > 5 && !J.full) {   // longer ranges wait for the background load
+    msgEl.hidden = false; msgEl.textContent = "Loading " + curRange + "…";
+    loadFull(t).then(() => { if (sel.value === t) draw(); })
+      .catch(() => { if (sel.value === t) msgEl.textContent = "Could not load history."; });
+    return;
+  }
+  msgEl.hidden = true;
   const p = J.p.slice(-n);
-  const W = 1040, H = 440, PL = 8, PR = 64, PT = 10, PB = 30;
-  // x by trading-day index: weekends never appear on the axis
+  const W = Math.max(chartEl.clientWidth, 240), mobile = W < 560, H = mobile ? 260 : 380;
+  const PL = 4, PR = mobile ? 46 : 58, PT = 14, PB = 10;
   const X = i => PL + i / Math.max(p.length - 1, 1) * (W - PL - PR);
   const idxForDate = d => { let bi = 0; p.forEach((r, i) => { if (r[0] <= d) bi = i; }); return bi; };
   const v = J.v.filter(r => r[0] >= p[0][0]);
   const vals = p.map(r => r[1]);
   v.forEach(r => { if (r[1]) vals.push(r[1], r[3]); vals.push(r[2]); });
-  const lo = Math.min(...vals) * 0.96, hi = Math.max(...vals) * 1.04;
+  const lo = Math.min(...vals) * 0.97, hi = Math.max(...vals) * 1.03;
   const Y = vv => PT + (1 - (vv - lo) / (hi - lo)) * (H - PT - PB);
   const p0 = p[0][1], p1 = p[p.length-1][1], pRet = p1 / p0 - 1;
   const lineCol = pRet >= 0 ? UP : DOWN;
-  let s = "";
+  pxsw.style.borderColor = lineCol;
+
+  let s = `<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">`
+        + `<stop offset="0" stop-color="${lineCol}" stop-opacity=".18"/><stop offset=".7" stop-color="${lineCol}" stop-opacity="0"/></linearGradient></defs>`;
   for (let g = 0; g <= 4; g++) {
     const vv = lo + (hi - lo) * g / 4, y = Y(vv);
-    s += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e4e0"/>`;
-    s += `<text x="${W-PR+8}" y="${y+4}" font-size="11" fill="#888">$${vv>=100?vv.toFixed(0):vv.toFixed(1)}</text>`;
+    s += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e4e0" stroke-dasharray="2 5"/>`;
+    s += `<text x="${W-PR+8}" y="${y+4}" font-size="11" fill="#7a847e">$${vv>=100?vv.toFixed(0):vv.toFixed(1)}</text>`;
   }
-  const cnt = p.length;
-  const step = cnt > 400 ? 63 : cnt > 150 ? 21 : cnt > 25 ? 5 : 1;
-  for (let i = 0; i < cnt; i += step) {
-    const ds = p[i][0];
-    const label = step >= 21 ? ds.slice(0, 7) : ds.slice(5);
-    s += `<text x="${X(i)}" y="${H-8}" font-size="11" fill="#888" text-anchor="middle">${label}</text>`;
-  }
-  v.forEach(r => {
-    const x = X(idxForDate(r[0]));
-    if (r[1] && r[3])
-      s += `<line x1="${x.toFixed(1)}" y1="${Y(r[3]).toFixed(1)}" x2="${x.toFixed(1)}" y2="${Y(r[1]).toFixed(1)}" stroke="${UP}" stroke-width="5" opacity="0.45"/>`;
-    s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[2]).toFixed(1)}" r="5" fill="${UP}" stroke="#fff" stroke-width="1.5">`
-       + `<title>${r[0]} bear $${r[1]?r[1].toFixed(0):"—"} / base $${r[2].toFixed(0)} / bull $${r[3]?r[3].toFixed(0):"—"}</title></circle>`;
-  });
-  s += `<polyline fill="none" stroke="#0f1f17" stroke-width="1.6" points="${
-    p.map((r, i) => X(i).toFixed(1)+','+Y(r[1]).toFixed(1)).join(' ')}"/>`;
+  // FMV band: bear-bull ribbon, dashed base line
+  const vx = v.map(r => [X(idxForDate(r[0])), r]);
+  let seg = [];
+  const flush = () => {
+    if (seg.length === 1) {
+      const [x, r] = seg[0];
+      s += `<line x1="${x}" y1="${Y(r[3])}" x2="${x}" y2="${Y(r[1])}" stroke="${GOLD}" stroke-width="8" stroke-linecap="round" opacity=".3"/>`;
+    } else if (seg.length > 1) {
+      const top = seg.map(([x, r]) => x.toFixed(1) + "," + Y(r[3]).toFixed(1));
+      const bot = seg.slice().reverse().map(([x, r]) => x.toFixed(1) + "," + Y(r[1]).toFixed(1));
+      s += `<polygon points="${top.concat(bot).join(' ')}" fill="${GOLD}" fill-opacity=".18" stroke="${GOLD}" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>`;
+    }
+    seg = [];
+  };
+  vx.forEach(([x, r]) => { if (r[1] && r[3]) seg.push([x, r]); else flush(); });
+  flush();
+  if (vx.length > 1)
+    s += `<polyline fill="none" stroke="${GOLD}" stroke-width="1.8" stroke-dasharray="6 4" stroke-linecap="round" points="${vx.map(([x, r]) => x.toFixed(1)+','+Y(r[2]).toFixed(1)).join(' ')}"/>`;
+  if (vx.length <= 12)
+    vx.forEach(([x, r]) => { s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[2]).toFixed(1)}" r="4" fill="${GOLD}" stroke="#fff" stroke-width="1.5"/>`; });
+
+  // price: gradient area + smooth coloured line + live dot
+  const pts = p.map((r, i) => [X(i), Y(r[1])]);
+  const line = smooth(pts);
+  s += `<path d="${line}L${pts[pts.length-1][0].toFixed(1)},${H-PB}L${pts[0][0].toFixed(1)},${H-PB}Z" fill="url(#ga)"/>`;
+  s += `<path d="${line}" fill="none" stroke="${lineCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const [lx, ly] = pts[pts.length-1];
+  s += `<circle cx="${lx}" cy="${ly}" r="4" fill="${lineCol}" opacity=".4"><animate attributeName="r" values="4;12" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".45;0" dur="1.8s" repeatCount="indefinite"/></circle>`;
+  s += `<circle cx="${lx}" cy="${ly}" r="4.5" fill="${lineCol}" stroke="#fff" stroke-width="2"/>`;
+  s += `<g id="hv"></g>`;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H);
   svg.innerHTML = s;
+  tip.style.display = "none";
+
   pxEl.textContent = "$" + p1.toFixed(2);
   const d = p1 - p0, pct = pRet * 100;
-  chgEl.innerHTML = `<span style="color:${lineCol}">${d>=0?"+":""}${d.toFixed(2)} (${pct>=0?"+":""}${pct.toFixed(1)}%)</span> <span style="color:#888">past ${curRange}</span>`;
+  chgEl.innerHTML = `<span style="color:${lineCol}">${d>=0?"+":""}${d.toFixed(2)} (${pct>=0?"+":""}${pct.toFixed(1)}%)</span> <span style="color:#7a847e">past ${curRange}</span>`;
   const {fm} = LATEST[t], [label, col] = zoneOf(p1, fm);
   zoneEl.innerHTML = `<span class="zb" style="background:${col};font-size:13px">${label}</span>`;
-  const vv = J.v;
-  svg.onmousemove = ev => {
-    const rect = svg.getBoundingClientRect(), mx = ev.clientX - rect.left;
-    const sx = rect.width / W;
-    let bi = -1, bd = 1e9;
-    vv.forEach((r, i) => { const dd = Math.abs(X(idxForDate(r[0])) * sx - mx); if (dd < bd) { bd = dd; bi = i; } });
-    if (bi < 0 || bd > 30) { tip.style.display = "none"; return; }
-    const r = vv[bi];
+
+  // hover / touch crosshair
+  const hv = svg.querySelector('#hv');
+  const move = ev => {
+    const rect = svg.getBoundingClientRect(), sx = rect.width / W;
+    const mx = (ev.clientX - rect.left) / sx;
+    let i = Math.round((mx - PL) / (W - PL - PR) * (p.length - 1));
+    i = Math.max(0, Math.min(p.length - 1, i));
+    const r = p[i], x = pts[i][0], y = pts[i][1];
+    let fv = null; J.v.forEach(q => { if (q[0] <= r[0]) fv = q; });
+    hv.innerHTML = `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H-PB}" stroke="${INK}" stroke-opacity=".25"/>`
+                 + `<circle cx="${x}" cy="${y}" r="5" fill="${lineCol}" stroke="#fff" stroke-width="2"/>`;
     tip.style.display = "block";
-    tip.innerHTML = `${r[0]}<br>bear $${r[1]?r[1].toFixed(0):"—"} · base $${r[2].toFixed(0)} · bull $${r[3]?r[3].toFixed(0):"—"}`;
-    let lx = X(idxForDate(r[0])) * sx + 12;
-    if (lx + tip.offsetWidth > rect.width) lx = X(idxForDate(r[0])) * sx - tip.offsetWidth - 12;
-    if (lx < 0) lx = 4;
-    tip.style.left = lx + "px"; tip.style.top = "12px";
+    tip.innerHTML = `${r[0]} &middot; <b>$${r[1].toFixed(2)}</b>` + (fv ? `<br>bear $${fv[1]?fv[1].toFixed(0):"—"} · base $${fv[2].toFixed(0)} · bull $${fv[3]?fv[3].toFixed(0):"—"}` : "");
+    let tx = x * sx + 12;
+    if (tx + tip.offsetWidth > rect.width) tx = x * sx - tip.offsetWidth - 12;
+    tip.style.left = Math.max(tx, 4) + "px"; tip.style.top = "8px";
   };
-  svg.onmouseleave = () => tip.style.display = "none";
+  const hide = () => { tip.style.display = "none"; hv.innerHTML = ""; };
+  svg.onpointermove = move; svg.onpointerdown = move;
+  svg.onpointerleave = hide; svg.onpointercancel = hide;
 }
 init();
 </script></body></html>

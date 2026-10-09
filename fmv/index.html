@@ -105,7 +105,8 @@ function zoneOf(px, fm) {
   return [pct.toFixed(0) + "% above FMV", pct > 25 ? "#FF5000" : "#b7791f"];
 }
 let D = {}, LATEST = {}, FULL = {};
-const RANGES = [["1W",5],["1M",21],["3M",63],["6M",126],["1Y",252],["ALL",1e9]];
+// [label, trading days shown, sample every N days] -- coarser sampling for longer ranges
+const RANGES = [["1W",5,1],["1M",21,2],["3M",63,3],["6M",126,5],["1Y",252,5],["ALL",1e9,0]];
 let curRange = "1W";
 
 const priceRows = rows => rows.filter(r => !isWeekend(r.date)).map(r => [r.date, r.c]);
@@ -196,17 +197,20 @@ function draw() {
     return;
   }
   msgEl.hidden = true;
-  const p = J.p.slice(-n);
+  const pFull = J.p.slice(-n);
+  const step = RANGES.find(r => r[0] === curRange)[2] || Math.max(5, Math.ceil(pFull.length / 150));
+  const p = pFull.filter((_, i) => (pFull.length - 1 - i) % step === 0);   // always keeps the latest day
   const W = Math.max(chartEl.clientWidth, 240), mobile = W < 560, H = mobile ? 260 : 380;
   const PL = 4, PR = mobile ? 46 : 58, PT = 14, PB = 10;
   const X = i => PL + i / Math.max(p.length - 1, 1) * (W - PL - PR);
   const idxForDate = d => { let bi = 0; p.forEach((r, i) => { if (r[0] <= d) bi = i; }); return bi; };
-  const v = J.v.filter(r => r[0] >= p[0][0]);
+  const v0 = J.v.filter(r => r[0] >= p[0][0]);
+  const v = v0.filter((r, i) => i === v0.length - 1 || idxForDate(r[0]) !== idxForDate(v0[i+1][0]));  // one vintage per plotted point
   const vals = p.map(r => r[1]);
   v.forEach(r => { if (r[1]) vals.push(r[1], r[3]); vals.push(r[2]); });
   const lo = Math.min(...vals) * 0.97, hi = Math.max(...vals) * 1.03;
   const Y = vv => PT + (1 - (vv - lo) / (hi - lo)) * (H - PT - PB);
-  const p0 = p[0][1], p1 = p[p.length-1][1], pRet = p1 / p0 - 1;
+  const p0 = pFull[0][1], p1 = p[p.length-1][1], pRet = p1 / p0 - 1;
   const lineCol = pRet >= 0 ? UP : DOWN;
   pxsw.style.borderColor = lineCol;
 

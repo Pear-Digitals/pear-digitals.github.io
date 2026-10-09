@@ -40,14 +40,14 @@
   footer { border-top:1px solid var(--line); padding:32px 0 48px; color:var(--muted); font-size:.9rem; }
   footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
   footer a { margin-right:18px; }
-  @media (max-width:760px){ .two{grid-template-columns:1fr;gap:16px} .cards{grid-template-columns:1fr} .hero{padding-top:40px} .links a:not(:last-child){display:none} }
+  @media (max-width:760px){ .two{grid-template-columns:1fr;gap:16px} .cards{grid-template-columns:1fr} .hero{padding-top:40px} .links a:not(:nth-last-child(-n+2)){display:none} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <nav>
     <a class="brand" href="/">Pear Digitals</a>
-    <div class="links"><a href="#mission">Mission</a><a href="#options-ledger">Options Ledger</a><a href="#contact">Contact</a></div>
+    <div class="links"><a href="#mission">Mission</a><a href="#options-ledger">Options Ledger</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="#contact">Contact</a></div>
   </nav>
 
   <header class="hero">

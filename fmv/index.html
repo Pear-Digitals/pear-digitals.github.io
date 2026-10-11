@@ -15,10 +15,7 @@
   /* nav: brand left, a single account control right */
   nav { display:flex; align-items:center; gap:22px; padding:18px 0; border-bottom:1px solid var(--line); }
   nav .brand { font-weight:700; letter-spacing:-.01em; color:var(--ink); text-decoration:none; font-size:1.05rem; }
-  nav .links { margin-left:auto; }
-  nav .links a { margin-left:20px; text-decoration:none; color:var(--muted); font-size:.92rem; }
-  nav .links a:hover { color:var(--ink); }
-  #navacct { display:flex; align-items:center; gap:10px; position:relative; }
+  #navacct { margin-left:auto; display:flex; align-items:center; gap:10px; position:relative; }
   .pill { border:0; border-radius:999px; padding:9px 18px; font-weight:600; font-size:.92rem; cursor:pointer; background:var(--green); color:#fff; }
   .pill.light { background:var(--soft); color:var(--ink); }
   .pill.ghost { background:none; color:var(--ink); padding:9px 6px; }
@@ -98,12 +95,11 @@
   /* chat */
   .ctag { display:inline-block; vertical-align:middle; font-size:.72rem; font-weight:700; letter-spacing:.02em; padding:2px 8px; border-radius:6px; background:#e8efff; color:var(--mine); }
   .ctagwrap { position:relative; display:inline-block; margin-left:6px; top:-2px; }
-  button.ctag { border:0; font-family:inherit; cursor:pointer; position:relative; }
-  .ctagwrap.open .tip::after { display:none; }
-  .pop { position:absolute; top:calc(100% + 8px); left:0; z-index:20; width:250px; display:flex; flex-direction:column; gap:10px;
-         background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 12px 32px rgba(15,31,23,.16); padding:14px; }
-  .pop .poptext { font-size:.88rem; font-weight:400; color:var(--ink); letter-spacing:0; line-height:1.45; }
-  .pop .pill { padding:8px 14px; font-size:.85rem; }
+  .ctagwrap .ctag { cursor:help; }
+  .fairacts { display:flex; gap:8px; margin-top:16px; }
+  .fairacts .pill { padding:8px 16px; font-size:.88rem; }
+  #resetbtn { color:var(--muted); }
+  #resetbtn.confirm { color:#fff; background:var(--down); }
   .tip:focus { outline:none; }
   .tip::after { content:attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%);
                 width:max-content; max-width:240px; background:var(--ink); color:#fff; font-size:.8rem; font-weight:500; letter-spacing:0;
@@ -181,7 +177,7 @@
     #chatfab.open { display:none; }
   }
   @media (max-width:900px) { .grid.with-side { grid-template-columns:minmax(0,1fr); } aside { position:static; } }
-  @media (max-width:760px) { .wrap { padding:0 16px; } nav { gap:12px; } nav .links { display:none; } .stats .v { font-size:1.05rem; } }
+  @media (max-width:760px) { .wrap { padding:0 16px; } nav { gap:12px; } .stats .v { font-size:1.05rem; } }
 </style></head><body>
 <div class="wrap">
   <nav>
@@ -190,7 +186,6 @@
       <input id="q" type="search" placeholder="Search" autocomplete="off" spellcheck="false" aria-label="Search stocks" aria-controls="qres" aria-expanded="false">
       <div class="results" id="qres" role="listbox" hidden></div>
     </div>
-    <div class="links"><a href="/#mission">Mission</a><a href="/#options-ledger">Options Ledger</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a></div>
     <div id="navacct"></div>
   </nav>
   <div id="loading">Loading&hellip;</div>
@@ -213,9 +208,10 @@
       </div>
 
       <section class="block">
-        <div class="bh"><h2>Fair value <span class="ctagwrap" id="custwrap" hidden><button type="button" id="custtag" class="ctag tip" data-tip="You've overridden the published fair value with your own." aria-haspopup="true" aria-expanded="false" aria-controls="custpop">Custom</button><span class="pop" id="custpop" role="group" hidden><span class="poptext">You've overridden the published fair value with your own.</span><button type="button" class="pill" id="custreset">Reset to published</button></span></span></h2><span id="zone"></span></div>
+        <div class="bh"><h2>Fair value <span class="ctagwrap" id="custwrap" hidden><span id="custtag" class="ctag tip" tabindex="0" data-tip="You've overridden the published fair value with your own." aria-label="Custom: you've overridden the published fair value with your own.">Custom</span></span></h2><span id="zone"></span></div>
         <div class="stats" id="fair"></div>
         <div id="fairmore"></div>
+        <div class="fairacts"><button type="button" class="pill light" id="explainbtn">Explain why</button><button type="button" class="pill light" id="custbtn">Customize</button><button type="button" class="pill ghost" id="resetbtn" hidden>Reset to published</button></div>
         <p id="foot"></p>
       </section>
     </main>
@@ -255,7 +251,7 @@
   <div class="wrap">
     <div class="row">
       <div>&copy; 2026 Pear Digitals LLC</div>
-      <div><a href="/">Home</a><a href="https://github.com/Pear-Digitals/trading-prompts" target="_blank" rel="noopener">GitHub</a><a href="/options-ledger/privacy.html">Privacy</a><a href="mailto:support@peardigitals.com">Contact</a></div>
+      <div><a href="/">Home</a><a href="https://github.com/Pear-Digitals/trading-prompts" target="_blank" rel="noopener">GitHub</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="/fmv/privacy.html">Privacy</a><a href="mailto:support@peardigitals.com">Contact</a></div>
     </div>
   </div>
 </footer>
@@ -642,7 +638,7 @@ function draw() {
   function renderFair(t) {
     const L = LATEST[t], fm = L && L.fm, mine = mineOf(t), r = rows[t], vals = mine || fm;
     $('custwrap').hidden = !mine;
-    if (!mine) closeCustPop();
+    $('resetbtn').hidden = !mine; disarmReset();
     const g = $('fair'); g.textContent = "";
     SC.forEach(s => g.appendChild(el('span', 'h', CAP[s])));
     if (vals) SC.forEach(s => g.appendChild(el('span', mine ? 'v mine' : 'v', money(vals[s]))));
@@ -653,23 +649,29 @@ function draw() {
     if (r.status === "error") more.appendChild(el('div', 'metarow warntext', "Couldn't update with the latest analysis \u00b7 showing your last values"));
   }
 
-  // Custom tag: tap for a pop-over with "Reset to published".
-  const custWrap = $('custwrap'), custTag = $('custtag'), custPop = $('custpop'), custReset = $('custreset');
-  function closeCustPop() { custPop.hidden = true; custWrap.classList.remove('open'); custTag.setAttribute('aria-expanded', 'false'); }
-  custTag.onclick = e => {
-    e.stopPropagation();
-    const open = custPop.hidden;
-    custPop.hidden = !open; custWrap.classList.toggle('open', open); custTag.setAttribute('aria-expanded', String(open));
-    if (open) custReset.focus();
+  // Customize: hand over to Quill. Reset: two clicks (the first arms it for a few seconds).
+  // Explain why / Customize: open Quill with a prompt (anyone can chat; saving a change needs an account).
+  $('explainbtn').onclick = () => {
+    const t = sel.value, mine = mineOf(t), fm = LATEST[t] && LATEST[t].fm;
+    if (!window.chatAsk) return;
+    window.chatAsk(mine ? `Explain how my ${t} fair value was calculated`
+                        : `Explain why ${t}'s fair value is ${fm ? money(fm.base) : "where it is"}`);
   };
-  custPop.onclick = e => e.stopPropagation();
-  document.addEventListener('click', closeCustPop);
-  document.addEventListener('keydown', e => { if (e.key === "Escape" && !custPop.hidden) { closeCustPop(); custTag.focus(); } });
-  custReset.onclick = async () => {
-    custReset.disabled = true; custReset.textContent = "Resetting\u2026";
-    try { await api('reset', {ticker: sel.value}); closeCustPop(); await refresh(); }
+  $('custbtn').onclick = () => { if (window.chatAsk) window.chatAsk(`Change ${sel.value}'s fair value`); };
+  const resetBtn = $('resetbtn');
+  let resetTimer = null;
+  function disarmReset() { clearTimeout(resetTimer); resetBtn.classList.remove('confirm'); resetBtn.textContent = "Reset to published"; }
+  resetBtn.onclick = async () => {
+    if (!resetBtn.classList.contains('confirm')) {
+      resetBtn.classList.add('confirm'); resetBtn.textContent = "Confirm reset";
+      resetTimer = setTimeout(disarmReset, 4000);
+      return;
+    }
+    clearTimeout(resetTimer);
+    resetBtn.disabled = true; resetBtn.textContent = "Resetting\u2026";
+    try { await api('reset', {ticker: sel.value}); await refresh(); }
     catch (e) { alert(errText(e)); }
-    custReset.disabled = false; custReset.textContent = "Reset to published";
+    resetBtn.disabled = false; disarmReset();
   };
 
   // ---- watchlist ----
@@ -800,7 +802,7 @@ function draw() {
     const body = el('div'); card.appendChild(body);
     const acts = el('div', 'acts'); card.appendChild(acts);
     const go = button("Preview", "pill light", async () => {
-      if (!USER) { openAuth("up"); return; }
+      if (!USER) { openAuth("up", "Sign up to save your own fair value."); return; }
       go.disabled = true; body.textContent = "Analysing…"; body.style.color = "var(--muted)";
       try {
         const res = await api('preview', {ticker: p.ticker, preferences: p.preferences});
@@ -853,7 +855,7 @@ function draw() {
     card.appendChild(el('div', 't', [adds.length ? "Add " + adds.join(", ") : "", rems.length ? "Remove " + rems.join(", ") : ""].filter(Boolean).join(" · ") + "?"));
     const acts = el('div', 'acts'); card.appendChild(acts);
     const go = button(adds.length ? "Add to watchlist" : "Remove", "pill", async () => {
-      if (!USER) { openAuth("up"); return; }
+      if (!USER) { openAuth("up", "Sign up to build a watchlist."); return; }
       go.disabled = true;
       let err = null;
       if (adds.length) err = (await sb.from('watchlist').upsert(adds.map(t => ({user_id: USER.id, ticker: t})), {onConflict: 'user_id,ticker', ignoreDuplicates: true})).error;
@@ -879,10 +881,8 @@ function draw() {
     fab.setAttribute('aria-expanded', open); fab.setAttribute('aria-label', open ? "Close chat" : "Open chat");
     if (open) { input.focus(); log.scrollTop = log.scrollHeight; } else fab.focus();
   };
-  fab.onclick = () => {
-    if (!USER) { window.openAuth("up", "Sign up to chat with Quill."); return; }
-    setOpen(pop.hidden);
-  };
+  fab.onclick = () => setOpen(pop.hidden);
+  window.chatAsk = q => { if (pop.hidden) setOpen(true); ask(q); };
   window.chatReset = () => { hist.length = 0; log.textContent = ""; chips.querySelectorAll('.gen').forEach(b => { b.hidden = false; }); if (!pop.hidden) setOpen(false); };
   document.getElementById('chatclose').onclick = () => setOpen(false);
   document.addEventListener('keydown', e => { if (e.key === "Escape" && !pop.hidden && !document.querySelector('dialog[open]')) setOpen(false); });
@@ -923,7 +923,11 @@ function draw() {
       });
       if (res.status === 429) {   // daily limit
         bot.textContent = await res.text(); hist.pop(); btn.disabled = false;
-        if (/Premium/.test(bot.textContent) && window.waitlistNote) bot.appendChild(window.waitlistNote("chat_limit"));
+        if (!USER) {
+          const acts = document.createElement('div'); acts.className = 'acts'; acts.style.marginTop = "10px";
+          const b = document.createElement('button'); b.type = "button"; b.className = "pill"; b.textContent = "Sign up";
+          b.onclick = () => window.openAuth("up", "Sign up for more messages with Quill."); acts.appendChild(b); bot.appendChild(acts);
+        } else if (/Premium/.test(bot.textContent) && window.waitlistNote) bot.appendChild(window.waitlistNote("chat_limit"));
         return;
       }
       if (!res.ok || !res.body) throw new Error("chat " + res.status);

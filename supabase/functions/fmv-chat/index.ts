@@ -1,9 +1,9 @@
 // Supabase Edge Function: finance chat limited to the Mag 7, grounded in fmv_docs.
-// Secrets: ANTHROPIC_API_KEY (required), ANTHROPIC_MODEL, ALLOWED_ORIGINS (comma list, optional).
+// Secrets: GEMINI_API_KEY (required), GEMINI_MODEL, ALLOWED_ORIGINS (comma list, optional).
 // Deploy with --no-verify-jwt (the page sends a publishable key, not a JWT); origin is checked below.
 
 const MAG7 = ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA"];
-const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-sonnet-5-5";
+const MODEL = Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash";
 const ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ??
   "https://pear-digitals.github.io,https://peardigitals.com,https://www.peardigitals.com").split(",");
 const MAX_MSGS = 12, MAX_CHARS = 2000, MAX_TOKENS = 1500;
@@ -31,7 +31,7 @@ const cors = (origin: string | null) => ({
   "Vary": "Origin",
 });
 
-// FMV data changes rarely, so cache the combined docs in memory.
+// FMV data changes rarely, so cache the combined docs in memory (Gemini also caches repeated prefixes implicitly).
 let cache: { at: number; text: string } | null = null;
 async function loadDocs(): Promise<string> {
   if (cache && Date.now() - cache.at < 30 * 60_000) return cache.text;
@@ -73,28 +73,26 @@ Deno.serve(async (req) => {
   let docs: string;
   try { docs = await loadDocs(); } catch { return new Response("data unavailable", { status: 502, headers: h }); }
 
-  const upstream = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": Deno.env.get("ANTHROPIC_API_KEY")!,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
+  const system = [
+    SYSTEM,
+    `FMV documents:\n\n${docs}`,
+    ...(ticker ? [`The user is currently viewing ${ticker} on the page.`] : []),
+  ].join("\n\n");
+  const upstream = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent?alt=sse`,
+    {
+      method: "POST",
+      headers: { "x-goog-api-key": Deno.env.get("GEMINI_API_KEY")!, "content-type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: msgs.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+        generationConfig: { maxOutputTokens: MAX_TOKENS },
+      }),
     },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      stream: true,
-      system: [
-        { type: "text", text: SYSTEM },
-        { type: "text", text: `FMV documents:\n\n${docs}`, cache_control: { type: "ephemeral" } },
-        ...(ticker ? [{ type: "text", text: `The user is currently viewing ${ticker} on the page.` }] : []),
-      ],
-      messages: msgs,
-    }),
-  });
+  );
   if (!upstream.ok || !upstream.body) return new Response("model error", { status: 502, headers: h });
 
-  // Convert Anthropic SSE into a plain text stream.
+  // Convert Gemini SSE into a plain text stream.
   const dec = new TextDecoder(), enc = new TextEncoder();
   let buf = "";
   const out = upstream.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
@@ -106,7 +104,8 @@ Deno.serve(async (req) => {
         if (!line.startsWith("data: ")) continue;
         try {
           const e = JSON.parse(line.slice(6));
-          if (e.type === "content_block_delta" && e.delta?.type === "text_delta") ctrl.enqueue(enc.encode(e.delta.text));
+          const t = (e.candidates?.[0]?.content?.parts ?? []).map((p: { text?: string }) => p.text ?? "").join("");
+          if (t) ctrl.enqueue(enc.encode(t));
         } catch { /* ignore partial/non-JSON lines */ }
       }
     },

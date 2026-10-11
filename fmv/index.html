@@ -49,7 +49,9 @@
   .ptag.pro { background:#1b1f3b; color:#fff; }
   .ptag.soon { background:var(--soft); color:var(--muted); }
   #paydlg { width:min(94vw,400px); }
-  .paytext { color:var(--muted); margin:-6px 0 18px; }
+  .paytext { color:var(--muted); margin:0 0 18px; }
+  .payprice { font-size:1.6rem; font-weight:700; letter-spacing:-.02em; margin:-8px 0 8px; }
+  .payprice span { font-size:.85rem; font-weight:400; color:var(--muted); letter-spacing:0; }
   .payacts { display:flex; flex-direction:column; gap:8px; }
   .payacts .pill { padding:12px; }
   #plansdlg { width:min(96vw,860px); }
@@ -273,6 +275,7 @@
 <dialog id="paydlg">
   <button type="button" class="xbtn" id="payclose" aria-label="Close">&times;</button>
   <h2 id="paytitle"></h2>
+  <div class="payprice" id="payprice"></div>
   <p class="paytext" id="paytext"></p>
   <div class="payacts" id="payacts"></div>
 </dialog>
@@ -696,20 +699,18 @@ function draw() {
     }
     hits = list; hi = Math.min(hi, Math.max(hits.length - 1, 0));
     qres.textContent = "";
-    if (!term) qres.appendChild(el('div', 'lab', "Free \u00b7 Magnificent 7"));
+    if (!term) qres.appendChild(el('div', 'lab', "Popular"));
     hits.forEach(([t, name, tier], i) => {
       const st = statusOf(t, tier);
       const o = button("", "opt" + (i === hi ? " on" : ""), () => choose(t, name, tier));
       o.setAttribute("role", "option");
       const left = el('div'); left.appendChild(el('b', null, t)); left.appendChild(el('span', null, name));
       o.appendChild(left);
-      if (st === "ok") o.appendChild(el('em', null, "$" + LATEST[t].px.toFixed(2)));
-      else o.appendChild(el('em', 'ptag ' + st, st === "soon" ? "Soon" : PLAN_NAME[st]));
+      if (st !== "ok") o.appendChild(el('em', 'ptag ' + st, st === "soon" ? "Soon" : PLAN_NAME[st]));
       o.onmouseenter = () => { hi = i; [...qres.querySelectorAll('.opt')].forEach((x, j) => x.classList.toggle('on', j === i)); };
       qres.appendChild(o);
     });
-    if (!term) qres.appendChild(el('div', 'none', "Search any NYSE or Nasdaq stock. S&P 500 stocks are Premium; the rest are Pro."));
-    else if (!hits.length) qres.appendChild(el('div', 'none', UNIVERSE ? `No NYSE or Nasdaq stock matches \u201c${raw}\u201d.` : "Searching\u2026"));
+    if (term && !hits.length) qres.appendChild(el('div', 'none', UNIVERSE ? `No NYSE or Nasdaq stock matches \u201c${raw}\u201d.` : "Searching\u2026"));
     qres.hidden = false; q.setAttribute("aria-expanded", "true");
   }
   function choose(t, name, tier) {
@@ -876,7 +877,7 @@ function draw() {
     const box = el('div', 'acts');
     if (tier && waitTier === tier) { box.appendChild(el('span', 'q', joinedText(tier))); return box; }
     if (tier) {
-      const b = button(`Join the ${PLAN_NAME[tier]} waitlist`, "pill", async () => {
+      const b = button(`Join the ${PLAN_NAME[tier]} waitlist \u00b7 ${priceOf(tier)}`, "pill", async () => {
         b.disabled = true;
         if (await joinWaitlist(source, tier)) box.replaceChildren(el('span', 'q', joinedText(tier))); else b.disabled = false;
       });
@@ -886,17 +887,22 @@ function draw() {
     return box;
   };
 
+  const priceOf = id => { const pl = PLANS.find(x => x.id === id); return pl ? pl.price : ""; };
+
   // Paywall for a stock outside the user's plan (or coming soon).
   const pay = $('paydlg');
   $('payclose').onclick = () => pay.close();
   function openPaywall(t, name, st) {
     const acts = $('payacts'); acts.textContent = "";
+    const pp = $('payprice'); pp.textContent = "";
     if (st === "soon") {
       $('paytitle').textContent = `${t} is coming soon`;
       $('paytext').textContent = `${name || t} is included in your plan. We're adding its fair value soon.`;
       acts.appendChild(button("OK", "pill", () => pay.close()));
     } else {
       $('paytitle').textContent = `${t} is a ${PLAN_NAME[st]} stock`;
+      const pl = PLANS.find(x => x.id === st);
+      pp.textContent = pl.price; pp.appendChild(el('span', null, ` ${pl.alt} \u00b7 at launch`));
       $('paytext').textContent = st === "premium"
         ? `${name || t} is in the S&P 500. Premium covers every S&P 500 stock with fair values, full history, your own fair values and unlimited Quill.`
         : `Pro covers every NYSE and Nasdaq stock, including ${name || t}, with fair values, full history, your own fair values and unlimited Quill.`;

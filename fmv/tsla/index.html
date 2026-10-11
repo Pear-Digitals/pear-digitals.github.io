@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--seo:head-->
+<title>Tesla (TSLA) Fair Value: Bear, Base &amp; Bull | Pear Digitals</title>
+<meta name="description" content="Tesla (TSLA) fair value: $280 base case, $120 bear, $550 bull (Oct 9, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<link rel="canonical" href="https://peardigitals.com/fmv/tsla/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pear Digitals">
+<meta property="og:title" content="Tesla (TSLA) Fair Value: Bear, Base &amp; Bull | Pear Digitals">
+<meta property="og:description" content="Tesla (TSLA) fair value: $280 base case, $120 bear, $550 bull (Oct 9, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta property="og:url" content="https://peardigitals.com/fmv/tsla/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Tesla (TSLA) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/tsla/", "description": "Tesla (TSLA) fair value: $280 base case, $120 bear, $550 bull (Oct 9, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-09", "about": {"@type": "Corporation", "name": "Tesla, Inc.", "tickerSymbol": "NASDAQ:TSLA"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
+<!--/seo:head-->
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<style>
+  :root { --ink:#0f1f17; --muted:#6b756f; --bg:#fff; --soft:#f4f6f3; --line:#e8ebe7; --green:#14532d; --up:#00a805; --down:#e04400; --mine:#2563eb; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Helvetica,Arial,sans-serif; line-height:1.5; color:var(--ink); background:var(--bg); }
+  a { color:var(--green); }
+  button { font:inherit; color:inherit; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+
+  /* nav: brand left, a single account control right */
+  nav { display:flex; align-items:center; gap:22px; padding:18px 0; border-bottom:1px solid var(--line); }
+  nav .brand { font-weight:700; letter-spacing:-.01em; color:var(--ink); text-decoration:none; font-size:1.05rem; }
+  #navacct { margin-left:auto; display:flex; align-items:center; gap:10px; position:relative; }
+  .pill { border:0; border-radius:999px; padding:9px 18px; font-weight:600; font-size:.92rem; cursor:pointer; background:var(--green); color:#fff; }
+  .pill.light { background:var(--soft); color:var(--ink); }
+  .pill.ghost { background:none; color:var(--ink); padding:9px 6px; }
+  .pill:disabled { opacity:.45; cursor:default; }
+  .avatar { width:34px; height:34px; border-radius:50%; border:0; background:var(--green); color:#fff; font-weight:700; cursor:pointer; }
+  .menu { position:absolute; right:0; top:44px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 10px 30px rgba(15,31,23,.12); padding:6px; min-width:200px; z-index:50; }
+  .menu .who { padding:8px 12px; font-size:.85rem; color:var(--muted); border-bottom:1px solid var(--line); margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; }
+  .menu button { display:block; width:100%; text-align:left; border:0; background:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+  .menu button:hover { background:var(--soft); }
+
+  /* layout: stock on the left, watchlist on the right when signed in */
+  .grid { display:grid; grid-template-columns:minmax(0,1fr); gap:48px; padding:28px 0 64px; }
+  .grid.with-side { grid-template-columns:minmax(0,1fr) 300px; }
+  main, aside { min-width:0; }
+  #loading, #err { color:var(--muted); padding:60px 0; text-align:center; }
+  #err { color:var(--down); }
+
+  .search { position:relative; flex:1; max-width:360px; }
+  .search input { width:100%; font:inherit; font-size:.92rem; padding:9px 14px 9px 36px; border:1px solid var(--line); border-radius:999px; background:var(--soft) no-repeat 12px center / 16px;
+                  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b756f' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E"); }
+  .search input:focus { outline:none; background-color:#fff; border-color:var(--ink); }
+  .search .results { position:absolute; left:0; right:0; top:44px; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 12px 32px rgba(15,31,23,.14); padding:6px; z-index:25; }
+  .search .results .lab { font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:6px 10px 4px; }
+  .search .opt { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; border:0; background:none; text-align:left; padding:9px 10px; border-radius:10px; cursor:pointer; }
+  .search .opt.on, .search .opt:hover { background:var(--soft); }
+  .search .opt > div { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .search .opt b { font-size:.92rem; } .search .opt span { color:var(--muted); font-size:.85rem; margin-left:8px; }
+  .search .opt em { flex:none; }
+  .ptag { flex:none; font-style:normal; font-size:.72rem; font-weight:700; padding:2px 8px; border-radius:6px; letter-spacing:.02em; }
+  .ptag.free { background:#e7f5ea; color:var(--green); }
+  .ptag.premium { background:#e8efff; color:var(--mine); }
+  .ptag.pro { background:#1b1f3b; color:#fff; }
+  .ptag.soon { background:var(--soft); color:var(--muted); }
+  #paydlg { width:min(94vw,400px); }
+  .paytext { color:var(--muted); margin:0 0 18px; }
+  .payprice { font-size:1.6rem; font-weight:700; letter-spacing:-.02em; margin:-8px 0 8px; }
+  .payprice span { font-size:.85rem; font-weight:400; color:var(--muted); letter-spacing:0; }
+  .payacts { display:flex; flex-direction:column; gap:8px; }
+  .payacts .pill { padding:12px; }
+  #plansdlg { width:min(96vw,860px); }
+  .plans { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+  .plan { border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:10px; }
+  .plan.current { border-color:var(--green); box-shadow:0 0 0 1px var(--green) inset; }
+  .plan h3 { margin:0; font-size:1.1rem; }
+  .plan .price { font-size:1.6rem; font-weight:700; letter-spacing:-.02em; } .plan .price span { font-size:.85rem; font-weight:400; color:var(--muted); letter-spacing:0; }
+  .plan .stocks { font-weight:700; font-size:1.05rem; }
+  .plan ul { margin:0; padding:0; list-style:none; font-size:.9rem; color:var(--ink); flex:1; } .plan li { margin:6px 0; }
+  .plan li::before { content:"\2713"; color:var(--green); font-weight:700; margin-right:8px; }
+  .plan .pill { padding:10px; }
+  .plan .state { text-align:center; font-weight:600; font-size:.9rem; color:var(--green); padding:10px 0; }
+  .plan .leave { border:0; background:none; color:var(--muted); font-size:.82rem; text-decoration:underline; cursor:pointer; }
+  .toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 16px; border-radius:12px;
+           font-size:.9rem; z-index:70; box-shadow:0 10px 30px rgba(15,31,23,.25); transition:opacity .4s; max-width:90vw; }
+  .toast.out { opacity:0; }
+  .plansnote { color:var(--muted); font-size:.85rem; margin:14px 0 0; }
+  @media (max-width:760px) { .plans { grid-template-columns:1fr; } }
+  .search .cancel { display:none; border:0; background:none; color:var(--green); font-weight:600; font-size:16px; padding:8px 2px; cursor:pointer; flex:none; }
+  .search .opt em { font-style:normal; font-weight:600; font-size:.88rem; }
+  .search .none { padding:10px; color:var(--muted); font-size:.88rem; }
+  #sel { display:none; }
+
+  main > .titlerow { margin-top:6px; }
+  .titlerow { display:flex; align-items:center; gap:10px; }
+  #title { font-size:clamp(1.6rem,4vw,2rem); font-weight:700; letter-spacing:-.02em; margin:0; line-height:1.2; }
+  #starbtn { border:0; background:none; font-size:1.5rem; line-height:1; cursor:pointer; color:var(--muted); padding:4px; }
+  #starbtn.on { color:var(--green); }
+  #px { font-size:clamp(2.2rem,7vw,2.8rem); font-weight:700; letter-spacing:-.03em; line-height:1.15; margin-top:6px; }
+  #chg { font-size:.95rem; font-weight:600; margin:2px 0 14px; }
+  #chg .when { color:var(--muted); font-weight:400; }
+
+  #chart { position:relative; width:100%; }
+  #chart svg { width:100%; height:auto; display:block; touch-action:pan-y; user-select:none; -webkit-user-select:none; }
+  #cmsg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.8); color:var(--muted); font-size:.95rem; }
+  #cmsg[hidden] { display:none; }
+  #tip { position:absolute; display:none; background:var(--ink); color:#fff; font-size:11px; padding:6px 9px; border-radius:6px; pointer-events:none; white-space:nowrap; z-index:5; }
+  .under { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; border-bottom:1px solid var(--line); padding:6px 0 10px; }
+  .ranges { display:flex; gap:2px; }
+  .ranges button { border:0; background:none; padding:6px 10px; font-weight:600; font-size:.85rem; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; }
+  .ranges button.on { color:var(--green); border-bottom-color:var(--green); }
+  .ranges button.locked { color:#b9c0bb; }
+  .ranges button.locked::after { content:""; display:inline-block; width:8px; height:9px; margin-left:4px; vertical-align:-1px; opacity:.7;
+    background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 18'%3E%3Cpath fill='%237a847e' d='M3 8V5a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1zm2 0h6V5a3 3 0 0 0-6 0z'/%3E%3C/svg%3E"); }
+  .legend { display:flex; gap:12px; font-size:.75rem; color:var(--muted); flex-wrap:wrap; }
+  .sw { display:inline-block; width:16px; height:0; border-top:2px solid; margin-right:5px; vertical-align:middle; }
+
+  section.block { padding:26px 0; }
+  .bh { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+  .bh h2 { font-size:1.2rem; letter-spacing:-.01em; margin:0; }
+  .zb { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; color:#fff; }
+  .stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); row-gap:10px; align-items:baseline; }
+  .stats .h { font-size:.78rem; color:var(--muted); }
+  .stats .v { font-size:1.25rem; font-weight:700; letter-spacing:-.01em; }
+  .stats .v.mine { color:var(--mine); }
+  .metarow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; font-size:.85rem; color:var(--muted); }
+  .warntext { color:#a15c00; }
+  #foot { color:var(--muted); font-size:.78rem; margin:14px 0 0; }
+  .seo { color:var(--muted); font-size:.85rem; margin:28px 0 0; padding-top:18px; border-top:1px solid var(--line); }
+  .seo h2 { font-size:.95rem; color:var(--ink); margin:0 0 6px; } .seo p { margin:0 0 8px; }
+  .seo a { color:var(--muted); margin-right:12px; }
+  .warn { color:#a15c00; font-size:.85rem; margin-top:6px; }
+
+  /* watchlist */
+  aside { position:sticky; top:20px; align-self:start; }
+  .side { border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .side h3 { margin:0; padding:16px 18px; font-size:1rem; border-bottom:1px solid var(--line); }
+  .wrow { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 18px; cursor:pointer; border:0; background:none; width:100%; text-align:left; }
+  .wrow:hover, .wrow.on { background:var(--soft); }
+  .wrow b { display:block; font-size:.95rem; }
+  .wrow small { color:var(--muted); font-size:.78rem; }
+  .wrow .px { text-align:right; font-weight:600; font-size:.92rem; }
+  .tag { display:inline-block; margin-top:3px; font-size:.75rem; font-weight:700; padding:2px 8px; border-radius:6px; color:#fff; }
+  .empty { padding:16px 18px; color:var(--muted); font-size:.88rem; }
+  .sk { display:inline-block; border-radius:6px; color:transparent; background:linear-gradient(90deg,#eef1ed 25%,#f7f9f6 50%,#eef1ed 75%);
+        background-size:200% 100%; animation:shimmer 1.2s linear infinite; }
+  .stats .v.sk { width:72%; max-width:110px; height:1.5rem; }
+  .skrow { cursor:default; } .skrow .sk { height:14px; } .skrow .sk:first-child { width:42%; } .skrow .sk:last-child { width:22%; }
+  .fadein { animation:fadein .25s ease-out; }
+  @keyframes shimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
+  @keyframes fadein { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion:reduce) { .sk, .fadein { animation:none; } }
+
+  /* chat */
+  .ctag { display:inline-block; vertical-align:middle; font-size:.72rem; font-weight:700; letter-spacing:.02em; padding:2px 8px; border-radius:6px; background:#e8efff; color:var(--mine); }
+  .ctagwrap { position:relative; display:inline-block; margin-left:6px; top:-2px; }
+  .ctagwrap .ctag { cursor:help; }
+  .fairacts { display:flex; gap:8px; margin-top:16px; }
+  .fairacts .pill { padding:8px 16px; font-size:.88rem; }
+  #resetbtn { color:var(--muted); }
+  #resetbtn.confirm { color:#fff; background:var(--down); }
+  .tip:focus { outline:none; }
+  .tip::after { content:attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%);
+                width:max-content; max-width:240px; background:var(--ink); color:#fff; font-size:.8rem; font-weight:500; letter-spacing:0;
+                line-height:1.4; padding:7px 10px; border-radius:8px; pointer-events:none; opacity:0; transition:opacity .12s; z-index:10; }
+  .tip:hover::after, .tip:focus::after { opacity:1; }
+
+  /* chat pop-up */
+  #chatfab { position:fixed; right:24px; bottom:24px; width:58px; height:58px; border-radius:50%; border:0; background:var(--green); color:#fff; cursor:pointer; z-index:40;
+             display:flex; align-items:center; justify-content:center; box-shadow:0 10px 28px rgba(15,31,23,.28); transition:transform .15s; }
+  #chatfab:hover { transform:scale(1.05); }
+  #chatfab .i-close, #chatfab.open .i-open { display:none; }
+  #chatfab.open .i-close { display:block; }
+  #chatpop { position:fixed; right:24px; bottom:96px; width:min(400px, calc(100vw - 32px)); height:min(620px, calc(100vh - 130px)); z-index:40;
+             background:#fff; border-radius:20px; box-shadow:0 24px 64px rgba(15,31,23,.28); display:flex; flex-direction:column; overflow:hidden; }
+  #chatpop header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 14px 20px; border-bottom:1px solid var(--line); }
+  #chatpop header .xbtn { position:static; }
+  #chatlog { flex:1; display:flex; flex-direction:column; gap:10px; overflow-y:auto; padding:16px; }
+  #chatlog:empty::before { content:attr(data-empty); color:var(--muted); font-size:.9rem; margin:auto 8px; text-align:center; }
+  #chatpop .chips { padding:0 16px; margin:0 0 10px; }
+  .chips button.shortcut { border-color:var(--green); color:var(--green); font-weight:600; }
+  .chips button.shortcut:hover { background:var(--green); color:#fff; }
+  #chatpop #chatform { margin:0 12px 12px; }
+  .msg { padding:10px 14px; border-radius:16px; font-size:.95rem; max-width:88%; }
+  .msg.user { white-space:pre-wrap; }
+  .msg.bot p { margin:0 0 8px; } .msg.bot > :last-child { margin-bottom:0; }
+  .msg.bot ul, .msg.bot ol { margin:4px 0 8px; padding-left:20px; } .msg.bot li { margin:2px 0; }
+  .msg.bot h4 { margin:10px 0 4px; font-size:.95rem; }
+  .msg.bot code { background:#fff; padding:1px 5px; border-radius:4px; font-size:.88em; }
+  .msg.user { align-self:flex-end; background:var(--ink); color:#fff; border-bottom-right-radius:4px; }
+  .msg.bot { align-self:flex-start; background:var(--soft); border-bottom-left-radius:4px; }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .chips button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; font-size:.82rem; cursor:pointer; }
+  .chips button:hover { border-color:var(--ink); }
+  #chatform { display:flex; align-items:center; gap:8px; background:var(--soft); border-radius:999px; padding:5px 5px 5px 16px; }
+  #chatin { flex:1; border:0; background:none; font:inherit; font-size:.95rem; outline:none; min-width:0; }
+  #chatform button { width:36px; height:36px; border-radius:50%; border:0; background:var(--green); color:#fff; font-size:1.1rem; cursor:pointer; flex:none; }
+  #chatform button:disabled { opacity:.4; }
+  .card { margin-top:10px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; white-space:normal; }
+  .card .t { font-weight:600; font-size:.9rem; }
+  .card .q { color:var(--muted); font-size:.85rem; margin:4px 0 8px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .card .acts { display:flex; gap:8px; margin-top:10px; }
+  .card .pill { padding:7px 14px; font-size:.85rem; }
+
+  /* dialogs */
+  dialog { border:0; border-radius:20px; padding:26px; width:min(94vw,420px); color:var(--ink); box-shadow:0 20px 60px rgba(15,31,23,.2); }
+  dialog::backdrop { background:rgba(15,31,23,.4); }
+  dialog h2:focus { outline:none; }
+  .authnote { margin:-10px 0 16px; color:var(--muted); font-size:.92rem; }
+  dialog h2 { margin:0 0 18px; font-size:1.3rem; letter-spacing:-.01em; }
+  .field { display:block; width:100%; margin:0 0 10px; font:inherit; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:#fff; }
+  .field:focus { outline:2px solid var(--green); outline-offset:-1px; border-color:transparent; }
+  textarea.field { resize:vertical; }
+  .wide { width:100%; padding:12px; }
+  .msgline { min-height:1.2em; font-size:.85rem; color:var(--down); margin:2px 0 10px; }
+  .switch { text-align:center; font-size:.88rem; color:var(--muted); margin:14px 0 0; }
+  .switch button { border:0; background:none; color:var(--green); font-weight:600; cursor:pointer; padding:0; }
+  .xbtn { position:absolute; top:14px; right:14px; border:0; background:var(--soft); width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.1rem; }
+  .oauth { display:none; }
+  .examples { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
+  .examples button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:5px 11px; font-size:.8rem; cursor:pointer; color:var(--muted); }
+  .examples button:hover { color:var(--ink); border-color:var(--ink); }
+  .result { background:var(--soft); border-radius:14px; padding:14px; margin:4px 0 14px; font-size:.88rem; }
+  .result .stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .result .delta { font-size:.78rem; font-weight:600; }
+  .result p { margin:10px 0 0; color:var(--muted); }
+  .hist div { padding:6px 0; border-top:1px solid var(--line); }
+
+  footer { border-top:1px solid var(--line); padding:28px 0 44px; color:var(--muted); font-size:.85rem; }
+  footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  footer a { margin-right:18px; color:var(--muted); }
+
+  /* Phones: 16px inputs (smaller makes iOS zoom the page), full-screen search, chat sized to the visible area */
+  @media (max-width:760px) {
+    .search input, #chatin, .field { font-size:16px; }
+    body.searching { overflow:hidden; }
+    body.searching .search { position:fixed; inset:0; z-index:60; max-width:none; background:#fff; padding:12px 16px;
+                             display:flex; flex-wrap:wrap; align-content:flex-start; gap:8px 12px; }
+    body.searching .search input { flex:1; min-width:0; }
+    body.searching .search .cancel { display:block; }
+    body.searching .search .results { position:static; flex-basis:100%; border:0; box-shadow:none; border-radius:0; padding:4px 0;
+                                      max-height:calc(100dvh - 76px); overflow-y:auto; }
+    body.searching .search .opt { padding:12px 6px; }
+  }
+  @media (max-width:560px) {
+    #navacct .pill.ghost { display:none; }
+    #chatpop { top:0; left:0; right:0; bottom:auto; width:auto; height:100vh; height:100dvh; border-radius:0; }
+    body.chatting { overflow:hidden; }
+    #chatfab.open { display:none; }
+  }
+  @media (max-width:900px) { .grid.with-side { grid-template-columns:minmax(0,1fr); } aside { position:static; } }
+  @media (max-width:760px) { .wrap { padding:0 16px; } nav { gap:12px; } .stats .v { font-size:1.05rem; } }
+</style></head><body>
+<div class="wrap">
+  <nav>
+    <a class="brand" href="/">Pear Digitals</a>
+    <div class="search" role="search">
+      <input id="q" type="search" placeholder="Search stocks" autocomplete="off" spellcheck="false" aria-label="Search stocks" aria-controls="qres" aria-expanded="false">
+      <button type="button" class="cancel" id="qcancel">Cancel</button>
+      <div class="results" id="qres" role="listbox" hidden></div>
+    </div>
+    <div id="navacct"></div>
+  </nav>
+  <div id="loading">Loading&hellip;</div>
+  <div id="err" hidden></div>
+  <div class="grid" id="app" hidden>
+    <main>
+      <select id="sel" aria-hidden="true"></select>
+      <div class="titlerow"><h1 id="title"></h1><button type="button" id="starbtn" aria-label="Add to watchlist">&#9734;</button></div>
+      <div id="px">&mdash;</div>
+      <div id="chg">&mdash;</div>
+      <div id="chart"><svg id="svg"></svg><div id="tip"></div><div id="cmsg" hidden>Loading&hellip;</div></div>
+      <div class="under">
+        <div class="ranges" id="ranges"></div>
+        <div class="legend">
+          <span><span class="sw" id="pxsw" style="border-color:#00C805"></span>Price</span>
+          <span><span class="sw" style="border-top:2px dashed #E0A800"></span>Base</span>
+          <span><span class="sw" style="border-top:2px dotted #FF5000"></span>Bear</span>
+          <span><span class="sw" style="border-top:2px dotted #00C805"></span>Bull</span>
+        </div>
+      </div>
+
+      <section class="block">
+        <div class="bh"><h2>Fair value <span class="ctagwrap" id="custwrap" hidden><span id="custtag" class="ctag tip" tabindex="0" data-tip="You've overridden the published fair value with your own." aria-label="Custom: you've overridden the published fair value with your own.">Custom</span></span></h2><span id="zone"></span></div>
+        <div class="stats" id="fair"></div>
+        <div id="fairmore"></div>
+        <div class="fairacts" id="fairacts"><button type="button" class="pill light" id="explainbtn">Explain why</button><button type="button" class="pill light" id="custbtn">Customize</button><button type="button" class="pill ghost" id="resetbtn" hidden>Reset to published</button></div>
+        <p id="foot"></p>
+        <!--seo:summary--><section class="seo"><h2>Tesla (TSLA) fair value</h2><p>Pear's fair value for Tesla is $280 in the base case, with a bear case of $120 and a bull case of $550 (published Oct 9, 2026).</p><p>Fair values are re-rated automatically after earnings and other significant events. Estimates, not investment advice.</p><p>More fair values: <a href="/fmv/aapl/">Apple (AAPL)</a> <a href="/fmv/amzn/">Amazon (AMZN)</a> <a href="/fmv/googl/">Alphabet (GOOGL)</a> <a href="/fmv/meta/">Meta (META)</a> <a href="/fmv/msft/">Microsoft (MSFT)</a> <a href="/fmv/nvda/">NVIDIA (NVDA)</a> <a href="/fmv/tsla/">Tesla (TSLA)</a></p></section><!--/seo:summary-->
+      </section>
+    </main>
+    <aside id="side" hidden>
+      <div class="side"><h3>Watchlist</h3><div id="wl"></div></div>
+    </aside>
+  </div>
+</div>
+
+<dialog id="paydlg">
+  <button type="button" class="xbtn" id="payclose" aria-label="Close">&times;</button>
+  <h2 id="paytitle"></h2>
+  <div class="payprice" id="payprice"></div>
+  <p class="paytext" id="paytext"></p>
+  <div class="payacts" id="payacts"></div>
+</dialog>
+
+<dialog id="plansdlg">
+  <button type="button" class="xbtn" id="plansclose" aria-label="Close">&times;</button>
+  <h2>Plans</h2>
+  <div class="plans" id="plansgrid"></div>
+  <p class="plansnote">Premium and Pro coming soon.</p>
+</dialog>
+
+<dialog id="authdlg">
+  <form id="authform">
+    <button type="button" class="xbtn" id="authclose" aria-label="Close">&times;</button>
+    <h2 id="authtitle">Log in</h2>
+    <p class="authnote" id="authnote" hidden></p>
+    <button type="button" class="oauth" data-provider="google">Continue with Google</button>
+    <button type="button" class="oauth" data-provider="apple">Continue with Apple</button>
+    <input class="field" id="authemail" type="email" placeholder="Email" autocomplete="email" required>
+    <input class="field" id="authpw" type="password" placeholder="Password" autocomplete="current-password" minlength="8" required>
+    <div class="msgline" id="authmsg" role="status"></div>
+    <button type="submit" class="pill wide" id="authgo">Log in</button>
+    <p class="switch"><span id="authq">New here?</span> <button type="button" id="authswitch">Create account</button></p>
+  </form>
+</dialog>
+
+<button type="button" id="chatfab" aria-label="Open chat" aria-expanded="false">
+  <svg class="i-open" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+  <svg class="i-close" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4L13.4 12 19 6.4 17.6 5 12 10.6z"/></svg>
+</button>
+<div id="chatpop" role="dialog" aria-labelledby="chattitle" hidden>
+  <header><b id="chattitle">Ask Quill</b><button type="button" class="xbtn" id="chatclose" aria-label="Close chat">&times;</button></header>
+  <div id="chatlog" data-empty="Ask about valuations and the bear, base and bull cases, or tell me how you'd value a stock."></div>
+  <div class="chips" id="chips"></div>
+  <form id="chatform"><input id="chatin" maxlength="2000" placeholder="Ask anything about valuation" autocomplete="off" aria-label="Message"><button type="submit" aria-label="Send">&#8593;</button></form>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <div>&copy; 2026 Pear Digitals LLC</div>
+      <div><a href="/">Home</a><a href="https://github.com/Pear-Digitals/trading-prompts" target="_blank" rel="noopener">GitHub</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="#plans" id="plansfoot">Plans</a><a href="/fmv/privacy.html">Privacy</a><a href="mailto:support@peardigitals.com">Contact</a></div>
+    </div>
+  </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
+<script>
+const SUPABASE_URL = "https://exzkanvrboytydrvwcwv.supabase.co/rest/v1";
+const ANON_KEY = "sb_publishable_i1mvt6QvDAsxIbOidUvCmg_XrVaizj4";
+const UP = "#00C805", DOWN = "#FF5000", GOLD = "#E0A800", INK = "#0f1f17";
+const sel = document.getElementById('sel'), svg = document.getElementById('svg'),
+      tip = document.getElementById('tip'), pxEl = document.getElementById('px'),
+      chgEl = document.getElementById('chg'), zoneEl = document.getElementById('zone'),
+      rangesEl = document.getElementById('ranges'), chartEl = document.getElementById('chart'),
+      msgEl = document.getElementById('cmsg'), pxsw = document.getElementById('pxsw');
+
+const MAG7 = ["AAPL","MSFT","GOOGL","AMZN","NVDA","META","TSLA"];
+const BASE_URL = SUPABASE_URL.replace(/\/rest\/v1$/, "");
+const sb = window.supabase ? window.supabase.createClient(BASE_URL, ANON_KEY) : null;   // null if the CDN script failed
+const MY = {};          // ticker -> the signed-in user's personal FMV, when they've customised it
+const WATCH = new Set();
+let USER = null;
+// supabase-js keeps the session in localStorage. Reading it synchronously lets the first frame show the
+// signed-in layout (avatar, watchlist, skeletons) instead of flashing the signed-out page.
+const SAVED_USER = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem(`sb-${new URL(BASE_URL).hostname.split('.')[0]}-auth-token`) || "null");
+    return v && v.user && v.user.email ? v.user : null;
+  } catch (e) { return null; }
+})();
+let userLoading = !!(sb && SAVED_USER);   // true until the signed-in data has arrived (or the session turned out invalid)
+const userView = () => USER || (userLoading ? SAVED_USER : null);
+async function authToken() {
+  if (!sb) return ANON_KEY;
+  const {data} = await sb.auth.getSession();
+  return data.session ? data.session.access_token : ANON_KEY;
+}
+
+async function get(path) {
+  const r = await fetch(SUPABASE_URL + path, {headers: {apikey: ANON_KEY}, cache: "no-store"});
+  if (!r.ok) throw new Error("supabase " + r.status);
+  return r.json();
+}
+const isWeekend = ds => { const w = new Date(ds + "T00:00:00").getDay(); return w === 0 || w === 6; };
+function zoneOf(px, fm) {
+  if (fm.sb_below && px < fm.sb_below) return ["Strong Buy", "#00C805"];
+  const pct = (px / fm.weighted - 1) * 100;
+  if ((fm.fb_hi && px <= fm.fb_hi) || pct < 0.5) return ["Fair Buy", "#1a7f37"];   // rounds to 0% above -> still Fair Buy
+  return [pct.toFixed(0) + "% above FMV", pct > 25 ? "#FF5000" : "#b7791f"];
+}
+let D = {}, LATEST = {}, FULL = {};
+// [label, trading days shown, sample every N days] -- coarser sampling for longer ranges
+const RANGES = [["1W",5,1],["1M",21,2],["3M",63,3],["6M",126,5],["1Y",252,5],["ALL",1e9,0]];
+let curRange = "1W";
+const RANGE_WORDS = {"1W": "Past week", "1M": "Past month", "3M": "Past 3 months", "6M": "Past 6 months", "1Y": "Past year", "ALL": "All time"};
+
+const priceRows = rows => rows.filter(r => !isWeekend(r.date)).map(r => [r.date, r.c]);
+const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+
+// History limits by plan (calendar days): Free 30, Premium 1 year, Pro everything. Enforced by the server;
+// the range tabs just lock what the plan can't load.
+const RANGE_DAYS = {"1W": 7, "1M": 31, "3M": 92, "6M": 183, "1Y": 366, "ALL": Infinity};
+// "anon" = signed out (1 week, public views); "free" = signed-in Free (1 month, from the server).
+const PLAN_DAYS = {anon: 7, free: 31, premium: 366, pro: Infinity};
+const planNow = () => (window.currentPlan && window.currentPlan()) || "anon";
+const rangeAllowed = label => RANGE_DAYS[label] <= PLAN_DAYS[planNow()];
+function renderRanges() {
+  [...rangesEl.children].forEach(b => {
+    const ok = rangeAllowed(b.dataset.r);
+    b.classList.toggle('locked', !ok);
+    b.setAttribute("aria-label", ok ? b.dataset.r : `${b.dataset.r} (needs a paid plan)`);
+  });
+}
+
+// Each covered stock has its own page (/fmv/<ticker>/, built by tools/seo_build.py). Keep the address and tab
+// title in step with the stock on screen so links are shareable and the back button works.
+const PAGED = ["AAPL","AMZN","GOOGL","META","MSFT","NVDA","TSLA"];   // stocks with a page (tools/seo_build.py NAMES)
+function syncUrl() {
+  const t = sel.value, path = PAGED.includes(t) ? `/fmv/${t.toLowerCase()}/` : "/fmv/";
+  if (location.pathname !== path) history.pushState({t}, "", path + location.hash);
+  document.title = (window.stockName ? window.stockName(t) : t) + ` (${t}) Fair Value | Pear Digitals`;
+}
+
+// Load the price (and, for paid plans, fair value) history for one ticker, within the plan's window.
+function loadFull(t) {
+  if (!FULL[t]) {
+    const signedIn = window.chartData && window.chartData(t);   // signed in: server returns the plan's window
+    FULL[t] = (signedIn || get(`/prices_free?select=symbol,date,c&symbol=eq.${t}&order=date&limit=1000`)
+        .then(rows => ({prices: rows, vintages: null})))
+      .then(({prices, vintages}) => {
+        D[t].p = priceRows(prices);
+        if (vintages && vintages.length) D[t].v = vintages.filter(r => !isWeekend(r.date)).map(r => [r.date, r.bear, r.base, r.bull, r]);
+        D[t].full = true;
+      });
+  }
+  return FULL[t];
+}
+
+async function init() {
+  try {
+    // First paint needs only the last ~week of prices plus the FMV vintages.
+    const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+    const [vintages, week] = await Promise.all([
+      // Mag 7 fair value history for the last 30 days (vintages_free); longer history comes per plan from fmv-user.
+      get("/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")
+        .catch(() => get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")),
+      get(`/prices_free?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`)
+        .catch(() => get(`/prices_public?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`))
+    ]);
+    vintages.forEach(r => {
+      if (isWeekend(r.date)) return;  // safety net: DB should never hold weekend rows
+      (D[r.ticker] = D[r.ticker] || {v: [], p: []}).v.push([r.date, r.bear, r.base, r.bull, r]);
+    });
+    week.forEach(r => {
+      if (isWeekend(r.date)) return;
+      (D[r.symbol] = D[r.symbol] || {v: [], p: []}).p.push([r.date, r.c]);
+    });
+    Object.keys(D).forEach(t => {
+      const J = D[t]; J.p = J.p.slice(-5);
+      if (J.v.length && J.p.length) LATEST[t] = {fm: J.v[J.v.length-1][4], px: J.p[J.p.length-1][1], pxd: J.p[J.p.length-1][0]};
+    });
+  } catch (e) {
+    document.getElementById('loading').hidden = true;
+    const er = document.getElementById('err');
+    er.hidden = false; er.textContent = "Could not load data: " + e.message;
+    return;
+  }
+  document.getElementById('loading').hidden = true;
+  document.getElementById('app').hidden = false;
+
+  Object.keys(D).sort().forEach(t => {
+    if (!LATEST[t]) return;
+    const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o);
+  });
+  RANGES.forEach(([label]) => {
+    const b = document.createElement('button'); b.textContent = label; b.dataset.r = label;
+    if (label === curRange) b.classList.add('on');
+    b.onclick = () => {
+      if (!rangeAllowed(label)) { if (window.openRangePaywall) window.openRangePaywall(label); return; }
+      curRange = label;
+      [...rangesEl.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); draw();
+    };
+    rangesEl.appendChild(b);
+  });
+  renderRanges();
+  const dates = Object.values(LATEST).map(x => x.pxd).sort();
+  document.getElementById('foot').textContent =
+    "Prices as of " + dates[dates.length-1] + " · Estimates, not investment advice.";
+  // Start on the stock in the URL (/fmv/nvda/) if we cover it.
+  const fromPath = (location.pathname.match(/^\/fmv\/([a-z0-9.\-]+)\/?$/i) || [])[1];
+  if (fromPath && [...sel.options].some(o => o.value === fromPath.toUpperCase())) sel.value = fromPath.toUpperCase();
+  sel.addEventListener('change', () => { syncUrl(); draw(); });
+  window.addEventListener('popstate', () => {
+    const t = (location.pathname.match(/^\/fmv\/([a-z0-9.\-]+)\/?$/i) || [])[1];
+    const want = t ? t.toUpperCase() : (sel.options[0] && sel.options[0].value);
+    if (want && want !== sel.value && [...sel.options].some(o => o.value === want)) { sel.value = want; draw(); }
+  });
+  draw();
+  if (window.onFmvReady) window.onFmvReady();
+
+  // Everything else loads asynchronously, selected ticker first.
+  const order = [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)];
+  order.forEach(t => loadFull(t).catch(() => {}));
+  let lastW = chartEl.clientWidth, raf;
+  new ResizeObserver(() => {
+    if (chartEl.clientWidth === lastW) return;
+    lastW = chartEl.clientWidth;
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(draw);
+  }).observe(chartEl);
+}
+
+// Smooth path through points using quadratic curves between midpoints.
+function smooth(pts) {
+  const f = q => q[0].toFixed(1) + "," + q[1].toFixed(1);
+  if (pts.length < 3) return "M" + pts.map(f).join("L");
+  let d = "M" + f(pts[0]);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const m = [(pts[i][0] + pts[i+1][0]) / 2, (pts[i][1] + pts[i+1][1]) / 2];
+    d += "Q" + f(pts[i]) + " " + f(m);
+  }
+  return d + "L" + f(pts[pts.length-1]);
+}
+
+function draw() {
+  const t = sel.value, J = D[t];
+  const n = RANGES.find(r => r[0] === curRange)[1];
+  if (n > 5 && !J.full) {   // longer ranges wait for the background load
+    msgEl.hidden = false; msgEl.textContent = "Loading " + curRange + "…";
+    loadFull(t).then(() => { if (sel.value === t) draw(); })
+      .catch(() => { if (sel.value === t) msgEl.textContent = "Could not load history."; });
+    return;
+  }
+  msgEl.hidden = true;
+  const pFull = J.p.slice(-n);
+  const step = RANGES.find(r => r[0] === curRange)[2] || Math.max(5, Math.ceil(pFull.length / 150));
+  const p = pFull.filter((_, i) => (pFull.length - 1 - i) % step === 0);   // always keeps the latest day
+  const W = Math.max(chartEl.clientWidth, 240), mobile = W < 560, H = mobile ? 260 : 380;
+  const PL = 4, PR = mobile ? 46 : 58, PT = 14, PB = 10;
+  const X = i => PL + i / Math.max(p.length - 1, 1) * (W - PL - PR);
+  const idxForDate = d => { let bi = 0; p.forEach((r, i) => { if (r[0] <= d) bi = i; }); return bi; };
+  // A custom analysis replaces the published cases: flat lines at the user's values across the range.
+  const my = MY[t];
+  // A custom fair value is drawn from its own history: from the day it was set (Free/Premium), or further back
+  // where Pro has backfilled it. Nothing is drawn before its first point.
+  const series = my ? ((window.customSeries && window.customSeries(t)) ||
+                       [[my.inputs_as_of || p[p.length-1][0], my.bear != null ? +my.bear : null, +my.base, my.bull != null ? +my.bull : null]]) : null;
+  const atDate = d => { let hit = null; if (series) series.forEach(r => { if (r[0] <= d) hit = r; }); return hit; };
+  let src = J.v;
+  if (userLoading) src = [];
+  else if (my) {
+    const start = p[0][0], end = p[p.length-1][0], startVal = atDate(start);
+    const pts = [...(startVal ? [[start, ...startVal.slice(1)]] : []), ...series.filter(r => r[0] > start && r[0] <= end)];
+    if (!pts.length && series.length) pts.push([end, ...series[series.length-1].slice(1)]);
+    else if (pts.length && pts[pts.length-1][0] < end) pts.push([end, ...pts[pts.length-1].slice(1)]);
+    src = pts.map(r => [r[0], r[1], r[2], r[3], null]);
+  }
+  const v0 = src.filter(r => r[0] >= p[0][0]);
+  const v = v0.filter((r, i) => i === v0.length - 1 || idxForDate(r[0]) !== idxForDate(v0[i+1][0]));  // one vintage per plotted point
+  const vals = p.map(r => r[1]);
+  v.forEach(r => { if (r[1]) vals.push(r[1], r[3]); vals.push(r[2]); });
+  const lo = Math.min(...vals) * 0.97, hi = Math.max(...vals) * 1.03;
+  const Y = vv => PT + (1 - (vv - lo) / (hi - lo)) * (H - PT - PB);
+  const p0 = pFull[0][1], p1 = p[p.length-1][1], pRet = p1 / p0 - 1;
+  const lineCol = pRet >= 0 ? UP : DOWN;
+  pxsw.style.borderColor = lineCol;
+
+  let s = `<defs></defs>`;
+  for (let g = 0; g <= 4; g++) {
+    const vv = lo + (hi - lo) * g / 4, y = Y(vv);
+    s += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e4e0" stroke-dasharray="2 5"/>`;
+    s += `<text x="${W-PR+8}" y="${y+4}" font-size="11" fill="#7a847e">$${vv>=100?vv.toFixed(0):vv.toFixed(1)}</text>`;
+  }
+  // FMV: gradient from price to base case, dotted bear/bull lines, dashed base line
+  const vx = v.map(r => { const i = idxForDate(r[0]); return [X(i), r, i]; });
+  const polyPts = (arr, f) => arr.map(([x, r]) => x.toFixed(1) + ',' + Y(f(r)).toFixed(1)).join(' ');
+  if (vx.length > 1) {
+    const last = vx[vx.length - 1], up = last[1][2] >= p[last[2]][1];
+    s = s.replace('</defs>', `<linearGradient id="gb" x1="0" y1="${up?1:0}" x2="0" y2="${up?0:1}">`
+      + `<stop offset="0" stop-color="${up?UP:DOWN}" stop-opacity=".05"/><stop offset="1" stop-color="${up?UP:DOWN}" stop-opacity=".40"/></linearGradient></defs>`);
+    const basePts = vx.map(([x, r]) => x.toFixed(1) + ',' + Y(r[2]).toFixed(1));
+    const pxPts = vx.slice().reverse().map(([x, r, i]) => x.toFixed(1) + ',' + Y(p[i][1]).toFixed(1));
+    s += `<polygon points="${basePts.concat(pxPts).join(' ')}" fill="url(#gb)" stroke="none"/>`;
+    [1, 3].forEach(k => {
+      const col = k === 1 ? DOWN : UP;
+      const seg = vx.filter(([, r]) => r[k]);
+      if (seg.length > 1)
+        s += `<polyline fill="none" stroke="${col}" stroke-width="2" stroke-dasharray="0.1 5" stroke-linecap="round" stroke-linejoin="round" points="${polyPts(seg, r => r[k])}"/>`;
+      else if (seg.length === 1)
+        s += `<circle cx="${seg[0][0].toFixed(1)}" cy="${Y(seg[0][1][k]).toFixed(1)}" r="2.5" fill="${col}"/>`;
+    });
+    s += `<polyline fill="none" stroke="${GOLD}" stroke-width="1.8" stroke-dasharray="6 4" stroke-linecap="round" points="${polyPts(vx, r => r[2])}"/>`;
+  } else vx.forEach(([x, r]) => {
+    [1, 3].forEach(k => { if (r[k]) s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[k]).toFixed(1)}" r="2.5" fill="${k === 1 ? DOWN : UP}"/>`; });
+  });
+  if (vx.length <= 12 && !my)
+    vx.forEach(([x, r]) => { s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[2]).toFixed(1)}" r="4" fill="${GOLD}" stroke="#fff" stroke-width="1.5"/>`; });
+
+  // price: smooth coloured line + live dot
+  const pts = p.map((r, i) => [X(i), Y(r[1])]);
+  const line = smooth(pts);
+  s += `<path d="${line}" fill="none" stroke="${lineCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const [lx, ly] = pts[pts.length-1];
+  s += `<circle cx="${lx}" cy="${ly}" r="4" fill="${lineCol}" opacity=".4"><animate attributeName="r" values="4;12" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".45;0" dur="1.8s" repeatCount="indefinite"/></circle>`;
+  s += `<circle cx="${lx}" cy="${ly}" r="4.5" fill="${lineCol}" stroke="#fff" stroke-width="2"/>`;
+  s += `<g id="hv"></g>`;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("width", W); svg.setAttribute("height", H);
+  svg.innerHTML = s;
+  tip.style.display = "none";
+
+  pxEl.textContent = "$" + p1.toFixed(2);
+  const d = p1 - p0, pct = pRet * 100;
+  chgEl.innerHTML = `<span style="color:${lineCol}">${d>=0?"+":""}${d.toFixed(2)} (${pct>=0?"+":""}${pct.toFixed(1)}%)</span> <span class="when">${RANGE_WORDS[curRange]}</span>`;
+  const {fm} = LATEST[t];
+  let [label, col] = zoneOf(p1, fm);
+  if (my) {
+    const pc = (p1 / +my.base - 1) * 100;
+    label = Math.abs(pc) < 0.5 ? "At your FMV" : `${Math.abs(pc).toFixed(0)}% ${pc < 0 ? "below" : "above"} your FMV`;
+    col = pc < 0.5 ? "#1a7f37" : pc > 25 ? "#FF5000" : "#b7791f";
+  }
+  zoneEl.innerHTML = userLoading ? "" : `<span class="zb fadein" style="background:${col};font-size:13px">${label}</span>`;
+
+  if (window.onDraw) window.onDraw(t);
+
+  // hover / touch crosshair
+  const hv = svg.querySelector('#hv');
+  const move = ev => {
+    const rect = svg.getBoundingClientRect(), sx = rect.width / W;
+    const mx = (ev.clientX - rect.left) / sx;
+    let i = Math.round((mx - PL) / (W - PL - PR) * (p.length - 1));
+    i = Math.max(0, Math.min(p.length - 1, i));
+    const r = p[i], x = pts[i][0], y = pts[i][1];
+    let fv = null;
+    if (my) fv = atDate(r[0]);     // no custom value shown before it existed
+    else J.v.forEach(q => { if (q[0] <= r[0]) fv = q; });
+    hv.innerHTML = `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H-PB}" stroke="${INK}" stroke-opacity=".25"/>`
+                 + `<circle cx="${x}" cy="${y}" r="5" fill="${lineCol}" stroke="#fff" stroke-width="2"/>`;
+    tip.style.display = "block";
+    tip.innerHTML = `${r[0]} &middot; <b>$${r[1].toFixed(2)}</b>` + (fv ? `<br>bear $${fv[1]?fv[1].toFixed(0):"—"} · base $${fv[2].toFixed(0)} · bull $${fv[3]?fv[3].toFixed(0):"—"}` : "");
+    let tx = x * sx + 12;
+    if (tx + tip.offsetWidth > rect.width) tx = x * sx - tip.offsetWidth - 12;
+    tip.style.left = Math.max(tx, 4) + "px"; tip.style.top = "8px";
+  };
+  const hide = () => { tip.style.display = "none"; hv.innerHTML = ""; };
+  svg.onpointermove = move; svg.onpointerdown = move;
+  svg.onpointerleave = hide; svg.onpointercancel = hide;
+}
+// ---- UI: account, stock header, fair value, watchlist, customize sheet ----
+(function () {
+  const $ = id => document.getElementById(id);
+  const NAMES = {AAPL: "Apple", AMZN: "Amazon", GOOGL: "Alphabet", META: "Meta", MSFT: "Microsoft", NVDA: "NVIDIA", TSLA: "Tesla"};
+  const USER_URL = BASE_URL + "/functions/v1/fmv-user";
+  const SC = ["bear", "base", "bull"], CAP = {bear: "Bear", base: "Base", bull: "Bull"};
+  let rows = {}, authMode = "in", plan = null, fullHistory = false, onWaitlist = false, waitTier = null, alertsOn = true;
+  const PLAN_NAME = {free: "Free", premium: "Premium", pro: "Pro"};
+  const RANK = {free: 0, premium: 1, pro: 2};
+  const myRank = () => RANK[plan || "free"];
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  const button = (text, cls, fn) => { const b = el('button', cls, text); b.type = "button"; if (fn) b.onclick = fn; return b; };
+  const money = v => v == null ? "—" : "$" + Math.round(+v).toLocaleString();
+  const day = ts => ts ? new Date(String(ts).slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, {month: "short", day: "numeric"}) : "";
+  const errText = e => e.data && e.data.error ? e.data.error : e.message;
+  window.stockName = t => NAMES[t] || t;
+
+  async function api(action, payload) {
+    const res = await fetch(USER_URL, {
+      method: "POST",
+      headers: {"content-type": "application/json", apikey: ANON_KEY, authorization: "Bearer " + await authToken()},
+      body: JSON.stringify({action, ...payload})
+    });
+    const data = await res.json().catch(() => ({error: "Unexpected response"}));
+    if (!res.ok) { const e = new Error(data.error || ("HTTP " + res.status)); e.data = data; throw e; }
+    return data;
+  }
+
+  // ---- log in / sign up (the only entry point is the nav) ----
+  const dlg = $('authdlg'), authMsg = $('authmsg');
+  function openAuth(mode, note) {
+    setAuthMode(mode || "in"); authMsg.textContent = "";
+    $('authnote').textContent = note || ""; $('authnote').hidden = !note;
+    if (!dlg.open) dlg.showModal(); $('authemail').focus();
+  }
+  function setAuthMode(m) {
+    authMode = m;
+    $('authtitle').textContent = m === "in" ? "Log in" : "Create account";
+    $('authgo').textContent = m === "in" ? "Log in" : "Create account";
+    $('authq').textContent = m === "in" ? "New here?" : "Have an account?";
+    $('authswitch').textContent = m === "in" ? "Create account" : "Log in";
+    $('authpw').autocomplete = m === "in" ? "current-password" : "new-password";
+    $('authpw').placeholder = m === "in" ? "Password" : "Password (8+ characters)";
+  }
+  window.openAuth = openAuth;
+  $('authswitch').onclick = () => { setAuthMode(authMode === "in" ? "up" : "in"); authMsg.textContent = ""; };
+  $('authclose').onclick = () => dlg.close();
+  document.querySelectorAll('.oauth').forEach(b => b.addEventListener('click', async () => {
+    const {error} = await sb.auth.signInWithOAuth({provider: b.dataset.provider, options: {redirectTo: location.origin + location.pathname}});
+    if (error) authMsg.textContent = error.message;
+  }));
+  $('authform').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!sb) { authMsg.textContent = "Accounts are unavailable right now."; return; }
+    const email = $('authemail').value.trim(), password = $('authpw').value;
+    if (password.length < 8) { authMsg.textContent = "Use at least 8 characters."; return; }
+    $('authgo').disabled = true; authMsg.style.color = ""; authMsg.textContent = "";
+    const {data, error} = authMode === "in"
+      ? await sb.auth.signInWithPassword({email, password})
+      // Confirmation link returns to the page they signed up on (must be listed under Supabase Auth > Redirect URLs).
+      : await sb.auth.signUp({email, password, options: {emailRedirectTo: location.origin + location.pathname}});
+    $('authgo').disabled = false;
+    if (error) { authMsg.textContent = error.message; return; }
+    if (authMode === "up" && !data.session) { authMsg.style.color = "var(--ink)"; authMsg.textContent = "Check your email to confirm, then log in."; return; }
+    $('authpw').value = ""; dlg.close();
+  });
+
+  const nav = $('navacct');
+  document.addEventListener('click', () => { const m = nav.querySelector('.menu'); if (m) m.hidden = true; });
+  function renderNav() {
+    nav.textContent = "";
+    if (!sb) return;
+    if (!USER && userLoading) {   // signed in, still restoring: avatar without the menu yet
+      const av = el('span', 'avatar', (SAVED_USER.email || "?")[0].toUpperCase());
+      av.style.cssText = "display:flex;align-items:center;justify-content:center";
+      nav.appendChild(av); return;
+    }
+    if (!USER) {
+      nav.appendChild(button("Log in", "pill ghost", () => openAuth("in")));
+      nav.appendChild(button("Sign up", "pill", () => openAuth("up")));
+      return;
+    }
+    const av = button((USER.email || "?")[0].toUpperCase(), "avatar");
+    av.setAttribute("aria-label", "Account");
+    const menu = el('div', 'menu'); menu.hidden = true;
+    menu.appendChild(el('div', 'who', USER.email + (plan ? ` \u00b7 ${PLAN_NAME[plan]}${plan === "free" ? " plan" : ""}` : "")));
+    if (waitTier) {
+      menu.appendChild(Object.assign(el('div', 'who', `\u2713 You're on the ${PLAN_NAME[waitTier]} waitlist`), {style: "border:0;margin:0"}));
+      menu.appendChild(button("Leave the waitlist", null, async () => { await leaveWaitlist(); renderNav(); }));
+    }
+    if (plan === "premium" || plan === "pro") menu.appendChild(button(`Email alerts: ${alertsOn ? "On" : "Off"}`, null, async ev => {
+      ev.stopPropagation();
+      const next = !alertsOn;
+      const {error} = await sb.from('alert_settings').upsert({user_id: USER.id, enabled: next, updated_at: new Date().toISOString()}, {onConflict: 'user_id'});
+      if (!error) { alertsOn = next; ev.target.textContent = `Email alerts: ${alertsOn ? "On" : "Off"}`; toast(alertsOn ? "Fair Buy alerts are on." : "Fair Buy alerts are off."); }
+    }));
+    if (plan !== "pro") menu.appendChild(button("Compare plans", null, () => { menu.hidden = true; openPlans(); }));
+    menu.appendChild(button("Log out", null, () => { menu.hidden = true; sb.auth.signOut(); }));
+    av.onclick = ev => { ev.stopPropagation(); menu.hidden = !menu.hidden; };
+    nav.appendChild(av); nav.appendChild(menu);
+  }
+
+  // ---- stock header ----
+  // ---- search: ticker or company name, keyboard friendly ----
+  const q = $('q'), qres = $('qres');
+  let hits = [], hi = 0;
+  const pick = t => {
+    if (sel.value !== t) { sel.value = t; sel.dispatchEvent(new Event('change')); }
+    q.value = ""; closeSearch(); q.blur(); window.scrollTo({top: 0, behavior: "smooth"});
+  };
+  const phone = () => matchMedia("(max-width:760px)").matches;
+  const closeSearch = () => { qres.hidden = true; q.setAttribute("aria-expanded", "false"); document.body.classList.remove('searching'); };
+  // Every NYSE / Nasdaq stock, loaded the first time search is used: [ticker, name, tier] (0 Mag 7, 1 S&P 500, 2 other).
+  let UNIVERSE = null, universeLoading = null;
+  const loadUniverse = () => universeLoading || (universeLoading = fetch("/fmv/universe.json").then(r => r.json())
+    .then(d => { UNIVERSE = d; if (!qres.hidden) renderSearch(); }).catch(() => { universeLoading = null; }));
+  const TIER_PLAN = ["free", "premium", "pro"];
+  // Search priority of each stock tier (index = tier), per plan. Pro has none: best match wins.
+  const TIER_ORDER = [[0, 1, 2], [1, 0, 2], null];
+  // What tapping a search result does: open it, show the paywall, or say it's coming.
+  const statusOf = (t, tier) => myRank() < tier ? TIER_PLAN[tier] : LATEST[t] ? "ok" : "soon";
+  function renderSearch() {
+    const raw = q.value.trim(), term = raw.toLowerCase();
+    const covered = [...sel.options].map(o => [o.value, NAMES[o.value] || "", 0]);
+    let list;
+    if (!term) list = covered;
+    else {
+      const score = ([t, n]) => { const tl = t.toLowerCase(), nl = n.toLowerCase();
+        return tl === term ? 0 : tl.startsWith(term) ? 1 : nl.startsWith(term) ? 2 : nl.includes(" " + term) ? 3 : nl.includes(term) ? 4 : 9; };
+      const pool = new Map(covered.map(x => [x[0], x]));
+      (UNIVERSE || []).forEach(x => { if (!pool.has(x[0])) pool.set(x[0], [x[0], NAMES[x[0]] || x[1], x[2]]); });
+      list = [...pool.values()].map(x => [x, score(x)]).filter(([, sc]) => sc < 9)
+        // Your plan's stocks first: Free -> Free stocks, Premium -> S&P 500 then Mag 7 then Pro; Pro -> best match.
+        .sort((a, b) => (TIER_ORDER[myRank()] ? TIER_ORDER[myRank()][a[0][2]] - TIER_ORDER[myRank()][b[0][2]] : 0)
+          || a[1] - b[1] || a[0][2] - b[0][2] || a[0][0].localeCompare(b[0][0]))
+        .slice(0, 10).map(([x]) => x);   // keep the list short
+    }
+    hits = list; hi = Math.min(hi, Math.max(hits.length - 1, 0));
+    qres.textContent = "";
+    if (!term) qres.appendChild(el('div', 'lab', "Popular"));
+    hits.forEach(([t, name, tier], i) => {
+      const st = statusOf(t, tier);
+      const o = button("", "opt" + (i === hi ? " on" : ""), () => choose(t, name, tier));
+      o.setAttribute("role", "option");
+      const left = el('div'); left.appendChild(el('b', null, t)); left.appendChild(el('span', null, name));
+      o.appendChild(left);
+      o.appendChild(el('em', 'ptag ' + TIER_PLAN[tier], PLAN_NAME[TIER_PLAN[tier]]));   // Free / Premium / Pro
+      o.onmouseenter = () => { hi = i; [...qres.querySelectorAll('.opt')].forEach((x, j) => x.classList.toggle('on', j === i)); };
+      qres.appendChild(o);
+    });
+    if (term && !hits.length) qres.appendChild(el('div', 'none', UNIVERSE ? `No NYSE or Nasdaq stock matches \u201c${raw}\u201d.` : "Searching\u2026"));
+    qres.hidden = false; q.setAttribute("aria-expanded", "true");
+  }
+  function choose(t, name, tier) {
+    const st = statusOf(t, tier);
+    if (st === "ok") { pick(t); return; }
+    q.value = ""; closeSearch(); q.blur();
+    openPaywall(t, name, st);
+  }
+  q.addEventListener('focus', () => { if (phone()) document.body.classList.add('searching'); loadUniverse(); renderSearch(); });
+  $('qcancel').onclick = () => { q.value = ""; closeSearch(); q.blur(); };
+  q.addEventListener('input', () => { hi = 0; renderSearch(); });
+  q.addEventListener('keydown', e => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); if (!hits.length) return;
+      hi = (hi + (e.key === "ArrowDown" ? 1 : -1) + hits.length) % hits.length; renderSearch();
+    } else if (e.key === "Enter") { e.preventDefault(); if (hits[hi]) choose(...hits[hi]); }
+    else if (e.key === "Escape") { closeSearch(); q.blur(); }
+  });
+  document.addEventListener('mousedown', e => { if (!e.target.closest('.search')) closeSearch(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === "/" && !/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && !document.querySelector('dialog[open]')) { e.preventDefault(); q.focus(); }
+  });
+  function renderHeader(t) {
+    if (window.setChatStock) window.setChatStock(t);
+    $('title').textContent = NAMES[t] || t;
+    const on = WATCH.has(t), star = $('starbtn');
+    star.innerHTML = on ? "&#9733;" : "&#9734;";
+    star.classList.toggle('on', on);
+    star.setAttribute("aria-label", on ? "Remove from watchlist" : "Add to watchlist");
+    star.hidden = !sb;
+    star.style.visibility = userLoading ? "hidden" : "";
+  }
+  $('starbtn').onclick = async () => {
+    if (!USER) { openAuth("up", "Sign up to build a watchlist."); return; }
+    const t = sel.value, on = WATCH.has(t);
+    // Instant: update the star and the watchlist now, save in the background, undo if the save fails.
+    on ? WATCH.delete(t) : WATCH.add(t);
+    renderHeader(t); renderSide();
+    const {error} = on
+      ? await sb.from('watchlist').delete().eq('ticker', t)
+      : await sb.from('watchlist').upsert({user_id: USER.id, ticker: t}, {onConflict: 'user_id,ticker', ignoreDuplicates: true});
+    if (error) {
+      on ? WATCH.add(t) : WATCH.delete(t);
+      renderHeader(t); renderSide();
+      alert("Couldn't update your watchlist.");
+      return;
+    }
+    refresh();   // sync personal fair values quietly; no need to wait
+  };
+
+  // ---- fair value block: just the numbers; a custom analysis replaces the published one ----
+  const mineOf = t => { const r = rows[t]; return r && r.preferences && r.base != null ? r : null; };
+  function renderFair(t) {
+    const L = LATEST[t], fm = L && L.fm, mine = mineOf(t), r = rows[t], vals = mine || fm;
+    if (mine && !userLoading) loadCustomHistory(t);
+    $('custwrap').hidden = !mine;
+    $('resetbtn').hidden = !mine; disarmReset();
+    const g = $('fair'); g.textContent = "";
+    SC.forEach(s => g.appendChild(el('span', 'h', CAP[s])));
+    $('fairacts').style.visibility = userLoading ? "hidden" : "";
+    if (userLoading) { SC.forEach(() => g.appendChild(el('span', 'v sk', "\u00a0"))); $('fairmore').textContent = ""; return; }
+    if (vals) SC.forEach(s => g.appendChild(el('span', (mine ? 'v mine' : 'v') + (fadeNext ? ' fadein' : ''), money(vals[s]))));
+    const more = $('fairmore'); more.textContent = "";
+    if (!mine) return;
+    // Only surface a failed automatic update; everything else about the analysis is in the chat.
+    if (r.status === "paused") more.appendChild(el('div', 'metarow warntext', "Paused \u00b7 Premium stock"));
+    if (r.status === "error") more.appendChild(el('div', 'metarow warntext', "Couldn't update with the latest analysis \u00b7 showing your last values"));
+  }
+
+  // Customize: hand over to Quill. Reset: two clicks (the first arms it for a few seconds).
+  // Explain why / Customize: open Quill with a prompt (anyone can chat; saving a change needs an account).
+  $('explainbtn').onclick = () => {
+    const t = sel.value, mine = mineOf(t), fm = LATEST[t] && LATEST[t].fm;
+    if (!window.chatAsk) return;
+    window.chatAsk(mine ? `Explain how my ${t} fair value was calculated`
+                        : `Explain why ${t}'s fair value is ${fm ? money(fm.base) : "where it is"}`);
+  };
+  $('custbtn').onclick = () => { if (window.chatAsk) window.chatAsk(`Change ${sel.value}'s fair value`); };
+  const resetBtn = $('resetbtn');
+  let resetTimer = null;
+  function disarmReset() { clearTimeout(resetTimer); resetBtn.classList.remove('confirm'); resetBtn.textContent = "Reset to published"; }
+  resetBtn.onclick = async () => {
+    if (!resetBtn.classList.contains('confirm')) {
+      resetBtn.classList.add('confirm'); resetBtn.textContent = "Confirm reset";
+      resetTimer = setTimeout(disarmReset, 4000);
+      return;
+    }
+    clearTimeout(resetTimer);
+    resetBtn.disabled = true; resetBtn.textContent = "Resetting\u2026";
+    try { await api('reset', {ticker: sel.value}); await refresh(); }
+    catch (e) { alert(errText(e)); }
+    resetBtn.disabled = false; disarmReset();
+  };
+
+  // ---- watchlist ----
+  function renderSide() {
+    const side = $('side'), grid = $('app'), signedIn = !!userView();
+    side.hidden = !signedIn; grid.classList.toggle('with-side', signedIn);
+    if (!signedIn) return;
+    const wl = $('wl'); wl.textContent = "";
+    if (userLoading) {
+      for (let i = 0; i < 3; i++) {
+        const r = el('div', 'wrow skrow');
+        r.appendChild(el('span', 'sk', "\u00a0")); r.appendChild(el('span', 'sk', "\u00a0"));
+        wl.appendChild(r);
+      }
+      return;
+    }
+    wl.classList.toggle('fadein', fadeNext);
+    const list = [...WATCH].filter(t => LATEST[t]).sort();
+    if (!list.length) { wl.appendChild(el('div', 'empty', "Tap ☆ on a stock to add it here.")); return; }
+    list.forEach(t => {
+      const L = LATEST[t], mine = mineOf(t), fair = mine ? mine.base : L.fm.base;   // base everywhere, matching the Fair value block
+      const row = button("", "wrow" + (t === sel.value ? " on" : ""), () => { sel.value = t; sel.dispatchEvent(new Event('change')); window.scrollTo({top: 0, behavior: "smooth"}); });
+      const left = el('div'); left.appendChild(el('b', null, t));
+      left.appendChild(el('small', null, (mine ? "Your base " : "Base ") + money(fair)));
+      const right = el('div', 'px'); right.appendChild(el('div', null, "$" + L.px.toFixed(2)));
+      const pct = (L.px / fair - 1) * 100;
+      const tag = el('span', 'tag', Math.abs(pct) < 0.5 ? "At base" : `${Math.abs(pct).toFixed(0)}% ${pct < 0 ? "below" : "above"}`);
+      tag.style.background = pct < 0.5 ? "var(--up)" : "var(--down)";
+      right.appendChild(tag);
+      row.appendChild(left); row.appendChild(right); wl.appendChild(row);
+    });
+  }
+
+  // Compact before/after view of an analysis result.
+  function resultView(p) {
+    const o = p.outcome, ref = p.before && p.before.base != null ? p.before : p.published;
+    const box = el('div', 'result'), g = el('div', 'stats');
+    SC.forEach(s => g.appendChild(el('span', 'h', CAP[s])));
+    SC.forEach(s => {
+      const c = el('div'); c.appendChild(el('div', 'v mine', money(o[s])));
+      if (ref && ref[s] != null && o[s] != null) {
+        const d = Math.round(o[s] - ref[s]);
+        const dl = el('div', 'delta', d === 0 ? "no change" : `${d > 0 ? "+" : "−"}$${Math.abs(d)}`);
+        dl.style.color = d === 0 ? "var(--muted)" : d > 0 ? "var(--up)" : "var(--down)";
+        c.appendChild(dl);
+      }
+      g.appendChild(c);
+    });
+    box.appendChild(g);
+    if (o.summary) box.appendChild(el('p', null, o.summary));
+    (o.warnings || []).slice(0, 3).forEach(w => box.appendChild(el('div', 'warn', w)));
+    return box;
+  }
+
+  // ---- state ----
+  // ---- waitlists for Premium / Pro (not on sale yet) ----
+  async function joinWaitlist(source, tier = "premium") {
+    if (!USER) { openAuth("up", `Sign up to join the ${PLAN_NAME[tier]} waitlist.`); return false; }
+    let {error} = await sb.from('premium_waitlist').upsert({user_id: USER.id, source, tier}, {onConflict: 'user_id'});
+    if (error && tier === "premium") ({error} = await sb.from('premium_waitlist').upsert({user_id: USER.id, source}, {onConflict: 'user_id', ignoreDuplicates: true}));
+    if (!error) { onWaitlist = true; waitTier = tier; renderNav(); }
+    return !error;
+  }
+  async function leaveWaitlist() {
+    if (!USER) return false;
+    const {error} = await sb.from('premium_waitlist').delete().eq('user_id', USER.id);
+    if (!error) { onWaitlist = false; waitTier = null; }
+    return !error;
+  }
+  const joinedText = tier => `\u2713 You're on the ${PLAN_NAME[tier]} waitlist. We'll email you when it opens.`;
+  // Shown under any "this needs a paid plan" message. With a tier: that plan's waitlist; without: compare plans.
+  window.waitlistNote = (source, tier) => {
+    const box = el('div', 'acts');
+    if (tier && waitTier === tier) { box.appendChild(el('span', 'q', joinedText(tier))); return box; }
+    if (tier) {
+      const b = button(`Join the ${PLAN_NAME[tier]} waitlist \u00b7 ${priceOf(tier)}`, "pill", async () => {
+        b.disabled = true;
+        if (await joinWaitlist(source, tier)) box.replaceChildren(el('span', 'q', joinedText(tier))); else b.disabled = false;
+      });
+      box.appendChild(b);
+    }
+    box.appendChild(button(tier ? "Compare plans" : "Join the Premium or Pro waitlist", tier ? "pill ghost" : "pill", () => openPlans()));
+    return box;
+  };
+
+  // One sentence per paid plan, used on every paywall.
+  const PLAN_BLURB = {
+    premium: "The Premium Plan covers every S&P 500 stock with fair values, 1Y historical data, daily alerts, and unlimited Quill.",
+    pro: "The Pro Plan covers every NYSE and Nasdaq stock with fair values, unlimited historical data, real-time alerts, and unlimited Quill.",
+  };
+  const priceOf = id => { const pl = PLANS.find(x => x.id === id); return pl ? pl.price : ""; };
+
+  // Paywall for a stock outside the user's plan (or coming soon).
+  const pay = $('paydlg');
+  $('payclose').onclick = () => pay.close();
+  function openPaywall(t, name, st) {
+    const acts = $('payacts'); acts.textContent = "";
+    const pp = $('payprice'); pp.textContent = "";
+    if (st === "soon") {
+      $('paytitle').textContent = `${t} is coming soon`;
+      $('paytext').textContent = `${name || t} is included in your plan. We're adding its fair value soon.`;
+      acts.appendChild(button("OK", "pill", () => pay.close()));
+    } else {
+      $('paytitle').textContent = `${t} is a ${PLAN_NAME[st]} stock`;
+      const pl = PLANS.find(x => x.id === st);
+      pp.textContent = pl.price; pp.appendChild(el('span', null, ` ${pl.alt} \u00b7 at launch`));
+      $('paytext').textContent = PLAN_BLURB[st];
+      if (waitTier === st) acts.appendChild(el('div', 'paytext', joinedText(st)));
+      else acts.appendChild(button(`Join the ${PLAN_NAME[st]} waitlist`, "pill", async ev => {
+        ev.target.disabled = true;
+        if (await joinWaitlist("search", st)) { pay.close(); toast(joinedText(st)); } else ev.target.disabled = false;
+      }));
+      acts.appendChild(button("Compare plans", "pill light", () => { pay.close(); openPlans(); }));
+    }
+    pay.showModal();
+  }
+
+  // Plan comparison.
+  const plansDlg = $('plansdlg');
+  $('plansclose').onclick = () => plansDlg.close();
+  $('plansfoot').onclick = e => { e.preventDefault(); openPlans(); };
+  const PLANS = [
+    {id: "free", name: "Free", price: "$0", stocks: "Magnificent 7",
+     items: ["Pear Recommended Fair Values & Charts", "Customized Fair Values", "Auto re-ratings after earnings & other significant events",
+             "20 Quill messages a day", "1M of Historical Data"]},
+    {id: "premium", name: "Premium", price: "$99/yr", alt: "or $9.99/mo", stocks: "S&P 500",
+     items: ["Everything in Free", "Unlimited Quill messages", "Daily Fair Buy Alerts", "1Y of Historical Data"]},
+    {id: "pro", name: "Pro", price: "$249/yr", alt: "or $29/mo", stocks: "All NYSE & Nasdaq",
+     items: ["Everything in Premium", "Real-time Fair Buy Alerts", "Backfilled Pear Recommended and Custom Fair Values", "Unlimited Historical Data"]},
+  ];
+  function openPlans() {
+    const g = $('plansgrid'); g.textContent = "";
+    const current = USER ? (plan || "free") : null;
+    PLANS.forEach(pl => {
+      const c = el('div', 'plan' + (pl.id === current ? ' current' : ''));
+      c.appendChild(el('h3', null, pl.name));
+      const pr = el('div', 'price', pl.price); if (pl.alt) pr.appendChild(el('span', null, " " + pl.alt)); c.appendChild(pr);
+      c.appendChild(el('div', 'stocks', pl.stocks));
+      const ul = el('ul'); pl.items.forEach(i => ul.appendChild(el('li', null, i))); c.appendChild(ul);
+      if (pl.id === current) c.appendChild(el('div', 'state', "Current plan"));
+      else if (pl.id === "free") { if (!USER) c.appendChild(button("Sign up free", "pill light", () => { plansDlg.close(); openAuth("up"); })); }
+      else if (current && RANK[current] > RANK[pl.id]) c.appendChild(el('div', 'state', "Included"));
+      else if (waitTier === pl.id) {
+        c.appendChild(el('div', 'state', "\u2713 On waitlist"));
+        c.appendChild(button("Leave the waitlist", "leave", async () => { await leaveWaitlist(); renderNav(); openPlans(); }));
+      } else c.appendChild(button(waitTier ? "Switch to this waitlist" : "Join waitlist", "pill", async ev => {
+        ev.target.disabled = true;
+        if (await joinWaitlist("plans", pl.id)) openPlans(); else ev.target.disabled = false;
+      }));
+      g.appendChild(c);
+    });
+    if (!plansDlg.open) plansDlg.showModal();
+  }
+  window.openPlans = openPlans;
+  if (location.hash === "#plans") setTimeout(openPlans, 0);
+
+  // Small confirmation that fades out.
+  function toast(text) {
+    const t = el('div', 'toast', text); document.body.appendChild(t);
+    setTimeout(() => t.classList.add('out'), 2600); setTimeout(() => t.remove(), 3100);
+  }
+  const showErr = (box, e) => {
+    box.textContent = errText(e);
+    if (e.data && e.data.upgrade) box.appendChild(window.waitlistNote(e.data.feature || "limit", e.data.tier));
+  };
+
+  // Custom fair value history per stock, for the chart: [[date, bear, base, bull], ...] since the last reset.
+  const HIST = {}, histLoading = {};
+  window.customSeries = t => HIST[t] || null;
+  function loadCustomHistory(t, force) {
+    if (!USER || (!force && (HIST[t] || histLoading[t]))) return;
+    histLoading[t] = api('history', {ticker: t}).then(({history}) => {
+      const asc = history.slice().reverse();
+      let run = [];
+      for (const x of asc) {
+        if (x.trigger === "reset" || !x.preferences) { run = []; continue; }
+        if (x.base != null) run.push([x.inputs_as_of || String(x.created_at).slice(0, 10), x.bear != null ? +x.bear : null, +x.base, x.bull != null ? +x.bull : null]);
+      }
+      const byDate = new Map(); run.sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0).forEach(r => byDate.set(r[0], r));   // latest wins per date
+      HIST[t] = [...byDate.values()];
+      if (sel.value === t) draw();
+    }).catch(() => {}).finally(() => { delete histLoading[t]; });
+  }
+  // Pro: after saving a custom fair value, backfill its history from past published analyses.
+  async function backfill(t) {
+    if (plan !== "pro") return;
+    toast(`Backfilling your ${NAMES[t] || t} fair value history\u2026`);
+    try {
+      const r = await api('backfill', {ticker: t});
+      delete HIST[t]; loadCustomHistory(t, true);
+      if (r.added) toast(`Added ${r.added} past ${r.added === 1 ? "point" : "points"} to your ${NAMES[t] || t} history.`);
+    } catch (e) { console.error(e); }
+  }
+
+  window.currentPlan = () => USER ? (plan || "free") : "anon";
+  // Signed in: chart history comes from the server, limited to the plan's window. Signed out: public 1-week views.
+  window.chartData = t => (USER && plan) ? api('chart', {ticker: t}) : null;
+  window.openRangePaywall = label => {
+    if (!USER && RANGE_DAYS[label] <= PLAN_DAYS.free) {   // 1M: just needs a free account
+      const acts = $('payacts'); acts.textContent = ""; $('payprice').textContent = "";
+      $('paytitle').textContent = `${label} history is free with an account`;
+      $('paytext').textContent = "Sign up free to see 1M of historical data, save your own fair values and keep a watchlist.";
+      acts.appendChild(button("Sign up free", "pill", () => { pay.close(); openAuth("up"); }));
+      acts.appendChild(button("Log in", "pill light", () => { pay.close(); openAuth("in"); }));
+      pay.showModal(); return;
+    }
+    const tier = RANGE_DAYS[label] <= PLAN_DAYS.premium ? "premium" : "pro";
+    const pl = PLANS.find(x => x.id === tier), acts = $('payacts'), pp = $('payprice');
+    acts.textContent = ""; pp.textContent = pl.price; pp.appendChild(el('span', null, ` ${pl.alt} \u00b7 at launch`));
+    $('paytitle').textContent = label === "ALL" ? "Full history is a Pro feature" : `${label} history is a Premium feature`;
+    $('paytext').textContent = PLAN_BLURB[tier];
+    if (waitTier === tier) acts.appendChild(el('div', 'paytext', joinedText(tier)));
+    else acts.appendChild(button(`Join the ${PLAN_NAME[tier]} waitlist`, "pill", async ev => {
+      ev.target.disabled = true;
+      if (await joinWaitlist("history", tier)) { pay.close(); toast(joinedText(tier)); } else ev.target.disabled = false;
+    }));
+    acts.appendChild(button("Compare plans", "pill light", () => { pay.close(); openPlans(); }));
+    pay.showModal();
+  };
+
+  // Premium: FMV history for Premium stocks (the Mag 7's is already public).
+  async function loadFullHistory() {
+    try {
+      const {vintages} = await api('vintages', {});
+      const byT = {};
+      vintages.forEach(r => { if (!isWeekend(r.date)) (byT[r.ticker] = byT[r.ticker] || []).push([r.date, r.bear, r.base, r.bull, r]); });
+      Object.keys(byT).forEach(t => { if (D[t]) D[t].v = byT[t]; });
+      fullHistory = true;
+    } catch (e) { console.error(e); }
+  }
+
+  let refreshSeq = 0, fadeNext = false, lastViewKey = "anon";
+  async function refresh() {
+    const seq = ++refreshSeq;
+    const next = {watch: new Set(), rows: {}, plan: null, onWaitlist: false};
+    if (sb && USER) {
+      try {
+        const [w, data, wl, al] = await Promise.all([
+          sb.from('watchlist').select('ticker'),
+          api('list', {}),
+          Promise.resolve(sb.from('premium_waitlist').select('*').maybeSingle()).catch(() => ({error: true})),
+          Promise.resolve(sb.from('alert_settings').select('enabled').maybeSingle()).catch(() => ({error: true})),
+        ]);
+        next.alertsOn = !(al && !al.error && al.data && al.data.enabled === false);
+        (w.data || []).forEach(r => next.watch.add(r.ticker));
+        (data.rows || []).forEach(r => { next.rows[r.ticker] = r; });
+        next.plan = data.plan || "free";
+        next.onWaitlist = !wl.error && !!wl.data;
+        next.waitTier = next.onWaitlist ? (wl.data.tier || "premium") : null;
+      } catch (e) { console.error(e); if (seq !== refreshSeq) return; }
+    }
+    if (seq !== refreshSeq) return;   // a newer refresh started; let it win
+    WATCH.clear(); next.watch.forEach(t => WATCH.add(t));
+    Object.keys(HIST).forEach(k => delete HIST[k]);
+    // History window depends on being signed in and on the plan.
+    const viewKey = USER ? (next.plan || "free") : "anon", planChanged = viewKey !== lastViewKey;
+    lastViewKey = viewKey;
+    rows = next.rows; plan = next.plan;
+    if (planChanged) {   // history window changed: reload charts, drop a range the plan no longer includes
+      Object.keys(FULL).forEach(k => delete FULL[k]);
+      Object.values(D).forEach(J => { J.full = false; });
+      if (!rangeAllowed(curRange)) { curRange = "1W"; [...rangesEl.children].forEach(x => x.classList.toggle('on', x.dataset.r === "1W")); }
+      [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)].forEach(t => { if (D[t]) loadFull(t).catch(() => {}); });
+    }
+    renderRanges(); onWaitlist = next.onWaitlist; waitTier = next.waitTier || null; alertsOn = next.alertsOn !== false;
+    if (plan === "premium" && !fullHistory) await loadFullHistory();
+    Object.keys(MY).forEach(k => delete MY[k]);
+    Object.values(rows).forEach(r => { if (mineOf(r.ticker)) MY[r.ticker] = r; });
+    const wasLoading = userLoading;
+    userLoading = false; fadeNext = wasLoading;
+    renderNav();
+    if (!$('app').hidden) draw(); else renderSide();
+    if (wasLoading) svg.classList.add('fadein');
+    fadeNext = false;
+  }
+  if (sb) sb.auth.onAuthStateChange((_ev, session) => {
+    USER = session ? session.user : null;
+    if (!USER && window.chatReset) window.chatReset();
+    setTimeout(refresh, 0);        // don't await supabase calls inside this callback
+  });
+  window.onFmvReady = () => draw();
+  window.onDraw = t => { renderHeader(t); renderFair(t); renderSide(); };
+  renderNav();
+
+  // ---- chat proposals: preferences or watchlist changes, confirmed by the user ----
+  const FENCES = ["```fmv-prefs", "```watchlist-proposal", "```fmv-reset"];
+  window.fmvStrip = txt => {
+    const idx = FENCES.map(f => txt.indexOf(f)).filter(i => i >= 0);
+    return (idx.length ? txt.slice(0, Math.min(...idx)) : txt).replace(/`{1,2}$/, "");
+  };
+  window.prefsParse = txt => {
+    const m = txt.match(/```fmv-prefs\s*([\s\S]*?)```/);
+    if (!m) return null;
+    try {
+      const o = JSON.parse(m[1]), t = String(o.ticker || "").toUpperCase();
+      if (!MAG7.includes(t) || typeof o.preferences !== "string" || !o.preferences.trim()) return null;
+      return {ticker: t, preferences: o.preferences.trim().slice(0, 4000), rationale: o.rationale ? String(o.rationale).slice(0, 2000) : null};
+    } catch (e) { return null; }
+  };
+  // Quill's fair value change is saved automatically; the card just reports the result.
+  window.prefsCard = p => {
+    const card = el('div', 'card');
+    const name = NAMES[p.ticker] || p.ticker;
+    const title = el('div', 't', `Saving your ${name} fair value\u2026`); card.appendChild(title);
+    const body = el('div'); card.appendChild(body);
+    if (!USER) {
+      title.textContent = `Sign up to save this as your ${name} fair value`;
+      const acts = el('div', 'acts'); card.appendChild(acts);
+      acts.appendChild(button("Sign up", "pill", () => openAuth("up", "Sign up to save your own fair value.")));
+      return card;
+    }
+    api('apply', {ticker: p.ticker, preferences: p.preferences, rationale: p.rationale}).then(async res => {
+      title.textContent = `\u2713 Saved as your ${name} fair value`;
+      body.appendChild(resultView(res));
+      if (sel.value !== p.ticker) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
+      await refresh();
+      backfill(p.ticker);
+    }).catch(e => { title.textContent = `Couldn't save your ${name} fair value`; showErr(body, e); });
+    return card;
+  };
+  window.resetParse = txt => {
+    const m = txt.match(/```fmv-reset\s*([\s\S]*?)```/);
+    if (!m) return null;
+    try { const t = String(JSON.parse(m[1]).ticker || "").toUpperCase(); return MAG7.includes(t) && mineOf(t) ? t : null; } catch (e) { return null; }
+  };
+  window.resetCard = t => {
+    const card = el('div', 'card');
+    card.appendChild(el('div', 't', `Reset ${NAMES[t] || t} to the published fair value?`));
+    const acts = el('div', 'acts'); card.appendChild(acts);
+    const go = button("Reset", "pill", async () => {
+      go.disabled = true;
+      try { await api('reset', {ticker: t}); card.textContent = `${NAMES[t] || t} is back to the published fair value.`; await refresh(); }
+      catch (e) { go.disabled = false; card.appendChild(el('div', 'warn', errText(e))); }
+    });
+    acts.appendChild(go); acts.appendChild(button("Cancel", "pill ghost", () => card.remove()));
+    return card;
+  };
+  window.watchParse = txt => {
+    const m = txt.match(/```watchlist-proposal\s*([\s\S]*?)```/);
+    if (!m) return [];
+    try {
+      const seen = new Set();
+      return JSON.parse(m[1]).filter(c => c && (c.action === "add" || c.action === "remove") && MAG7.includes(String(c.ticker).toUpperCase()))
+        .map(c => ({action: c.action, ticker: String(c.ticker).toUpperCase()}))
+        .filter(c => (seen.has(c.ticker) ? false : seen.add(c.ticker)))
+        .filter(c => c.action === "add" ? !WATCH.has(c.ticker) : WATCH.has(c.ticker));
+    } catch (e) { return []; }
+  };
+  window.watchCard = changes => {
+    const card = el('div', 'card');
+    const adds = changes.filter(c => c.action === "add").map(c => c.ticker), rems = changes.filter(c => c.action === "remove").map(c => c.ticker);
+    card.appendChild(el('div', 't', [adds.length ? "Add " + adds.join(", ") : "", rems.length ? "Remove " + rems.join(", ") : ""].filter(Boolean).join(" · ") + "?"));
+    const acts = el('div', 'acts'); card.appendChild(acts);
+    const go = button(adds.length ? "Add to watchlist" : "Remove", "pill", async () => {
+      if (!USER) { openAuth("up", "Sign up to build a watchlist."); return; }
+      go.disabled = true;
+      let err = null;
+      if (adds.length) err = (await sb.from('watchlist').upsert(adds.map(t => ({user_id: USER.id, ticker: t})), {onConflict: 'user_id,ticker', ignoreDuplicates: true})).error;
+      if (!err && rems.length) err = (await sb.from('watchlist').delete().in('ticker', rems)).error;
+      if (err) { go.disabled = false; return; }
+      card.textContent = "Watchlist updated.";
+      await refresh();
+    });
+    acts.appendChild(go); acts.appendChild(button("No thanks", "pill ghost", () => card.remove()));
+    return card;
+  };
+})();
+// ---- chat: thin client for the fmv-chat edge function (the LLM lives on the backend) ----
+(function () {
+  const CHAT_URL = SUPABASE_URL.replace(/\/rest\/v1$/, "") + "/functions/v1/fmv-chat";
+  const log = document.getElementById('chatlog'), form = document.getElementById('chatform'),
+        input = document.getElementById('chatin'), chips = document.getElementById('chips'),
+        btn = form.querySelector('button');
+  const hist = [];
+  const pop = document.getElementById('chatpop'), fab = document.getElementById('chatfab');
+  const smallScreen = () => matchMedia("(max-width:560px)").matches;
+  // On phones the chat fills the visible area, which shrinks when the keyboard opens (iOS doesn't resize fixed elements).
+  const fitToViewport = () => {
+    const vv = window.visualViewport;
+    if (pop.hidden || !smallScreen() || !vv) { pop.style.height = ""; pop.style.top = ""; return; }
+    pop.style.height = vv.height + "px"; pop.style.top = vv.offsetTop + "px";
+    log.scrollTop = log.scrollHeight;
+  };
+  if (window.visualViewport) { visualViewport.addEventListener('resize', fitToViewport); visualViewport.addEventListener('scroll', fitToViewport); }
+  const setOpen = open => {
+    pop.hidden = !open; fab.classList.toggle('open', open);
+    fab.setAttribute('aria-expanded', open); fab.setAttribute('aria-label', open ? "Close chat" : "Open chat");
+    document.body.classList.toggle('chatting', open && smallScreen());
+    fitToViewport();
+    if (open) { if (!matchMedia("(pointer:coarse)").matches) input.focus(); log.scrollTop = log.scrollHeight; } else fab.focus();
+  };
+  fab.onclick = () => setOpen(pop.hidden);
+  window.chatAsk = q => { if (pop.hidden) setOpen(true); ask(q); };
+  window.chatReset = () => { hist.length = 0; log.textContent = ""; chips.querySelectorAll('.gen').forEach(b => { b.hidden = false; }); if (!pop.hidden) setOpen(false); };
+  document.getElementById('chatclose').onclick = () => setOpen(false);
+  document.addEventListener('keydown', e => { if (e.key === "Escape" && !pop.hidden && !document.querySelector('dialog[open]')) setOpen(false); });
+  // Minimal, safe Markdown: text is HTML-escaped first, so only the tags added here can appear.
+  function md(src) {
+    const esc = x => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const inline = x => esc(x)
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/__([^_]+)__/g, "<strong>$1</strong>")
+      .replace(/(^|[^*\w])\*(?!\s)([^*]+?)\*(?!\w)/g, "$1<em>$2</em>");
+    let html = "", para = [], list = null;
+    const flushP = () => { if (para.length) { html += "<p>" + para.map(inline).join("<br>") + "</p>"; para = []; } };
+    const flushL = () => { if (list) { html += `<${list.t}>` + list.items.map(i => "<li>" + inline(i) + "</li>").join("") + `</${list.t}>`; list = null; } };
+    for (const raw of src.split("\n")) {
+      const line = raw.trimEnd(); let m;
+      if (!line.trim()) { flushP(); flushL(); continue; }
+      if ((m = line.match(/^\s*#{1,6}\s+(.*)/))) { flushP(); flushL(); html += "<h4>" + inline(m[1]) + "</h4>"; continue; }
+      if ((m = line.match(/^\s*[-*\u2022]\s+(.*)/))) { flushP(); if (!list || list.t !== "ul") { flushL(); list = {t: "ul", items: []}; } list.items.push(m[1]); continue; }
+      if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (!list || list.t !== "ol") { flushL(); list = {t: "ol", items: []}; } list.items.push(m[1]); continue; }
+      if (list && /^\s{2,}\S/.test(raw)) { list.items[list.items.length - 1] += " " + line.trim(); continue; }
+      flushL(); para.push(line);
+    }
+    flushP(); flushL();
+    return html;
+  }
+  const add = (cls, text) => { const d = document.createElement('div'); d.className = 'msg ' + cls; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
+  async function ask(q) {
+    q = q.trim(); if (!q) return;
+    hist.push({role: "user", content: q});
+    add('user', q); input.value = ""; btn.disabled = true; chips.querySelectorAll('.gen').forEach(b => { b.hidden = true; });
+    const bot = add('bot', "Thinking…");
+    try {
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {"content-type": "application/json", apikey: ANON_KEY, authorization: "Bearer " + await authToken()},
+        body: JSON.stringify({messages: hist.slice(-12), ticker: sel.value})
+      });
+      if (res.status === 429) {   // daily limit
+        bot.textContent = await res.text(); hist.pop(); btn.disabled = false;
+        if (!USER) {
+          const acts = document.createElement('div'); acts.className = 'acts'; acts.style.marginTop = "10px";
+          const b = document.createElement('button'); b.type = "button"; b.className = "pill"; b.textContent = "Sign up";
+          b.onclick = () => window.openAuth("up", "Sign up for more messages with Quill."); acts.appendChild(b); bot.appendChild(acts);
+        } else if (/Premium/.test(bot.textContent) && window.waitlistNote) bot.appendChild(window.waitlistNote("chat_limit"));
+        return;
+      }
+      if (!res.ok || !res.body) throw new Error("chat " + res.status);
+      const rd = res.body.getReader(), dec = new TextDecoder();
+      let out = "";
+      for (;;) {
+        const {done, value} = await rd.read(); if (done) break;
+        out += dec.decode(value, {stream: true}); bot.innerHTML = md(window.fmvStrip(out)); log.scrollTop = log.scrollHeight;
+      }
+      if (!out) throw new Error("empty");
+      const clean = window.fmvStrip(out).trim();
+      hist.push({role: "assistant", content: clean});
+      bot.innerHTML = md(clean);
+      const prefs = window.prefsParse(out);
+      if (prefs) bot.appendChild(window.prefsCard(prefs));
+      const rst = window.resetParse(out);
+      if (rst) bot.appendChild(window.resetCard(rst));
+      const wch = window.watchParse(out);
+      if (wch.length) bot.appendChild(window.watchCard(wch));
+    } catch (e) {
+      bot.textContent = "Sorry, that didn't go through. Try again in a moment.";
+      hist.pop();
+    }
+    btn.disabled = false; input.focus();
+  }
+  form.addEventListener('submit', e => { e.preventDefault(); ask(input.value); });
+  // Shortcut for the stock on screen (always shown) + general starters (hidden once the chat starts).
+  const shortcut = document.createElement('button'); shortcut.type = "button"; shortcut.className = "shortcut";
+  shortcut.addEventListener('click', () => ask(shortcut.textContent));
+  chips.appendChild(shortcut);
+  ["What are bear, base and bull cases?", "What is a DCF?"].forEach(t => {
+    const b = document.createElement('button'); b.type = "button"; b.textContent = t; b.className = "gen";
+    b.addEventListener('click', () => ask(t)); chips.appendChild(b);
+  });
+  window.setChatStock = t => { shortcut.textContent = `Change ${t}'s fair value`; };
+  window.setChatStock(sel.value || "AAPL");
+})();
+init();
+</script></body></html>

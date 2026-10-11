@@ -44,7 +44,7 @@
       <li><strong>Your fair values.</strong> The instructions you give for valuing a stock (for example
       &ldquo;use a 22x multiple&rdquo;), any reason you add, the resulting values, the method summary and
       assumptions, previews you haven&rsquo;t saved yet, and a history of past versions.</li>
-      <li><strong>Premium waitlist.</strong> Whether you joined and where in the app you joined from.</li>
+      <li><strong>Waitlists.</strong> Whether you joined the Premium or Pro waitlist, which one, and where in the app you joined from.</li>
       <li><strong>Plan.</strong> Whether your account is on the Free or Premium plan.</li>
     </ul>
 
@@ -56,6 +56,12 @@
     your browser tab and is cleared when you close the page or log out. We use Google&rsquo;s paid Gemini API service;
     under its terms, Google doesn&rsquo;t use this text to improve its products, and may keep it for a limited time
     to detect abuse. Please don&rsquo;t share personal or sensitive information in chat.</p>
+
+    <h2>Email alerts</h2>
+    <p>On Premium and Pro, if alerts are on, we check prices for the stocks on your watchlist (daily on Premium, during
+    market hours on Pro) and email you when one reaches your Fair Buy zone. We keep a record of each alert (stock,
+    price, threshold and time) so we don&rsquo;t send duplicates. Every alert email has a link to turn alerts off, and you
+    can switch them off from the account menu.</p>
 
     <h2>Usage records</h2>
     <p>To enforce daily limits and keep costs in check, we record each Quill message and each fair value analysis:
@@ -73,8 +79,8 @@
       <li>To keep your fair values up to date: when a stock&rsquo;s published analysis changes, we re-run your saved
       instructions automatically.</li>
       <li>To enforce plan limits and prevent abuse.</li>
-      <li>To email you about your account (for example sign-up confirmation or password reset) and, if you joined the
-      Premium waitlist, to tell you when Premium is available.</li>
+      <li>To email you about your account (for example sign-up confirmation or password reset) and, if you joined a
+      waitlist, to tell you when Premium or Pro is available.</li>
     </ul>
     <p>We don&rsquo;t sell your information or use it for advertising.</p>
 
@@ -84,6 +90,7 @@
       <li><strong>Supabase</strong>: accounts, database and server functions. Data is stored in Supabase&rsquo;s
       Canada (Central) region.</li>
       <li><strong>Google (Gemini API)</strong>: generates Quill&rsquo;s replies and custom fair value analyses.</li>
+      <li><strong>Resend</strong>: sends alert emails (your email address and the alert content).</li>
       <li><strong>GitHub Pages</strong>: hosts the website.</li>
       <li><strong>jsDelivr</strong>: serves a software library the page loads.</li>
     </ul>
@@ -96,8 +103,8 @@
     your account. Resetting a fair value to the published one removes your instructions but keeps the history of past
     versions. Usage records are kept to enforce limits and monitor costs. To delete your account and everything linked
     to it, email <a href="mailto:support@peardigitals.com">support@peardigitals.com</a> from the address on your
-    account; deleting the account removes your watchlist, fair values and their history, waitlist entry, plan and
-    usage records.</p>
+    account; deleting the account removes your watchlist, fair values and their history, waitlist entry, plan, alert
+    settings and history, and usage records.</p>
 
     <h2>Security</h2>
     <p>Information is sent over encrypted connections (HTTPS). Database access rules let each account read only its

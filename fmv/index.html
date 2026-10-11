@@ -44,6 +44,30 @@
   .search .opt > div { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .search .opt b { font-size:.92rem; } .search .opt span { color:var(--muted); font-size:.85rem; margin-left:8px; }
   .search .opt em { flex:none; }
+  .ptag { flex:none; font-style:normal; font-size:.72rem; font-weight:700; padding:2px 8px; border-radius:6px; letter-spacing:.02em; }
+  .ptag.premium { background:#e8efff; color:var(--mine); }
+  .ptag.pro { background:#1b1f3b; color:#fff; }
+  .ptag.soon { background:var(--soft); color:var(--muted); }
+  #paydlg { width:min(94vw,400px); }
+  .paytext { color:var(--muted); margin:-6px 0 18px; }
+  .payacts { display:flex; flex-direction:column; gap:8px; }
+  .payacts .pill { padding:12px; }
+  #plansdlg { width:min(96vw,860px); }
+  .plans { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+  .plan { border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:10px; }
+  .plan.current { border-color:var(--green); box-shadow:0 0 0 1px var(--green) inset; }
+  .plan h3 { margin:0; font-size:1.1rem; } .plan .who2 { color:var(--muted); font-size:.85rem; margin-top:-6px; }
+  .plan .price { font-size:1.6rem; font-weight:700; letter-spacing:-.02em; } .plan .price span { font-size:.85rem; font-weight:400; color:var(--muted); letter-spacing:0; }
+  .plan .stocks { font-weight:700; font-size:1.05rem; }
+  .plan ul { margin:0; padding-left:18px; font-size:.88rem; color:var(--ink); flex:1; } .plan li { margin:4px 0; }
+  .plan .pill { padding:10px; }
+  .plan .state { text-align:center; font-weight:600; font-size:.9rem; color:var(--green); padding:10px 0; }
+  .plan .leave { border:0; background:none; color:var(--muted); font-size:.82rem; text-decoration:underline; cursor:pointer; }
+  .toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 16px; border-radius:12px;
+           font-size:.9rem; z-index:70; box-shadow:0 10px 30px rgba(15,31,23,.25); transition:opacity .4s; max-width:90vw; }
+  .toast.out { opacity:0; }
+  .plansnote { color:var(--muted); font-size:.85rem; margin:14px 0 0; }
+  @media (max-width:760px) { .plans { grid-template-columns:1fr; } }
   .search .cancel { display:none; border:0; background:none; color:var(--green); font-weight:600; font-size:16px; padding:8px 2px; cursor:pointer; flex:none; }
   .search .opt em { font-style:normal; font-weight:600; font-size:.88rem; }
   .search .none { padding:10px; color:var(--muted); font-size:.88rem; }
@@ -246,6 +270,20 @@
   </div>
 </div>
 
+<dialog id="paydlg">
+  <button type="button" class="xbtn" id="payclose" aria-label="Close">&times;</button>
+  <h2 id="paytitle"></h2>
+  <p class="paytext" id="paytext"></p>
+  <div class="payacts" id="payacts"></div>
+</dialog>
+
+<dialog id="plansdlg">
+  <button type="button" class="xbtn" id="plansclose" aria-label="Close">&times;</button>
+  <h2>Plans</h2>
+  <div class="plans" id="plansgrid"></div>
+  <p class="plansnote">Premium and Pro aren&rsquo;t on sale yet; prices shown are planned launch prices. Join a waitlist and we&rsquo;ll email you when they open.</p>
+</dialog>
+
 <dialog id="authdlg">
   <form id="authform">
     <button type="button" class="xbtn" id="authclose" aria-label="Close">&times;</button>
@@ -276,7 +314,7 @@
   <div class="wrap">
     <div class="row">
       <div>&copy; 2026 Pear Digitals LLC</div>
-      <div><a href="/">Home</a><a href="https://github.com/Pear-Digitals/trading-prompts" target="_blank" rel="noopener">GitHub</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="/fmv/privacy.html">Privacy</a><a href="mailto:support@peardigitals.com">Contact</a></div>
+      <div><a href="/">Home</a><a href="https://github.com/Pear-Digitals/trading-prompts" target="_blank" rel="noopener">GitHub</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="#plans" id="plansfoot">Plans</a><a href="/fmv/privacy.html">Privacy</a><a href="mailto:support@peardigitals.com">Contact</a></div>
     </div>
   </div>
 </footer>
@@ -529,7 +567,10 @@ function draw() {
   const NAMES = {AAPL: "Apple", AMZN: "Amazon", GOOGL: "Alphabet", META: "Meta", MSFT: "Microsoft", NVDA: "NVIDIA", TSLA: "Tesla"};
   const USER_URL = BASE_URL + "/functions/v1/fmv-user";
   const SC = ["bear", "base", "bull"], CAP = {bear: "Bear", base: "Base", bull: "Bull"};
-  let rows = {}, authMode = "in", plan = null, fullHistory = false, onWaitlist = false;
+  let rows = {}, authMode = "in", plan = null, fullHistory = false, onWaitlist = false, waitTier = null, alertsOn = true;
+  const PLAN_NAME = {free: "Free", premium: "Premium", pro: "Pro"};
+  const RANK = {free: 0, premium: 1, pro: 2};
+  const myRank = () => RANK[plan || "free"];
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const button = (text, cls, fn) => { const b = el('button', cls, text); b.type = "button"; if (fn) b.onclick = fn; return b; };
   const money = v => v == null ? "—" : "$" + Math.round(+v).toLocaleString();
@@ -605,13 +646,18 @@ function draw() {
     const av = button((USER.email || "?")[0].toUpperCase(), "avatar");
     av.setAttribute("aria-label", "Account");
     const menu = el('div', 'menu'); menu.hidden = true;
-    menu.appendChild(el('div', 'who', USER.email + (plan ? " \u00b7 " + (plan === "premium" ? "Premium" : "Free plan") : "")));
-    if (plan !== "premium") {
-      if (onWaitlist) {
-        menu.appendChild(Object.assign(el('div', 'who', "\u2713 You're on the Premium waitlist"), {style: "border:0;margin:0"}));
-        menu.appendChild(button("Leave the waitlist", null, async () => { await leaveWaitlist(); renderNav(); }));
-      } else menu.appendChild(button("Join the Premium waitlist", null, async () => { await joinWaitlist("menu"); renderNav(); }));
+    menu.appendChild(el('div', 'who', USER.email + (plan ? ` \u00b7 ${PLAN_NAME[plan]}${plan === "free" ? " plan" : ""}` : "")));
+    if (waitTier) {
+      menu.appendChild(Object.assign(el('div', 'who', `\u2713 You're on the ${PLAN_NAME[waitTier]} waitlist`), {style: "border:0;margin:0"}));
+      menu.appendChild(button("Leave the waitlist", null, async () => { await leaveWaitlist(); renderNav(); }));
     }
+    if (plan === "premium" || plan === "pro") menu.appendChild(button(`Email alerts: ${alertsOn ? "On" : "Off"}`, null, async ev => {
+      ev.stopPropagation();
+      const next = !alertsOn;
+      const {error} = await sb.from('alert_settings').upsert({user_id: USER.id, enabled: next, updated_at: new Date().toISOString()}, {onConflict: 'user_id'});
+      if (!error) { alertsOn = next; ev.target.textContent = `Email alerts: ${alertsOn ? "On" : "Off"}`; toast(alertsOn ? "Fair Buy alerts are on." : "Fair Buy alerts are off."); }
+    }));
+    if (plan !== "pro") menu.appendChild(button("Compare plans", null, () => { menu.hidden = true; openPlans(); }));
     menu.appendChild(button("Log out", null, () => { menu.hidden = true; sb.auth.signOut(); }));
     av.onclick = ev => { ev.stopPropagation(); menu.hidden = !menu.hidden; };
     nav.appendChild(av); nav.appendChild(menu);
@@ -627,34 +673,59 @@ function draw() {
   };
   const phone = () => matchMedia("(max-width:760px)").matches;
   const closeSearch = () => { qres.hidden = true; q.setAttribute("aria-expanded", "false"); document.body.classList.remove('searching'); };
+  // Every NYSE / Nasdaq stock, loaded the first time search is used: [ticker, name, tier] (0 Mag 7, 1 S&P 500, 2 other).
+  let UNIVERSE = null, universeLoading = null;
+  const loadUniverse = () => universeLoading || (universeLoading = fetch("universe.json").then(r => r.json())
+    .then(d => { UNIVERSE = d; if (!qres.hidden) renderSearch(); }).catch(() => { universeLoading = null; }));
+  const TIER_PLAN = ["free", "premium", "pro"];
+  // What tapping a search result does: open it, show the paywall, or say it's coming.
+  const statusOf = (t, tier) => myRank() < tier ? TIER_PLAN[tier] : LATEST[t] ? "ok" : "soon";
   function renderSearch() {
-    const term = q.value.trim().toLowerCase();
-    const all = [...sel.options].map(o => o.value);
-    hits = all.filter(t => !term || t.toLowerCase().startsWith(term) || (NAMES[t] || "").toLowerCase().includes(term))
-              .sort((a, b) => (b.toLowerCase().startsWith(term) - a.toLowerCase().startsWith(term)) || a.localeCompare(b));
-    hi = Math.min(hi, Math.max(hits.length - 1, 0));
+    const raw = q.value.trim(), term = raw.toLowerCase();
+    const covered = [...sel.options].map(o => [o.value, NAMES[o.value] || "", 0]);
+    let list;
+    if (!term) list = covered;
+    else {
+      const score = ([t, n]) => { const tl = t.toLowerCase(), nl = n.toLowerCase();
+        return tl === term ? 0 : tl.startsWith(term) ? 1 : nl.startsWith(term) ? 2 : nl.includes(" " + term) ? 3 : nl.includes(term) ? 4 : 9; };
+      const pool = new Map(covered.map(x => [x[0], x]));
+      (UNIVERSE || []).forEach(x => { if (!pool.has(x[0])) pool.set(x[0], [x[0], NAMES[x[0]] || x[1], x[2]]); });
+      list = [...pool.values()].map(x => [x, score(x)]).filter(([, sc]) => sc < 9)
+        .sort((a, b) => a[1] - b[1] || (LATEST[b[0][0]] ? 1 : 0) - (LATEST[a[0][0]] ? 1 : 0) || a[0][2] - b[0][2] || a[0][0].localeCompare(b[0][0]))
+        .slice(0, 25).map(([x]) => x);
+    }
+    hits = list; hi = Math.min(hi, Math.max(hits.length - 1, 0));
     qres.textContent = "";
-    if (!term) qres.appendChild(el('div', 'lab', "Stocks"));
-    hits.forEach((t, i) => {
-      const o = button("", "opt" + (i === hi ? " on" : ""), () => pick(t));
+    if (!term) qres.appendChild(el('div', 'lab', "Free \u00b7 Magnificent 7"));
+    hits.forEach(([t, name, tier], i) => {
+      const st = statusOf(t, tier);
+      const o = button("", "opt" + (i === hi ? " on" : ""), () => choose(t, name, tier));
       o.setAttribute("role", "option");
-      const left = el('div'); left.appendChild(el('b', null, t)); left.appendChild(el('span', null, NAMES[t] || ""));
+      const left = el('div'); left.appendChild(el('b', null, t)); left.appendChild(el('span', null, name));
       o.appendChild(left);
-      if (LATEST[t]) o.appendChild(el('em', null, "$" + LATEST[t].px.toFixed(2)));
+      if (st === "ok") o.appendChild(el('em', null, "$" + LATEST[t].px.toFixed(2)));
+      else o.appendChild(el('em', 'ptag ' + st, st === "soon" ? "Soon" : PLAN_NAME[st]));
       o.onmouseenter = () => { hi = i; [...qres.querySelectorAll('.opt')].forEach((x, j) => x.classList.toggle('on', j === i)); };
       qres.appendChild(o);
     });
-    if (!hits.length) qres.appendChild(el('div', 'none', `No match for \u201c${q.value.trim()}\u201d. We cover the Magnificent 7 for now.`));
+    if (!term) qres.appendChild(el('div', 'none', "Search any NYSE or Nasdaq stock. S&P 500 stocks are Premium; the rest are Pro."));
+    else if (!hits.length) qres.appendChild(el('div', 'none', UNIVERSE ? `No NYSE or Nasdaq stock matches \u201c${raw}\u201d.` : "Searching\u2026"));
     qres.hidden = false; q.setAttribute("aria-expanded", "true");
   }
-  q.addEventListener('focus', () => { if (phone()) document.body.classList.add('searching'); renderSearch(); });
+  function choose(t, name, tier) {
+    const st = statusOf(t, tier);
+    if (st === "ok") { pick(t); return; }
+    q.value = ""; closeSearch(); q.blur();
+    openPaywall(t, name, st);
+  }
+  q.addEventListener('focus', () => { if (phone()) document.body.classList.add('searching'); loadUniverse(); renderSearch(); });
   $('qcancel').onclick = () => { q.value = ""; closeSearch(); q.blur(); };
   q.addEventListener('input', () => { hi = 0; renderSearch(); });
   q.addEventListener('keydown', e => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault(); if (!hits.length) return;
       hi = (hi + (e.key === "ArrowDown" ? 1 : -1) + hits.length) % hits.length; renderSearch();
-    } else if (e.key === "Enter") { e.preventDefault(); if (hits[hi]) pick(hits[hi]); }
+    } else if (e.key === "Enter") { e.preventDefault(); if (hits[hi]) choose(...hits[hi]); }
     else if (e.key === "Escape") { closeSearch(); q.blur(); }
   });
   document.addEventListener('mousedown', e => { if (!e.target.closest('.search')) closeSearch(); });
@@ -785,34 +856,107 @@ function draw() {
   }
 
   // ---- state ----
-  // ---- Premium waitlist (Premium isn't on sale yet) ----
-  async function joinWaitlist(source) {
-    if (!USER) { openAuth("up", "Sign up to join the Premium waitlist."); return false; }
-    const {error} = await sb.from('premium_waitlist').upsert({user_id: USER.id, source}, {onConflict: 'user_id', ignoreDuplicates: true});
-    if (!error) onWaitlist = true;
+  // ---- waitlists for Premium / Pro (not on sale yet) ----
+  async function joinWaitlist(source, tier = "premium") {
+    if (!USER) { openAuth("up", `Sign up to join the ${PLAN_NAME[tier]} waitlist.`); return false; }
+    let {error} = await sb.from('premium_waitlist').upsert({user_id: USER.id, source, tier}, {onConflict: 'user_id'});
+    if (error && tier === "premium") ({error} = await sb.from('premium_waitlist').upsert({user_id: USER.id, source}, {onConflict: 'user_id', ignoreDuplicates: true}));
+    if (!error) { onWaitlist = true; waitTier = tier; renderNav(); }
     return !error;
   }
   async function leaveWaitlist() {
     if (!USER) return false;
     const {error} = await sb.from('premium_waitlist').delete().eq('user_id', USER.id);
-    if (!error) onWaitlist = false;
+    if (!error) { onWaitlist = false; waitTier = null; }
     return !error;
   }
-  // Shown under any "this is a Premium feature" message.
-  window.waitlistNote = source => {
+  const joinedText = tier => `\u2713 You're on the ${PLAN_NAME[tier]} waitlist. We'll email you when it opens.`;
+  // Shown under any "this needs a paid plan" message. With a tier: that plan's waitlist; without: compare plans.
+  window.waitlistNote = (source, tier) => {
     const box = el('div', 'acts');
-    if (onWaitlist) { box.appendChild(el('span', 'q', "\u2713 You're on the Premium waitlist.")); return box; }
-    const b = button("Join the Premium waitlist", "pill", async () => {
-      b.disabled = true;
-      if (await joinWaitlist(source)) box.replaceChildren(el('span', 'q', "\u2713 You're on the list. We'll let you know when Premium opens."));
-      else b.disabled = false;
-    });
-    box.appendChild(b);
+    if (tier && waitTier === tier) { box.appendChild(el('span', 'q', joinedText(tier))); return box; }
+    if (tier) {
+      const b = button(`Join the ${PLAN_NAME[tier]} waitlist`, "pill", async () => {
+        b.disabled = true;
+        if (await joinWaitlist(source, tier)) box.replaceChildren(el('span', 'q', joinedText(tier))); else b.disabled = false;
+      });
+      box.appendChild(b);
+    }
+    box.appendChild(button(tier ? "Compare plans" : "Join the Premium or Pro waitlist", tier ? "pill ghost" : "pill", () => openPlans()));
     return box;
   };
+
+  // Paywall for a stock outside the user's plan (or coming soon).
+  const pay = $('paydlg');
+  $('payclose').onclick = () => pay.close();
+  function openPaywall(t, name, st) {
+    const acts = $('payacts'); acts.textContent = "";
+    if (st === "soon") {
+      $('paytitle').textContent = `${t} is coming soon`;
+      $('paytext').textContent = `${name || t} is included in your plan. We're adding its fair value soon.`;
+      acts.appendChild(button("OK", "pill", () => pay.close()));
+    } else {
+      $('paytitle').textContent = `${t} is a ${PLAN_NAME[st]} stock`;
+      $('paytext').textContent = st === "premium"
+        ? `${name || t} is in the S&P 500. Premium covers every S&P 500 stock with fair values, full history, your own fair values and unlimited Quill.`
+        : `Pro covers every NYSE and Nasdaq stock, including ${name || t}, with fair values, full history, your own fair values and unlimited Quill.`;
+      if (waitTier === st) acts.appendChild(el('div', 'paytext', joinedText(st)));
+      else acts.appendChild(button(`Join the ${PLAN_NAME[st]} waitlist`, "pill", async ev => {
+        ev.target.disabled = true;
+        if (await joinWaitlist("search", st)) { pay.close(); toast(joinedText(st)); } else ev.target.disabled = false;
+      }));
+      acts.appendChild(button("Compare plans", "pill light", () => { pay.close(); openPlans(); }));
+    }
+    pay.showModal();
+  }
+
+  // Plan comparison.
+  const plansDlg = $('plansdlg');
+  $('plansclose').onclick = () => plansDlg.close();
+  $('plansfoot').onclick = e => { e.preventDefault(); openPlans(); };
+  const PLANS = [
+    {id: "free", name: "Free", who: "Get started", price: "$0", stocks: "Magnificent 7",
+     items: ["Fair values with full history and charts", "Automatic re-ratings after earnings and major events",
+             "Your own fair values with Quill", "Watchlist", "Quill: 20 messages a day (10 without an account)"]},
+    {id: "premium", name: "Premium", who: "For S&P 500 investors", price: "$9.99/mo", alt: "or $99/yr", stocks: "S&P 500 (~500 stocks)",
+     items: ["Everything in Free, for every S&P 500 stock", "Email alerts when a watchlist stock hits your Fair Buy zone, checked daily", "Unlimited Quill"]},
+    {id: "pro", name: "Pro", who: "For the whole market", price: "$29/mo", alt: "or $249/yr", stocks: "Every NYSE & Nasdaq stock (~5,900)",
+     items: ["Everything in Premium, for every NYSE and Nasdaq stock", "Real-time Fair Buy alerts during market hours", "Unlimited Quill"]},
+  ];
+  function openPlans() {
+    const g = $('plansgrid'); g.textContent = "";
+    const current = USER ? (plan || "free") : null;
+    PLANS.forEach(pl => {
+      const c = el('div', 'plan' + (pl.id === current ? ' current' : ''));
+      c.appendChild(el('h3', null, pl.name)); c.appendChild(el('div', 'who2', pl.who));
+      const pr = el('div', 'price', pl.price); if (pl.alt) pr.appendChild(el('span', null, " " + pl.alt)); c.appendChild(pr);
+      c.appendChild(el('div', 'stocks', pl.stocks));
+      const ul = el('ul'); pl.items.forEach(i => ul.appendChild(el('li', null, i))); c.appendChild(ul);
+      if (pl.id === current) c.appendChild(el('div', 'state', "Your plan"));
+      else if (pl.id === "free") { if (!USER) c.appendChild(button("Sign up free", "pill light", () => { plansDlg.close(); openAuth("up"); })); }
+      else if (current && RANK[current] > RANK[pl.id]) c.appendChild(el('div', 'state', "Included in your plan"));
+      else if (waitTier === pl.id) {
+        c.appendChild(el('div', 'state', "\u2713 On the waitlist"));
+        c.appendChild(button("Leave the waitlist", "leave", async () => { await leaveWaitlist(); renderNav(); openPlans(); }));
+      } else c.appendChild(button(waitTier ? `Switch to the ${pl.name} waitlist` : `Join the ${pl.name} waitlist`, "pill", async ev => {
+        ev.target.disabled = true;
+        if (await joinWaitlist("plans", pl.id)) openPlans(); else ev.target.disabled = false;
+      }));
+      g.appendChild(c);
+    });
+    if (!plansDlg.open) plansDlg.showModal();
+  }
+  window.openPlans = openPlans;
+  if (location.hash === "#plans") setTimeout(openPlans, 0);
+
+  // Small confirmation that fades out.
+  function toast(text) {
+    const t = el('div', 'toast', text); document.body.appendChild(t);
+    setTimeout(() => t.classList.add('out'), 2600); setTimeout(() => t.remove(), 3100);
+  }
   const showErr = (box, e) => {
     box.textContent = errText(e);
-    if (e.data && e.data.upgrade) box.appendChild(window.waitlistNote(e.data.feature || "limit"));
+    if (e.data && e.data.upgrade) box.appendChild(window.waitlistNote(e.data.feature || "limit", e.data.tier));
   };
 
   // Premium: FMV history for Premium stocks (the Mag 7's is already public).
@@ -832,20 +976,23 @@ function draw() {
     const next = {watch: new Set(), rows: {}, plan: null, onWaitlist: false};
     if (sb && USER) {
       try {
-        const [w, data, wl] = await Promise.all([
+        const [w, data, wl, al] = await Promise.all([
           sb.from('watchlist').select('ticker'),
           api('list', {}),
-          Promise.resolve(sb.from('premium_waitlist').select('user_id').maybeSingle()).catch(() => ({error: true})),
+          Promise.resolve(sb.from('premium_waitlist').select('*').maybeSingle()).catch(() => ({error: true})),
+          Promise.resolve(sb.from('alert_settings').select('enabled').maybeSingle()).catch(() => ({error: true})),
         ]);
+        next.alertsOn = !(al && !al.error && al.data && al.data.enabled === false);
         (w.data || []).forEach(r => next.watch.add(r.ticker));
         (data.rows || []).forEach(r => { next.rows[r.ticker] = r; });
         next.plan = data.plan || "free";
         next.onWaitlist = !wl.error && !!wl.data;
+        next.waitTier = next.onWaitlist ? (wl.data.tier || "premium") : null;
       } catch (e) { console.error(e); if (seq !== refreshSeq) return; }
     }
     if (seq !== refreshSeq) return;   // a newer refresh started; let it win
     WATCH.clear(); next.watch.forEach(t => WATCH.add(t));
-    rows = next.rows; plan = next.plan; onWaitlist = next.onWaitlist;
+    rows = next.rows; plan = next.plan; onWaitlist = next.onWaitlist; waitTier = next.waitTier || null; alertsOn = next.alertsOn !== false;
     if (plan === "premium" && !fullHistory) await loadFullHistory();
     Object.keys(MY).forEach(k => delete MY[k]);
     Object.values(rows).forEach(r => { if (mineOf(r.ticker)) MY[r.ticker] = r; });

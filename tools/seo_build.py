@@ -63,7 +63,7 @@ def main():
     for p in px:
         close.setdefault(p["symbol"], p)
     tickers = sorted(t for t in latest if t in NAMES and t in close)
-    links = " ".join(f'<a href="/fmv/{t.lower()}/">{html.escape(NAMES[t][0])} ({t})</a>' for t in tickers)
+    links = " · ".join(f'<a href="/fmv/{t.lower()}/" title="{html.escape(NAMES[t][0])} fair value">{t}</a>' for t in tickers)
     changed = []
 
     for t in tickers:
@@ -86,22 +86,19 @@ def main():
                 f'<link rel="canonical" href="{url}">\n'
                 f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Pear Digitals">\n'
                 f'<meta property="og:title" content="{e(title)}">\n<meta property="og:description" content="{e(desc)}">\n'
-                f'<meta property="og:url" content="{url}">\n<meta name="twitter:card" content="summary">\n'
+                f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{SITE}/assets/og/{t.lower()}.png">\n'
+                f'<meta name="twitter:card" content="summary_large_image">\n'
                 f'<script type="application/ld+json">{json.dumps(jsonld)}</script>\n')
-        summary = (f'<section class="seo"><h2>{e(name)} ({t}) fair value</h2>'
-                   f"<p>Pear's fair value for {e(name)} is {money(base)} in the base case, with a bear case of {money(bear)} "
-                   f"and a bull case of {money(bull)} (published {nice_date(v['date'])}).</p>"
-                   f"<p>Fair values are re-rated automatically after earnings and other significant events. "
-                   f"Estimates, not investment advice.</p><p>More fair values: {links}</p></section>")
+        summary = (f'<p class="seo">{e(name)} ({t}) fair value: bear, base &amp; bull, re-rated after earnings. '
+                   f"Not investment advice. · {links}</p>")
         page = replace_between(template, "seo:head", head)
         page = replace_between(page, "seo:summary", summary)
         if write_if_changed(os.path.join(ROOT, "fmv", t.lower(), "index.html"), page):
             changed.append(f"fmv/{t.lower()}/")
 
     # Main page: a short intro with links to every stock page (helps search engines find them).
-    intro = ('<section class="seo"><h2>Fair value analysis</h2><p>Pear Digitals publishes bear, base and bull fair '
-             "values for the Magnificent 7, re-rated automatically after earnings and other significant events. "
-             f"Estimates, not investment advice.</p><p>{links}</p></section>")
+    intro = ('<p class="seo">Bear, base &amp; bull fair values for the Magnificent 7, re-rated after earnings. '
+             f"Not investment advice. · {links}</p>")
     if write_if_changed(os.path.join(ROOT, "fmv", "index.html"), replace_between(template, "seo:summary", intro)):
         changed.append("fmv/ (intro)")
 
@@ -109,7 +106,7 @@ def main():
     newest = max(latest[t]["date"] for t in tickers)
     urls = [(f"{SITE}/", None), (f"{SITE}/fmv/", newest)]
     urls += [(f"{SITE}/fmv/{t.lower()}/", latest[t]["date"]) for t in tickers]
-    urls += [(f"{SITE}/fmv/privacy", None), (f"{SITE}/options-ledger/privacy", None)]
+    urls += [(f"{SITE}/fmv/methodology/", None), (f"{SITE}/fmv/privacy", None), (f"{SITE}/options-ledger/privacy", None)]
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                + "".join(f"  <url><loc>{u}</loc>" + (f"<lastmod>{d}</lastmod>" if d else "") + "</url>\n" for u, d in urls)
                + "</urlset>\n")

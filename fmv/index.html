@@ -24,7 +24,8 @@
   #err { color:#b00; padding:40px 0; text-align:center; }
   .zb { display:inline-block; font-size:11px; font-weight:700; padding:2px 9px; border-radius:10px; color:#fff; }
   #px { font-size:clamp(1.9rem,7vw,2.4rem); font-weight:700; letter-spacing:-.02em; margin:4px 0 0; line-height:1.2; }
-  #tickerrow { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  #tickerrow { display:flex; align-items:center; gap:12px; margin:0 0 6px; }
+  #tickerrow select { font-size:1.35rem; font-weight:700; letter-spacing:-.01em; padding:8px 18px; border-width:2px; border-color:var(--ink); }
   #chg { font-size:.95rem; margin-bottom:6px; }
   select { font:inherit; font-size:.95rem; padding:7px 12px; margin:4px 0; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--ink); }
   #tickerrow, .ranges { max-width:100%; }
@@ -62,12 +63,13 @@
     <div id="loading">Loading data&hellip;</div>
     <div id="err" hidden></div>
     <div id="app" hidden>
-      <div id="px">&mdash;</div><div id="chg">&mdash;</div>
       <div id="tickerrow"><select id="sel"></select> <span id="zone"></span></div>
+      <div id="px">&mdash;</div><div id="chg">&mdash;</div>
       <div class="ranges" id="ranges"></div>
       <div class="legend">
         <span><span class="sw" id="pxsw" style="border-color:#00C805"></span>stock price</span>
-        <span><span class="bx"></span>FMV bear&ndash;bull range, dashed = base</span>
+        <span><span class="sw" style="border-top:3px dotted #E0A800"></span>bear / bull case</span>
+        <span><span class="bx"></span>base case (dashed), shaded from price</span>
       </div>
       <div id="chart"><svg id="svg"></svg><div id="tip"></div><div id="cmsg" hidden>Loading&hellip;</div></div>
       <p class="note" id="foot"></p>
@@ -221,24 +223,27 @@ function draw() {
     s += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e4e0" stroke-dasharray="2 5"/>`;
     s += `<text x="${W-PR+8}" y="${y+4}" font-size="11" fill="#7a847e">$${vv>=100?vv.toFixed(0):vv.toFixed(1)}</text>`;
   }
-  // FMV band: bear-bull ribbon, dashed base line
-  const vx = v.map(r => [X(idxForDate(r[0])), r]);
-  let seg = [];
-  const flush = () => {
-    if (seg.length === 1) {
-      const [x, r] = seg[0];
-      s += `<line x1="${x}" y1="${Y(r[3])}" x2="${x}" y2="${Y(r[1])}" stroke="${GOLD}" stroke-width="8" stroke-linecap="round" opacity=".3"/>`;
-    } else if (seg.length > 1) {
-      const top = seg.map(([x, r]) => x.toFixed(1) + "," + Y(r[3]).toFixed(1));
-      const bot = seg.slice().reverse().map(([x, r]) => x.toFixed(1) + "," + Y(r[1]).toFixed(1));
-      s += `<polygon points="${top.concat(bot).join(' ')}" fill="${GOLD}" fill-opacity=".18" stroke="${GOLD}" stroke-opacity=".45" stroke-width="1" stroke-linejoin="round"/>`;
-    }
-    seg = [];
-  };
-  vx.forEach(([x, r]) => { if (r[1] && r[3]) seg.push([x, r]); else flush(); });
-  flush();
-  if (vx.length > 1)
-    s += `<polyline fill="none" stroke="${GOLD}" stroke-width="1.8" stroke-dasharray="6 4" stroke-linecap="round" points="${vx.map(([x, r]) => x.toFixed(1)+','+Y(r[2]).toFixed(1)).join(' ')}"/>`;
+  // FMV: gradient from price to base case, dotted bear/bull lines, dashed base line
+  const vx = v.map(r => { const i = idxForDate(r[0]); return [X(i), r, i]; });
+  const polyPts = (arr, f) => arr.map(([x, r]) => x.toFixed(1) + ',' + Y(f(r)).toFixed(1)).join(' ');
+  if (vx.length > 1) {
+    const last = vx[vx.length - 1], up = last[1][2] >= p[last[2]][1];
+    s = s.replace('</defs>', `<linearGradient id="gb" x1="0" y1="${up?1:0}" x2="0" y2="${up?0:1}">`
+      + `<stop offset="0" stop-color="${lineCol}" stop-opacity=".30"/><stop offset="1" stop-color="${GOLD}" stop-opacity=".30"/></linearGradient></defs>`);
+    const basePts = vx.map(([x, r]) => x.toFixed(1) + ',' + Y(r[2]).toFixed(1));
+    const pxPts = vx.slice().reverse().map(([x, r, i]) => x.toFixed(1) + ',' + Y(p[i][1]).toFixed(1));
+    s += `<polygon points="${basePts.concat(pxPts).join(' ')}" fill="url(#gb)" stroke="none"/>`;
+    [1, 3].forEach(k => {
+      const seg = vx.filter(([, r]) => r[k]);
+      if (seg.length > 1)
+        s += `<polyline fill="none" stroke="${GOLD}" stroke-width="2" stroke-dasharray="0.1 5" stroke-linecap="round" stroke-linejoin="round" points="${polyPts(seg, r => r[k])}"/>`;
+      else if (seg.length === 1)
+        s += `<circle cx="${seg[0][0].toFixed(1)}" cy="${Y(seg[0][1][k]).toFixed(1)}" r="2.5" fill="${GOLD}"/>`;
+    });
+    s += `<polyline fill="none" stroke="${GOLD}" stroke-width="1.8" stroke-dasharray="6 4" stroke-linecap="round" points="${polyPts(vx, r => r[2])}"/>`;
+  } else vx.forEach(([x, r]) => {
+    [1, 3].forEach(k => { if (r[k]) s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[k]).toFixed(1)}" r="2.5" fill="${GOLD}"/>`; });
+  });
   if (vx.length <= 12)
     vx.forEach(([x, r]) => { s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[2]).toFixed(1)}" r="4" fill="${GOLD}" stroke="#fff" stroke-width="1.5"/>`; });
 

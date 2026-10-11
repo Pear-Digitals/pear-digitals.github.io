@@ -45,6 +45,18 @@
   footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
   footer a { margin-right:18px; }
   .note { font-size:.85rem; color:var(--muted); }
+  #chat h2 { font-size:1.15rem; margin:0 0 4px; letter-spacing:-.01em; }
+  #chatlog { max-height:420px; overflow-y:auto; margin:12px 0; display:flex; flex-direction:column; gap:10px; }
+  .msg { padding:10px 14px; border-radius:14px; font-size:.95rem; line-height:1.5; white-space:pre-wrap; max-width:88%; }
+  .msg.user { align-self:flex-end; background:var(--green); color:#fff; }
+  .msg.bot { align-self:flex-start; background:#f3f5f2; color:var(--ink); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .chips button { border:1px solid var(--line); background:var(--card); border-radius:999px; padding:6px 12px; font:inherit; font-size:.82rem; cursor:pointer; color:var(--ink); }
+  .chips button:hover { border-color:var(--green); }
+  #chatform { display:flex; gap:8px; }
+  #chatin { flex:1; font:inherit; font-size:.95rem; padding:10px 14px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--ink); }
+  #chatform button { border:0; border-radius:999px; padding:10px 20px; font:inherit; font-weight:600; background:var(--green); color:#fff; cursor:pointer; }
+  #chatform button:disabled { opacity:.5; cursor:default; }
   @media (max-width:760px){ .ranges button{padding:6px 11px;margin-right:4px} .wrap{padding:0 16px} .panel{padding:14px 12px; border-radius:14px; margin-bottom:40px} .legend{gap:10px} .gh{padding:8px 16px} .links a:not(:nth-last-child(-n+2)){display:none} }
 </style></head><body>
 <div class="wrap">
@@ -75,6 +87,13 @@
       <div id="chart"><svg id="svg"></svg><div id="tip"></div><div id="cmsg" hidden>Loading&hellip;</div></div>
       <p class="note" id="foot"></p>
     </div>
+  </div>
+  <div class="panel" id="chat">
+    <h2>Ask about the fair values</h2>
+    <p class="note">Finance questions only. Stock analysis covers the Mag 7. Ask for the bear, base and bull cases, a valuation term explained, or a what-if on an assumption. Educational, not financial advice.</p>
+    <div id="chatlog"></div>
+    <div class="chips" id="chips"></div>
+    <form id="chatform"><input id="chatin" maxlength="2000" placeholder="e.g. Why is the bear case lower for this stock?" autocomplete="off"><button type="submit">Ask</button></form>
   </div>
 </div>
 <footer>
@@ -287,5 +306,45 @@ function draw() {
   svg.onpointermove = move; svg.onpointerdown = move;
   svg.onpointerleave = hide; svg.onpointercancel = hide;
 }
+// ---- chat: thin client for the fmv-chat edge function (the LLM lives on the backend) ----
+(function () {
+  const CHAT_URL = SUPABASE_URL.replace(/\/rest\/v1$/, "") + "/functions/v1/fmv-chat";
+  const log = document.getElementById('chatlog'), form = document.getElementById('chatform'),
+        input = document.getElementById('chatin'), chips = document.getElementById('chips'),
+        btn = form.querySelector('button');
+  const hist = [];
+  const add = (cls, text) => { const d = document.createElement('div'); d.className = 'msg ' + cls; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
+  async function ask(q) {
+    q = q.trim(); if (!q) return;
+    hist.push({role: "user", content: q});
+    add('user', q); input.value = ""; btn.disabled = true;
+    const bot = add('bot', "Thinking…");
+    try {
+      const res = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {"content-type": "application/json", apikey: ANON_KEY, authorization: "Bearer " + ANON_KEY},
+        body: JSON.stringify({messages: hist.slice(-12), ticker: sel.value})
+      });
+      if (!res.ok || !res.body) throw new Error("chat " + res.status);
+      const rd = res.body.getReader(), dec = new TextDecoder();
+      let out = "";
+      for (;;) {
+        const {done, value} = await rd.read(); if (done) break;
+        out += dec.decode(value, {stream: true}); bot.textContent = out; log.scrollTop = log.scrollHeight;
+      }
+      if (!out) throw new Error("empty");
+      hist.push({role: "assistant", content: out});
+    } catch (e) {
+      bot.textContent = "Sorry, the assistant is unavailable right now. Please try again in a moment.";
+      hist.pop();
+    }
+    btn.disabled = false; input.focus();
+  }
+  form.addEventListener('submit', e => { e.preventDefault(); ask(input.value); });
+  ["Explain the bear, base and bull cases for this stock", "What is a DCF?", "What if the discount rate were 1% higher?", "Which valuation metrics does FMV use?"].forEach(t => {
+    const b = document.createElement('button'); b.type = "button"; b.textContent = t;
+    b.addEventListener('click', () => ask(t)); chips.appendChild(b);
+  });
+})();
 init();
 </script></body></html>

@@ -582,9 +582,12 @@ function draw() {
     av.setAttribute("aria-label", "Account");
     const menu = el('div', 'menu'); menu.hidden = true;
     menu.appendChild(el('div', 'who', USER.email + (plan ? " \u00b7 " + (plan === "premium" ? "Premium" : "Free plan") : "")));
-    if (plan !== "premium") menu.appendChild(onWaitlist
-      ? Object.assign(el('div', 'who', "\u2713 You're on the Premium waitlist"), {style: "border:0;margin:0"})
-      : button("Join the Premium waitlist", null, async () => { await joinWaitlist("menu"); renderNav(); }));
+    if (plan !== "premium") {
+      if (onWaitlist) {
+        menu.appendChild(Object.assign(el('div', 'who', "\u2713 You're on the Premium waitlist"), {style: "border:0;margin:0"}));
+        menu.appendChild(button("Leave the waitlist", null, async () => { await leaveWaitlist(); renderNav(); }));
+      } else menu.appendChild(button("Join the Premium waitlist", null, async () => { await joinWaitlist("menu"); renderNav(); }));
+    }
     menu.appendChild(button("Log out", null, () => { menu.hidden = true; sb.auth.signOut(); }));
     av.onclick = ev => { ev.stopPropagation(); menu.hidden = !menu.hidden; };
     nav.appendChild(av); nav.appendChild(menu);
@@ -646,11 +649,19 @@ function draw() {
   $('starbtn').onclick = async () => {
     if (!USER) { openAuth("up", "Sign up to build a watchlist."); return; }
     const t = sel.value, on = WATCH.has(t);
+    // Instant: update the star and the watchlist now, save in the background, undo if the save fails.
+    on ? WATCH.delete(t) : WATCH.add(t);
+    renderHeader(t); renderSide();
     const {error} = on
       ? await sb.from('watchlist').delete().eq('ticker', t)
       : await sb.from('watchlist').upsert({user_id: USER.id, ticker: t}, {onConflict: 'user_id,ticker', ignoreDuplicates: true});
-    if (error) { alert("Couldn't update your watchlist."); return; }
-    await refresh();
+    if (error) {
+      on ? WATCH.add(t) : WATCH.delete(t);
+      renderHeader(t); renderSide();
+      alert("Couldn't update your watchlist.");
+      return;
+    }
+    refresh();   // sync personal fair values quietly; no need to wait
   };
 
   // ---- fair value block: just the numbers; a custom analysis replaces the published one ----
@@ -745,6 +756,12 @@ function draw() {
     if (!error) onWaitlist = true;
     return !error;
   }
+  async function leaveWaitlist() {
+    if (!USER) return false;
+    const {error} = await sb.from('premium_waitlist').delete().eq('user_id', USER.id);
+    if (!error) onWaitlist = false;
+    return !error;
+  }
   // Shown under any "this is a Premium feature" message.
   window.waitlistNote = source => {
     const box = el('div', 'acts');
@@ -773,19 +790,27 @@ function draw() {
     } catch (e) { console.error(e); }
   }
 
+  let refreshSeq = 0;
   async function refresh() {
-    WATCH.clear(); rows = {}; plan = null; onWaitlist = false;
+    const seq = ++refreshSeq;
+    const next = {watch: new Set(), rows: {}, plan: null, onWaitlist: false};
     if (sb && USER) {
       try {
-        const [w, data] = await Promise.all([sb.from('watchlist').select('ticker'), api('list', {})]);
-        (w.data || []).forEach(r => WATCH.add(r.ticker));
-        (data.rows || []).forEach(r => { rows[r.ticker] = r; });
-        plan = data.plan || "free";
-        try { const wl = await sb.from('premium_waitlist').select('user_id').maybeSingle(); onWaitlist = !wl.error && !!wl.data; }
-        catch (e) { onWaitlist = false; }
-        if (plan === "premium" && !fullHistory) await loadFullHistory();
-      } catch (e) { console.error(e); }
+        const [w, data, wl] = await Promise.all([
+          sb.from('watchlist').select('ticker'),
+          api('list', {}),
+          Promise.resolve(sb.from('premium_waitlist').select('user_id').maybeSingle()).catch(() => ({error: true})),
+        ]);
+        (w.data || []).forEach(r => next.watch.add(r.ticker));
+        (data.rows || []).forEach(r => { next.rows[r.ticker] = r; });
+        next.plan = data.plan || "free";
+        next.onWaitlist = !wl.error && !!wl.data;
+      } catch (e) { console.error(e); if (seq !== refreshSeq) return; }
     }
+    if (seq !== refreshSeq) return;   // a newer refresh started; let it win
+    WATCH.clear(); next.watch.forEach(t => WATCH.add(t));
+    rows = next.rows; plan = next.plan; onWaitlist = next.onWaitlist;
+    if (plan === "premium" && !fullHistory) await loadFullHistory();
     Object.keys(MY).forEach(k => delete MY[k]);
     Object.values(rows).forEach(r => { if (mineOf(r.ticker)) MY[r.ticker] = r; });
     renderNav();

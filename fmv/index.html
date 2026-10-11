@@ -69,7 +69,7 @@
       <div class="legend">
         <span><span class="sw" id="pxsw" style="border-color:#00C805"></span>stock price</span>
         <span><span class="sw" style="border-top:3px dotted #E0A800"></span>bear / bull case</span>
-        <span><span class="bx"></span>base case (dashed), shaded from price</span>
+        <span><span class="bx"></span>base case (dashed); shading green = price under base, red = over</span>
       </div>
       <div id="chart"><svg id="svg"></svg><div id="tip"></div><div id="cmsg" hidden>Loading&hellip;</div></div>
       <p class="note" id="foot"></p>
@@ -102,8 +102,8 @@ async function get(path) {
 const isWeekend = ds => { const w = new Date(ds + "T00:00:00").getDay(); return w === 0 || w === 6; };
 function zoneOf(px, fm) {
   if (fm.sb_below && px < fm.sb_below) return ["Strong Buy", "#00C805"];
-  if (fm.fb_hi && px <= fm.fb_hi) return ["Fair Buy", "#1a7f37"];
   const pct = (px / fm.weighted - 1) * 100;
+  if ((fm.fb_hi && px <= fm.fb_hi) || pct < 0.5) return ["Fair Buy", "#1a7f37"];   // rounds to 0% above -> still Fair Buy
   return [pct.toFixed(0) + "% above FMV", pct > 25 ? "#FF5000" : "#b7791f"];
 }
 let D = {}, LATEST = {}, FULL = {};
@@ -229,7 +229,7 @@ function draw() {
   if (vx.length > 1) {
     const last = vx[vx.length - 1], up = last[1][2] >= p[last[2]][1];
     s = s.replace('</defs>', `<linearGradient id="gb" x1="0" y1="${up?1:0}" x2="0" y2="${up?0:1}">`
-      + `<stop offset="0" stop-color="${lineCol}" stop-opacity=".30"/><stop offset="1" stop-color="${GOLD}" stop-opacity=".30"/></linearGradient></defs>`);
+      + `<stop offset="0" stop-color="${up?UP:DOWN}" stop-opacity=".05"/><stop offset="1" stop-color="${up?UP:DOWN}" stop-opacity=".40"/></linearGradient></defs>`);
     const basePts = vx.map(([x, r]) => x.toFixed(1) + ',' + Y(r[2]).toFixed(1));
     const pxPts = vx.slice().reverse().map(([x, r, i]) => x.toFixed(1) + ',' + Y(p[i][1]).toFixed(1));
     s += `<polygon points="${basePts.concat(pxPts).join(' ')}" fill="url(#gb)" stroke="none"/>`;

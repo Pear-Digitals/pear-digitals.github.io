@@ -94,6 +94,14 @@
   .wrow .px { text-align:right; font-weight:600; font-size:.92rem; }
   .tag { display:inline-block; margin-top:3px; font-size:.75rem; font-weight:700; padding:2px 8px; border-radius:6px; color:#fff; }
   .empty { padding:16px 18px; color:var(--muted); font-size:.88rem; }
+  .sk { display:inline-block; border-radius:6px; color:transparent; background:linear-gradient(90deg,#eef1ed 25%,#f7f9f6 50%,#eef1ed 75%);
+        background-size:200% 100%; animation:shimmer 1.2s linear infinite; }
+  .stats .v.sk { width:72%; max-width:110px; height:1.5rem; }
+  .skrow { cursor:default; } .skrow .sk { height:14px; } .skrow .sk:first-child { width:42%; } .skrow .sk:last-child { width:22%; }
+  .fadein { animation:fadein .25s ease-out; }
+  @keyframes shimmer { from { background-position:200% 0; } to { background-position:-200% 0; } }
+  @keyframes fadein { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion:reduce) { .sk, .fadein { animation:none; } }
 
   /* chat */
   .ctag { display:inline-block; vertical-align:middle; font-size:.72rem; font-weight:700; letter-spacing:.02em; padding:2px 8px; border-radius:6px; background:#e8efff; color:var(--mine); }
@@ -228,7 +236,7 @@
         <div class="bh"><h2>Fair value <span class="ctagwrap" id="custwrap" hidden><span id="custtag" class="ctag tip" tabindex="0" data-tip="You've overridden the published fair value with your own." aria-label="Custom: you've overridden the published fair value with your own.">Custom</span></span></h2><span id="zone"></span></div>
         <div class="stats" id="fair"></div>
         <div id="fairmore"></div>
-        <div class="fairacts"><button type="button" class="pill light" id="explainbtn">Explain why</button><button type="button" class="pill light" id="custbtn">Customize</button><button type="button" class="pill ghost" id="resetbtn" hidden>Reset to published</button></div>
+        <div class="fairacts" id="fairacts"><button type="button" class="pill light" id="explainbtn">Explain why</button><button type="button" class="pill light" id="custbtn">Customize</button><button type="button" class="pill ghost" id="resetbtn" hidden>Reset to published</button></div>
         <p id="foot"></p>
       </section>
     </main>
@@ -289,6 +297,16 @@ const sb = window.supabase ? window.supabase.createClient(BASE_URL, ANON_KEY) : 
 const MY = {};          // ticker -> the signed-in user's personal FMV, when they've customised it
 const WATCH = new Set();
 let USER = null;
+// supabase-js keeps the session in localStorage. Reading it synchronously lets the first frame show the
+// signed-in layout (avatar, watchlist, skeletons) instead of flashing the signed-out page.
+const SAVED_USER = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem(`sb-${new URL(BASE_URL).hostname.split('.')[0]}-auth-token`) || "null");
+    return v && v.user && v.user.email ? v.user : null;
+  } catch (e) { return null; }
+})();
+let userLoading = !!(sb && SAVED_USER);   // true until the signed-in data has arrived (or the session turned out invalid)
+const userView = () => USER || (userLoading ? SAVED_USER : null);
 async function authToken() {
   if (!sb) return ANON_KEY;
   const {data} = await sb.auth.getSession();
@@ -413,7 +431,8 @@ function draw() {
   const idxForDate = d => { let bi = 0; p.forEach((r, i) => { if (r[0] <= d) bi = i; }); return bi; };
   // A custom analysis replaces the published cases: flat lines at the user's values across the range.
   const my = MY[t];
-  const src = my ? [p[0][0], p[p.length-1][0]].map(d => [d, my.bear != null ? +my.bear : null, +my.base, my.bull != null ? +my.bull : null, null]) : J.v;
+  const src = userLoading ? []
+    : my ? [p[0][0], p[p.length-1][0]].map(d => [d, my.bear != null ? +my.bear : null, +my.base, my.bull != null ? +my.bull : null, null]) : J.v;
   const v0 = src.filter(r => r[0] >= p[0][0]);
   const v = v0.filter((r, i) => i === v0.length - 1 || idxForDate(r[0]) !== idxForDate(v0[i+1][0]));  // one vintage per plotted point
   const vals = p.map(r => r[1]);
@@ -477,7 +496,7 @@ function draw() {
     label = Math.abs(pc) < 0.5 ? "At your FMV" : `${Math.abs(pc).toFixed(0)}% ${pc < 0 ? "below" : "above"} your FMV`;
     col = pc < 0.5 ? "#1a7f37" : pc > 25 ? "#FF5000" : "#b7791f";
   }
-  zoneEl.innerHTML = `<span class="zb" style="background:${col};font-size:13px">${label}</span>`;
+  zoneEl.innerHTML = userLoading ? "" : `<span class="zb fadein" style="background:${col};font-size:13px">${label}</span>`;
 
   if (window.onDraw) window.onDraw(t);
 
@@ -573,6 +592,11 @@ function draw() {
   function renderNav() {
     nav.textContent = "";
     if (!sb) return;
+    if (!USER && userLoading) {   // signed in, still restoring: avatar without the menu yet
+      const av = el('span', 'avatar', (SAVED_USER.email || "?")[0].toUpperCase());
+      av.style.cssText = "display:flex;align-items:center;justify-content:center";
+      nav.appendChild(av); return;
+    }
     if (!USER) {
       nav.appendChild(button("Log in", "pill ghost", () => openAuth("in")));
       nav.appendChild(button("Sign up", "pill", () => openAuth("up")));
@@ -645,6 +669,7 @@ function draw() {
     star.classList.toggle('on', on);
     star.setAttribute("aria-label", on ? "Remove from watchlist" : "Add to watchlist");
     star.hidden = !sb;
+    star.style.visibility = userLoading ? "hidden" : "";
   }
   $('starbtn').onclick = async () => {
     if (!USER) { openAuth("up", "Sign up to build a watchlist."); return; }
@@ -672,7 +697,9 @@ function draw() {
     $('resetbtn').hidden = !mine; disarmReset();
     const g = $('fair'); g.textContent = "";
     SC.forEach(s => g.appendChild(el('span', 'h', CAP[s])));
-    if (vals) SC.forEach(s => g.appendChild(el('span', mine ? 'v mine' : 'v', money(vals[s]))));
+    $('fairacts').style.visibility = userLoading ? "hidden" : "";
+    if (userLoading) { SC.forEach(() => g.appendChild(el('span', 'v sk', "\u00a0"))); $('fairmore').textContent = ""; return; }
+    if (vals) SC.forEach(s => g.appendChild(el('span', (mine ? 'v mine' : 'v') + (fadeNext ? ' fadein' : ''), money(vals[s]))));
     const more = $('fairmore'); more.textContent = "";
     if (!mine) return;
     // Only surface a failed automatic update; everything else about the analysis is in the chat.
@@ -707,10 +734,19 @@ function draw() {
 
   // ---- watchlist ----
   function renderSide() {
-    const side = $('side'), grid = $('app');
-    side.hidden = !USER; grid.classList.toggle('with-side', !!USER);
-    if (!USER) return;
+    const side = $('side'), grid = $('app'), signedIn = !!userView();
+    side.hidden = !signedIn; grid.classList.toggle('with-side', signedIn);
+    if (!signedIn) return;
     const wl = $('wl'); wl.textContent = "";
+    if (userLoading) {
+      for (let i = 0; i < 3; i++) {
+        const r = el('div', 'wrow skrow');
+        r.appendChild(el('span', 'sk', "\u00a0")); r.appendChild(el('span', 'sk', "\u00a0"));
+        wl.appendChild(r);
+      }
+      return;
+    }
+    wl.classList.toggle('fadein', fadeNext);
     const list = [...WATCH].filter(t => LATEST[t]).sort();
     if (!list.length) { wl.appendChild(el('div', 'empty', "Tap ☆ on a stock to add it here.")); return; }
     list.forEach(t => {
@@ -790,7 +826,7 @@ function draw() {
     } catch (e) { console.error(e); }
   }
 
-  let refreshSeq = 0;
+  let refreshSeq = 0, fadeNext = false;
   async function refresh() {
     const seq = ++refreshSeq;
     const next = {watch: new Set(), rows: {}, plan: null, onWaitlist: false};
@@ -813,8 +849,12 @@ function draw() {
     if (plan === "premium" && !fullHistory) await loadFullHistory();
     Object.keys(MY).forEach(k => delete MY[k]);
     Object.values(rows).forEach(r => { if (mineOf(r.ticker)) MY[r.ticker] = r; });
+    const wasLoading = userLoading;
+    userLoading = false; fadeNext = wasLoading;
     renderNav();
     if (!$('app').hidden) draw(); else renderSide();
+    if (wasLoading) svg.classList.add('fadein');
+    fadeNext = false;
   }
   if (sb) sb.auth.onAuthStateChange((_ev, session) => {
     USER = session ? session.user : null;

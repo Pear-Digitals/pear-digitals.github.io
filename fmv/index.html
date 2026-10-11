@@ -59,10 +59,11 @@
   .plans { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
   .plan { border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:10px; }
   .plan.current { border-color:var(--green); box-shadow:0 0 0 1px var(--green) inset; }
-  .plan h3 { margin:0; font-size:1.1rem; } .plan .who2 { color:var(--muted); font-size:.85rem; margin-top:-6px; }
+  .plan h3 { margin:0; font-size:1.1rem; }
   .plan .price { font-size:1.6rem; font-weight:700; letter-spacing:-.02em; } .plan .price span { font-size:.85rem; font-weight:400; color:var(--muted); letter-spacing:0; }
   .plan .stocks { font-weight:700; font-size:1.05rem; }
-  .plan ul { margin:0; padding-left:18px; font-size:.88rem; color:var(--ink); flex:1; } .plan li { margin:4px 0; }
+  .plan ul { margin:0; padding:0; list-style:none; font-size:.9rem; color:var(--ink); flex:1; } .plan li { margin:6px 0; }
+  .plan li::before { content:"\2713"; color:var(--green); font-weight:700; margin-right:8px; }
   .plan .pill { padding:10px; }
   .plan .state { text-align:center; font-weight:600; font-size:.9rem; color:var(--green); padding:10px 0; }
   .plan .leave { border:0; background:none; color:var(--muted); font-size:.82rem; text-decoration:underline; cursor:pointer; }
@@ -285,7 +286,7 @@
   <button type="button" class="xbtn" id="plansclose" aria-label="Close">&times;</button>
   <h2>Plans</h2>
   <div class="plans" id="plansgrid"></div>
-  <p class="plansnote">Premium and Pro aren&rsquo;t on sale yet; prices shown are planned launch prices. Join a waitlist and we&rsquo;ll email you when they open.</p>
+  <p class="plansnote">Premium and Pro launch soon.</p>
 </dialog>
 
 <dialog id="authdlg">
@@ -473,8 +474,20 @@ function draw() {
   const idxForDate = d => { let bi = 0; p.forEach((r, i) => { if (r[0] <= d) bi = i; }); return bi; };
   // A custom analysis replaces the published cases: flat lines at the user's values across the range.
   const my = MY[t];
-  const src = userLoading ? []
-    : my ? [p[0][0], p[p.length-1][0]].map(d => [d, my.bear != null ? +my.bear : null, +my.base, my.bull != null ? +my.bull : null, null]) : J.v;
+  // A custom fair value is drawn from its own history: from the day it was set (Free/Premium), or further back
+  // where Pro has backfilled it. Nothing is drawn before its first point.
+  const series = my ? ((window.customSeries && window.customSeries(t)) ||
+                       [[my.inputs_as_of || p[p.length-1][0], my.bear != null ? +my.bear : null, +my.base, my.bull != null ? +my.bull : null]]) : null;
+  const atDate = d => { let hit = null; if (series) series.forEach(r => { if (r[0] <= d) hit = r; }); return hit; };
+  let src = J.v;
+  if (userLoading) src = [];
+  else if (my) {
+    const start = p[0][0], end = p[p.length-1][0], startVal = atDate(start);
+    const pts = [...(startVal ? [[start, ...startVal.slice(1)]] : []), ...series.filter(r => r[0] > start && r[0] <= end)];
+    if (!pts.length && series.length) pts.push([end, ...series[series.length-1].slice(1)]);
+    else if (pts.length && pts[pts.length-1][0] < end) pts.push([end, ...pts[pts.length-1].slice(1)]);
+    src = pts.map(r => [r[0], r[1], r[2], r[3], null]);
+  }
   const v0 = src.filter(r => r[0] >= p[0][0]);
   const v = v0.filter((r, i) => i === v0.length - 1 || idxForDate(r[0]) !== idxForDate(v0[i+1][0]));  // one vintage per plotted point
   const vals = p.map(r => r[1]);
@@ -551,7 +564,7 @@ function draw() {
     i = Math.max(0, Math.min(p.length - 1, i));
     const r = p[i], x = pts[i][0], y = pts[i][1];
     let fv = null;
-    if (my) fv = [null, my.bear != null ? +my.bear : null, +my.base, my.bull != null ? +my.bull : null];
+    if (my) fv = atDate(r[0]);     // no custom value shown before it existed
     else J.v.forEach(q => { if (q[0] <= r[0]) fv = q; });
     hv.innerHTML = `<line x1="${x}" y1="${PT}" x2="${x}" y2="${H-PB}" stroke="${INK}" stroke-opacity=".25"/>`
                  + `<circle cx="${x}" cy="${y}" r="5" fill="${lineCol}" stroke="#fff" stroke-width="2"/>`;
@@ -770,6 +783,7 @@ function draw() {
   const mineOf = t => { const r = rows[t]; return r && r.preferences && r.base != null ? r : null; };
   function renderFair(t) {
     const L = LATEST[t], fm = L && L.fm, mine = mineOf(t), r = rows[t], vals = mine || fm;
+    if (mine && !userLoading) loadCustomHistory(t);
     $('custwrap').hidden = !mine;
     $('resetbtn').hidden = !mine; disarmReset();
     const g = $('fair'); g.textContent = "";
@@ -926,30 +940,29 @@ function draw() {
   $('plansclose').onclick = () => plansDlg.close();
   $('plansfoot').onclick = e => { e.preventDefault(); openPlans(); };
   const PLANS = [
-    {id: "free", name: "Free", who: "Get started", price: "$0", stocks: "Magnificent 7",
-     items: ["Fair values with full history and charts", "Automatic re-ratings after earnings and major events",
-             "Your own fair values with Quill", "Watchlist", "Quill: 20 messages a day (10 without an account)"]},
-    {id: "premium", name: "Premium", who: "For S&P 500 investors", price: "$9.99/mo", alt: "or $99/yr", stocks: "S&P 500 (~500 stocks)",
-     items: ["Everything in Free, for every S&P 500 stock", "Email alerts when a watchlist stock hits your Fair Buy zone, checked daily", "Unlimited Quill"]},
-    {id: "pro", name: "Pro", who: "For the whole market", price: "$29/mo", alt: "or $249/yr", stocks: "Every NYSE & Nasdaq stock (~5,900)",
-     items: ["Everything in Premium, for every NYSE and Nasdaq stock", "Real-time Fair Buy alerts during market hours", "Unlimited Quill"]},
+    {id: "free", name: "Free", price: "$0", stocks: "Magnificent 7",
+     items: ["Fair values & charts", "Your own fair values", "Auto re-ratings after earnings", "20 Quill chats a day"]},
+    {id: "premium", name: "Premium", price: "$9.99/mo", alt: "or $99/yr", stocks: "S&P 500",
+     items: ["Everything in Free", "Unlimited Quill", "Daily Fair Buy alerts"]},
+    {id: "pro", name: "Pro", price: "$29/mo", alt: "or $249/yr", stocks: "All NYSE & Nasdaq",
+     items: ["Everything in Premium", "Real-time Fair Buy alerts", "Backfilled history for your fair values"]},
   ];
   function openPlans() {
     const g = $('plansgrid'); g.textContent = "";
     const current = USER ? (plan || "free") : null;
     PLANS.forEach(pl => {
       const c = el('div', 'plan' + (pl.id === current ? ' current' : ''));
-      c.appendChild(el('h3', null, pl.name)); c.appendChild(el('div', 'who2', pl.who));
+      c.appendChild(el('h3', null, pl.name));
       const pr = el('div', 'price', pl.price); if (pl.alt) pr.appendChild(el('span', null, " " + pl.alt)); c.appendChild(pr);
       c.appendChild(el('div', 'stocks', pl.stocks));
       const ul = el('ul'); pl.items.forEach(i => ul.appendChild(el('li', null, i))); c.appendChild(ul);
-      if (pl.id === current) c.appendChild(el('div', 'state', "Your plan"));
+      if (pl.id === current) c.appendChild(el('div', 'state', "Current plan"));
       else if (pl.id === "free") { if (!USER) c.appendChild(button("Sign up free", "pill light", () => { plansDlg.close(); openAuth("up"); })); }
-      else if (current && RANK[current] > RANK[pl.id]) c.appendChild(el('div', 'state', "Included in your plan"));
+      else if (current && RANK[current] > RANK[pl.id]) c.appendChild(el('div', 'state', "Included"));
       else if (waitTier === pl.id) {
-        c.appendChild(el('div', 'state', "\u2713 On the waitlist"));
+        c.appendChild(el('div', 'state', "\u2713 On waitlist"));
         c.appendChild(button("Leave the waitlist", "leave", async () => { await leaveWaitlist(); renderNav(); openPlans(); }));
-      } else c.appendChild(button(waitTier ? `Switch to the ${pl.name} waitlist` : `Join the ${pl.name} waitlist`, "pill", async ev => {
+      } else c.appendChild(button(waitTier ? "Switch to this waitlist" : "Join waitlist", "pill", async ev => {
         ev.target.disabled = true;
         if (await joinWaitlist("plans", pl.id)) openPlans(); else ev.target.disabled = false;
       }));
@@ -969,6 +982,34 @@ function draw() {
     box.textContent = errText(e);
     if (e.data && e.data.upgrade) box.appendChild(window.waitlistNote(e.data.feature || "limit", e.data.tier));
   };
+
+  // Custom fair value history per stock, for the chart: [[date, bear, base, bull], ...] since the last reset.
+  const HIST = {}, histLoading = {};
+  window.customSeries = t => HIST[t] || null;
+  function loadCustomHistory(t, force) {
+    if (!USER || (!force && (HIST[t] || histLoading[t]))) return;
+    histLoading[t] = api('history', {ticker: t}).then(({history}) => {
+      const asc = history.slice().reverse();
+      let run = [];
+      for (const x of asc) {
+        if (x.trigger === "reset" || !x.preferences) { run = []; continue; }
+        if (x.base != null) run.push([x.inputs_as_of || String(x.created_at).slice(0, 10), x.bear != null ? +x.bear : null, +x.base, x.bull != null ? +x.bull : null]);
+      }
+      const byDate = new Map(); run.sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0).forEach(r => byDate.set(r[0], r));   // latest wins per date
+      HIST[t] = [...byDate.values()];
+      if (sel.value === t) draw();
+    }).catch(() => {}).finally(() => { delete histLoading[t]; });
+  }
+  // Pro: after saving a custom fair value, backfill its history from past published analyses.
+  async function backfill(t) {
+    if (plan !== "pro") return;
+    toast(`Backfilling your ${NAMES[t] || t} fair value history\u2026`);
+    try {
+      const r = await api('backfill', {ticker: t});
+      delete HIST[t]; loadCustomHistory(t, true);
+      if (r.added) toast(`Added ${r.added} past ${r.added === 1 ? "point" : "points"} to your ${NAMES[t] || t} history.`);
+    } catch (e) { console.error(e); }
+  }
 
   // Premium: FMV history for Premium stocks (the Mag 7's is already public).
   async function loadFullHistory() {
@@ -1003,6 +1044,7 @@ function draw() {
     }
     if (seq !== refreshSeq) return;   // a newer refresh started; let it win
     WATCH.clear(); next.watch.forEach(t => WATCH.add(t));
+    Object.keys(HIST).forEach(k => delete HIST[k]);
     rows = next.rows; plan = next.plan; onWaitlist = next.onWaitlist; waitTier = next.waitTier || null; alertsOn = next.alertsOn !== false;
     if (plan === "premium" && !fullHistory) await loadFullHistory();
     Object.keys(MY).forEach(k => delete MY[k]);
@@ -1055,6 +1097,7 @@ function draw() {
       body.appendChild(resultView(res));
       if (sel.value !== p.ticker) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
       await refresh();
+      backfill(p.ticker);
     }).catch(e => { title.textContent = `Couldn't save your ${name} fair value`; showErr(body, e); });
     return card;
   };

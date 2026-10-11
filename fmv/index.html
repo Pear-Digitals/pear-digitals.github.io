@@ -45,6 +45,7 @@
   .search .opt b { font-size:.92rem; } .search .opt span { color:var(--muted); font-size:.85rem; margin-left:8px; }
   .search .opt em { flex:none; }
   .ptag { flex:none; font-style:normal; font-size:.72rem; font-weight:700; padding:2px 8px; border-radius:6px; letter-spacing:.02em; }
+  .ptag.free { background:#e7f5ea; color:var(--green); }
   .ptag.premium { background:#e8efff; color:var(--mine); }
   .ptag.pro { background:#1b1f3b; color:#fff; }
   .ptag.soon { background:var(--soft); color:var(--muted); }
@@ -681,6 +682,8 @@ function draw() {
   const loadUniverse = () => universeLoading || (universeLoading = fetch("universe.json").then(r => r.json())
     .then(d => { UNIVERSE = d; if (!qres.hidden) renderSearch(); }).catch(() => { universeLoading = null; }));
   const TIER_PLAN = ["free", "premium", "pro"];
+  // Search priority of each stock tier (index = tier), per plan. Pro has none: best match wins.
+  const TIER_ORDER = [[0, 1, 2], [1, 0, 2], null];
   // What tapping a search result does: open it, show the paywall, or say it's coming.
   const statusOf = (t, tier) => myRank() < tier ? TIER_PLAN[tier] : LATEST[t] ? "ok" : "soon";
   function renderSearch() {
@@ -694,8 +697,10 @@ function draw() {
       const pool = new Map(covered.map(x => [x[0], x]));
       (UNIVERSE || []).forEach(x => { if (!pool.has(x[0])) pool.set(x[0], [x[0], NAMES[x[0]] || x[1], x[2]]); });
       list = [...pool.values()].map(x => [x, score(x)]).filter(([, sc]) => sc < 9)
-        .sort((a, b) => a[1] - b[1] || (LATEST[b[0][0]] ? 1 : 0) - (LATEST[a[0][0]] ? 1 : 0) || a[0][2] - b[0][2] || a[0][0].localeCompare(b[0][0]))
-        .slice(0, 25).map(([x]) => x);
+        // Your plan's stocks first: Free -> Free stocks, Premium -> S&P 500 then Mag 7 then Pro; Pro -> best match.
+        .sort((a, b) => (TIER_ORDER[myRank()] ? TIER_ORDER[myRank()][a[0][2]] - TIER_ORDER[myRank()][b[0][2]] : 0)
+          || a[1] - b[1] || a[0][2] - b[0][2] || a[0][0].localeCompare(b[0][0]))
+        .slice(0, 10).map(([x]) => x);   // keep the list short
     }
     hits = list; hi = Math.min(hi, Math.max(hits.length - 1, 0));
     qres.textContent = "";
@@ -706,7 +711,7 @@ function draw() {
       o.setAttribute("role", "option");
       const left = el('div'); left.appendChild(el('b', null, t)); left.appendChild(el('span', null, name));
       o.appendChild(left);
-      if (st !== "ok") o.appendChild(el('em', 'ptag ' + st, st === "soon" ? "Soon" : PLAN_NAME[st]));
+      o.appendChild(el('em', 'ptag ' + TIER_PLAN[tier], PLAN_NAME[TIER_PLAN[tier]]));   // Free / Premium / Pro
       o.onmouseenter = () => { hi = i; [...qres.querySelectorAll('.opt')].forEach((x, j) => x.classList.toggle('on', j === i)); };
       qres.appendChild(o);
     });

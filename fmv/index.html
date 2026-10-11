@@ -95,6 +95,9 @@
   .ranges { display:flex; gap:2px; }
   .ranges button { border:0; background:none; padding:6px 10px; font-weight:600; font-size:.85rem; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; }
   .ranges button.on { color:var(--green); border-bottom-color:var(--green); }
+  .ranges button.locked { color:#b9c0bb; }
+  .ranges button.locked::after { content:""; display:inline-block; width:8px; height:9px; margin-left:4px; vertical-align:-1px; opacity:.7;
+    background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 18'%3E%3Cpath fill='%237a847e' d='M3 8V5a5 5 0 0 1 10 0v3h1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1zm2 0h6V5a3 3 0 0 0-6 0z'/%3E%3C/svg%3E"); }
   .legend { display:flex; gap:12px; font-size:.75rem; color:var(--muted); flex-wrap:wrap; }
   .sw { display:inline-block; width:16px; height:0; border-top:2px solid; margin-right:5px; vertical-align:middle; }
 
@@ -375,11 +378,35 @@ let curRange = "1W";
 const RANGE_WORDS = {"1W": "Past week", "1M": "Past month", "3M": "Past 3 months", "6M": "Past 6 months", "1Y": "Past year", "ALL": "All time"};
 
 const priceRows = rows => rows.filter(r => !isWeekend(r.date)).map(r => [r.date, r.c]);
+const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
 
-// Load the full price history for one ticker in the background.
+// History limits by plan (calendar days): Free 30, Premium 1 year, Pro everything. Enforced by the server;
+// the range tabs just lock what the plan can't load.
+const RANGE_DAYS = {"1W": 7, "1M": 31, "3M": 92, "6M": 183, "1Y": 366, "ALL": Infinity};
+const PLAN_DAYS = {free: 31, premium: 366, pro: Infinity};
+const planNow = () => (window.currentPlan && window.currentPlan()) || "free";
+const rangeAllowed = label => RANGE_DAYS[label] <= PLAN_DAYS[planNow()];
+function renderRanges() {
+  [...rangesEl.children].forEach(b => {
+    const ok = rangeAllowed(b.dataset.r);
+    b.classList.toggle('locked', !ok);
+    b.setAttribute("aria-label", ok ? b.dataset.r : `${b.dataset.r} (needs a paid plan)`);
+  });
+}
+
+// Load the price (and, for paid plans, fair value) history for one ticker, within the plan's window.
 function loadFull(t) {
-  if (!FULL[t]) FULL[t] = get(`/prices_public?select=symbol,date,c&symbol=eq.${t}&order=date&limit=1000`)
-    .then(rows => { D[t].p = priceRows(rows); D[t].full = true; });
+  if (!FULL[t]) {
+    const paid = window.chartData && window.chartData(t);   // Premium / Pro: server returns their window
+    FULL[t] = (paid || get(`/prices_free?select=symbol,date,c&symbol=eq.${t}&order=date&limit=1000`)
+        .catch(() => get(`/prices_public?select=symbol,date,c&symbol=eq.${t}&date=gte.${daysAgo(31)}&order=date&limit=1000`))
+        .then(rows => ({prices: rows, vintages: null})))
+      .then(({prices, vintages}) => {
+        D[t].p = priceRows(prices);
+        if (vintages && vintages.length) D[t].v = vintages.filter(r => !isWeekend(r.date)).map(r => [r.date, r.bear, r.base, r.bull, r]);
+        D[t].full = true;
+      });
+  }
   return FULL[t];
 }
 
@@ -388,10 +415,11 @@ async function init() {
     // First paint needs only the last ~week of prices plus the FMV vintages.
     const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
     const [vintages, week] = await Promise.all([
-      // Full Mag 7 FMV history is free (vintages_free); falls back to the old view until that migration has run.
+      // Mag 7 fair value history for the last 30 days (vintages_free); longer history comes per plan from fmv-user.
       get("/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")
         .catch(() => get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")),
-      get(`/prices_public?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`)
+      get(`/prices_free?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`)
+        .catch(() => get(`/prices_public?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`))
     ]);
     vintages.forEach(r => {
       if (isWeekend(r.date)) return;  // safety net: DB should never hold weekend rows
@@ -419,12 +447,16 @@ async function init() {
     const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o);
   });
   RANGES.forEach(([label]) => {
-    const b = document.createElement('button'); b.textContent = label;
+    const b = document.createElement('button'); b.textContent = label; b.dataset.r = label;
     if (label === curRange) b.classList.add('on');
-    b.onclick = () => { curRange = label;
-      [...rangesEl.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); draw(); };
+    b.onclick = () => {
+      if (!rangeAllowed(label)) { if (window.openRangePaywall) window.openRangePaywall(label); return; }
+      curRange = label;
+      [...rangesEl.children].forEach(x => x.classList.remove('on')); b.classList.add('on'); draw();
+    };
     rangesEl.appendChild(b);
   });
+  renderRanges();
   const dates = Object.values(LATEST).map(x => x.pxd).sort();
   document.getElementById('foot').textContent =
     "Prices as of " + dates[dates.length-1] + " · Estimates, not investment advice.";
@@ -941,11 +973,12 @@ function draw() {
   $('plansfoot').onclick = e => { e.preventDefault(); openPlans(); };
   const PLANS = [
     {id: "free", name: "Free", price: "$0", stocks: "Magnificent 7",
-     items: ["Fair values & charts", "Your own fair values", "Auto re-ratings after earnings", "20 Quill chats a day"]},
+     items: ["Pear Recommended Fair Values & Charts", "Customized Fair Values", "Auto re-ratings after earnings & other significant events",
+             "20 Quill messages a day", "30 days of data"]},
     {id: "premium", name: "Premium", price: "$9.99/mo", alt: "or $99/yr", stocks: "S&P 500",
-     items: ["Everything in Free", "Unlimited Quill", "Daily Fair Buy alerts"]},
+     items: ["Everything in Free", "Unlimited Quill messages", "Daily Fair Buy Alerts", "1 year of data"]},
     {id: "pro", name: "Pro", price: "$29/mo", alt: "or $249/yr", stocks: "All NYSE & Nasdaq",
-     items: ["Everything in Premium", "Real-time Fair Buy alerts", "Backfilled history for your fair values"]},
+     items: ["Everything in Premium", "Real-time Fair Buy Alerts", "Backfilled Pear Recommended and Custom Fair Values", "Unlimited historical data"]},
   ];
   function openPlans() {
     const g = $('plansgrid'); g.textContent = "";
@@ -1011,6 +1044,26 @@ function draw() {
     } catch (e) { console.error(e); }
   }
 
+  window.currentPlan = () => (USER && plan) || "free";
+  // Premium / Pro: chart history comes from the server, limited to the plan's window.
+  window.chartData = t => (USER && plan && plan !== "free") ? api('chart', {ticker: t}) : null;
+  window.openRangePaywall = label => {
+    const tier = RANGE_DAYS[label] <= PLAN_DAYS.premium ? "premium" : "pro";
+    const pl = PLANS.find(x => x.id === tier), acts = $('payacts'), pp = $('payprice');
+    acts.textContent = ""; pp.textContent = pl.price; pp.appendChild(el('span', null, ` ${pl.alt} \u00b7 at launch`));
+    $('paytitle').textContent = label === "ALL" ? "Full history is a Pro feature" : `${label} history is a Premium feature`;
+    $('paytext').textContent = tier === "premium"
+      ? "Free shows the last 30 days. Premium shows a year of prices and fair values."
+      : "Premium shows a year. Pro shows the full history of prices and fair values.";
+    if (waitTier === tier) acts.appendChild(el('div', 'paytext', joinedText(tier)));
+    else acts.appendChild(button(`Join the ${PLAN_NAME[tier]} waitlist`, "pill", async ev => {
+      ev.target.disabled = true;
+      if (await joinWaitlist("history", tier)) { pay.close(); toast(joinedText(tier)); } else ev.target.disabled = false;
+    }));
+    acts.appendChild(button("Compare plans", "pill light", () => { pay.close(); openPlans(); }));
+    pay.showModal();
+  };
+
   // Premium: FMV history for Premium stocks (the Mag 7's is already public).
   async function loadFullHistory() {
     try {
@@ -1045,7 +1098,15 @@ function draw() {
     if (seq !== refreshSeq) return;   // a newer refresh started; let it win
     WATCH.clear(); next.watch.forEach(t => WATCH.add(t));
     Object.keys(HIST).forEach(k => delete HIST[k]);
-    rows = next.rows; plan = next.plan; onWaitlist = next.onWaitlist; waitTier = next.waitTier || null; alertsOn = next.alertsOn !== false;
+    const planChanged = (next.plan || "free") !== (plan || "free");
+    rows = next.rows; plan = next.plan;
+    if (planChanged) {   // history window changed: reload charts, drop a range the plan no longer includes
+      Object.keys(FULL).forEach(k => delete FULL[k]);
+      Object.values(D).forEach(J => { J.full = false; });
+      if (!rangeAllowed(curRange)) { curRange = "1W"; [...rangesEl.children].forEach(x => x.classList.toggle('on', x.dataset.r === "1W")); }
+      [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)].forEach(t => { if (D[t]) loadFull(t).catch(() => {}); });
+    }
+    renderRanges(); onWaitlist = next.onWaitlist; waitTier = next.waitTier || null; alertsOn = next.alertsOn !== false;
     if (plan === "premium" && !fullHistory) await loadFullHistory();
     Object.keys(MY).forEach(k => delete MY[k]);
     Object.values(rows).forEach(r => { if (mineOf(r.ticker)) MY[r.ticker] = r; });

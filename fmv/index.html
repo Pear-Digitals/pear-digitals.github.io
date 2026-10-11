@@ -68,8 +68,8 @@
       <div class="ranges" id="ranges"></div>
       <div class="legend">
         <span><span class="sw" id="pxsw" style="border-color:#00C805"></span>stock price</span>
-        <span><span class="sw" style="border-top:3px dotted #E0A800"></span>bear / bull case</span>
-        <span><span class="bx"></span>base case (dashed); shading green = price under base, red = over</span>
+        <span><span class="sw" style="border-top:3px dotted #FF5000"></span>bear case</span>
+        <span><span class="sw" style="border-top:3px dotted #00C805"></span>bull case</span>
       </div>
       <div id="chart"><svg id="svg"></svg><div id="tip"></div><div id="cmsg" hidden>Loading&hellip;</div></div>
       <p class="note" id="foot"></p>
@@ -216,8 +216,7 @@ function draw() {
   const lineCol = pRet >= 0 ? UP : DOWN;
   pxsw.style.borderColor = lineCol;
 
-  let s = `<defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">`
-        + `<stop offset="0" stop-color="${lineCol}" stop-opacity=".18"/><stop offset=".7" stop-color="${lineCol}" stop-opacity="0"/></linearGradient></defs>`;
+  let s = `<defs></defs>`;
   for (let g = 0; g <= 4; g++) {
     const vv = lo + (hi - lo) * g / 4, y = Y(vv);
     s += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#e2e4e0" stroke-dasharray="2 5"/>`;
@@ -234,23 +233,23 @@ function draw() {
     const pxPts = vx.slice().reverse().map(([x, r, i]) => x.toFixed(1) + ',' + Y(p[i][1]).toFixed(1));
     s += `<polygon points="${basePts.concat(pxPts).join(' ')}" fill="url(#gb)" stroke="none"/>`;
     [1, 3].forEach(k => {
+      const col = k === 1 ? DOWN : UP;
       const seg = vx.filter(([, r]) => r[k]);
       if (seg.length > 1)
-        s += `<polyline fill="none" stroke="${GOLD}" stroke-width="2" stroke-dasharray="0.1 5" stroke-linecap="round" stroke-linejoin="round" points="${polyPts(seg, r => r[k])}"/>`;
+        s += `<polyline fill="none" stroke="${col}" stroke-width="2" stroke-dasharray="0.1 5" stroke-linecap="round" stroke-linejoin="round" points="${polyPts(seg, r => r[k])}"/>`;
       else if (seg.length === 1)
-        s += `<circle cx="${seg[0][0].toFixed(1)}" cy="${Y(seg[0][1][k]).toFixed(1)}" r="2.5" fill="${GOLD}"/>`;
+        s += `<circle cx="${seg[0][0].toFixed(1)}" cy="${Y(seg[0][1][k]).toFixed(1)}" r="2.5" fill="${col}"/>`;
     });
     s += `<polyline fill="none" stroke="${GOLD}" stroke-width="1.8" stroke-dasharray="6 4" stroke-linecap="round" points="${polyPts(vx, r => r[2])}"/>`;
   } else vx.forEach(([x, r]) => {
-    [1, 3].forEach(k => { if (r[k]) s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[k]).toFixed(1)}" r="2.5" fill="${GOLD}"/>`; });
+    [1, 3].forEach(k => { if (r[k]) s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[k]).toFixed(1)}" r="2.5" fill="${k === 1 ? DOWN : UP}"/>`; });
   });
   if (vx.length <= 12)
     vx.forEach(([x, r]) => { s += `<circle cx="${x.toFixed(1)}" cy="${Y(r[2]).toFixed(1)}" r="4" fill="${GOLD}" stroke="#fff" stroke-width="1.5"/>`; });
 
-  // price: gradient area + smooth coloured line + live dot
+  // price: smooth coloured line + live dot
   const pts = p.map((r, i) => [X(i), Y(r[1])]);
   const line = smooth(pts);
-  s += `<path d="${line}L${pts[pts.length-1][0].toFixed(1)},${H-PB}L${pts[0][0].toFixed(1)},${H-PB}Z" fill="url(#ga)"/>`;
   s += `<path d="${line}" fill="none" stroke="${lineCol}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
   const [lx, ly] = pts[pts.length-1];
   s += `<circle cx="${lx}" cy="${ly}" r="4" fill="${lineCol}" opacity=".4"><animate attributeName="r" values="4;12" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values=".45;0" dur="1.8s" repeatCount="indefinite"/></circle>`;

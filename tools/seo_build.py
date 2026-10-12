@@ -116,6 +116,15 @@ def main():
     if write_if_changed(os.path.join(ROOT, "fmv", "screener", "index.html"), page):
         changed.append("fmv/screener/")
 
+    # Agentic Trading tab: same app at /fmv/agentic-trading/ (not in the sitemap while it's a placeholder).
+    url = f"{SITE}/fmv/agentic-trading/"
+    title, desc = "Agentic Trading | Pear Digitals", "Agentic Trading from Pear Digitals, coming soon for Premium and Pro."
+    head = (f"\n<title>{e(title)}</title>\n<meta name=\"description\" content=\"{e(desc)}\">\n<link rel=\"canonical\" href=\"{url}\">\n"
+            f'<meta name="robots" content="noindex">\n<meta property="og:title" content="{e(title)}">\n<meta property="og:url" content="{url}">\n')
+    page = replace_between(replace_between(template, "seo:head", head), "seo:summary", f'<p class="seo">{e(desc)} · {links}</p>')
+    if write_if_changed(os.path.join(ROOT, "fmv", "agentic-trading", "index.html"), page):
+        changed.append("fmv/agentic-trading/")
+
     # lastmod only where we know a real date (the latest fair value), so the file only changes when data does.
     newest = max(latest[t]["date"] for t in tickers)
     urls = [(f"{SITE}/", None), (f"{SITE}/fmv/", newest)]

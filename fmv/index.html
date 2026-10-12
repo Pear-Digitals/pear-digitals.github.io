@@ -133,7 +133,12 @@
   /* watchlist */
   aside { position:sticky; top:20px; align-self:start; }
   .side { border:1px solid var(--line); border-radius:16px; overflow:hidden; }
-  .side h3 { margin:0; padding:16px 18px; font-size:1rem; border-bottom:1px solid var(--line); }
+  .side h3 { margin:0; padding:12px 12px 12px 18px; font-size:1rem; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
+  .sortbtn { border:0; background:none; color:var(--muted); font:inherit; font-size:.8rem; font-weight:600; padding:6px 8px; border-radius:8px; cursor:pointer; }
+  .sortbtn:hover { background:var(--soft); color:var(--ink); }
+  .sortmenu { top:50px; right:8px; min-width:230px; }
+  .sortmenu button.on { font-weight:700; }
+  .sortmenu button.on::after { content:"\2713"; float:right; color:var(--green); }
   .wrow { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 18px; cursor:pointer; border:0; background:none; width:100%; text-align:left; }
   .wrow:hover, .wrow.on { background:var(--soft); }
   .wrow b { display:block; font-size:.95rem; }
@@ -260,7 +265,7 @@
     body.chatting { overflow:hidden; }
     #chatfab.open { display:none; }
   }
-  @media (max-width:900px) { .grid.with-side { grid-template-columns:minmax(0,1fr); } aside { position:static; } }
+  @media (max-width:900px) { .grid.with-side { grid-template-columns:minmax(0,1fr); } aside { position:relative; top:0; } }
   @media (max-width:760px) { .wrap { padding:0 var(--pad); } nav { gap:12px; } .stats .v { font-size:1.05rem; } }
 </style></head><body>
 <div class="wrap">
@@ -302,7 +307,8 @@
       </section>
     </main>
     <aside id="side" hidden>
-      <div class="side"><h3>Watchlist</h3><div id="wl"></div></div>
+      <div class="side"><h3>Watchlist<button type="button" class="sortbtn" id="sortbtn" aria-haspopup="menu" aria-expanded="false"></button></h3><div id="wl"></div></div>
+      <div class="menu sortmenu" id="sortmenu" role="menu" hidden></div>
     </aside>
   </div>
 </div>
@@ -931,6 +937,36 @@ function draw() {
   };
 
   // ---- watchlist ----
+  // ---- watchlist sort (remembered on this device) ----
+  const SORTS = [
+    ["name-asc", "Name: A to Z", "A\u2013Z"], ["name-desc", "Name: Z to A", "Z\u2013A"],
+    ["price-desc", "Price: high to low", "Price \u2193"], ["price-asc", "Price: low to high", "Price \u2191"],
+    ["diff-desc", "vs fair value: most above first", "Most above"], ["diff-asc", "vs fair value: most below first", "Most below"],
+  ];
+  let sortKey = (() => { try { const k = localStorage.getItem("fmv-watch-sort"); return SORTS.some(x => x[0] === k) ? k : "name-asc"; } catch (e) { return "name-asc"; } })();
+  const fairOf = t => { const mine = mineOf(t); return mine ? mine.base : LATEST[t].fm.base; };
+  const diffOf = t => LATEST[t].px / fairOf(t) - 1;   // same % as the row's tag: + above fair value, - below
+  function sortWatch(list) {
+    const [field, dir] = sortKey.split("-"), sign = dir === "asc" ? 1 : -1;
+    const val = t => field === "price" ? LATEST[t].px : field === "diff" ? diffOf(t) : t;
+    return list.sort((a, b) => { const x = val(a), y = val(b);
+      return (x < y ? -1 : x > y ? 1 : 0) * sign || a.localeCompare(b); });
+  }
+  const sortBtn = $('sortbtn'), sortMenu = $('sortmenu');
+  const sortLabel = () => { sortBtn.textContent = "Sort: " + SORTS.find(x => x[0] === sortKey)[2] + " \u25BE"; };
+  sortLabel();
+  sortBtn.onclick = e => {
+    e.stopPropagation();
+    if (!sortMenu.hidden) { sortMenu.hidden = true; sortBtn.setAttribute("aria-expanded", "false"); return; }
+    sortMenu.textContent = "";
+    SORTS.forEach(([k, label]) => sortMenu.appendChild(button(label, k === sortKey ? "on" : null, () => {
+      sortKey = k; try { localStorage.setItem("fmv-watch-sort", k); } catch (err) {}
+      sortMenu.hidden = true; sortBtn.setAttribute("aria-expanded", "false"); sortLabel(); renderSide();
+    })));
+    sortMenu.hidden = false; sortBtn.setAttribute("aria-expanded", "true");
+  };
+  document.addEventListener('click', e => { if (!sortMenu.hidden && !e.target.closest('#sortmenu')) { sortMenu.hidden = true; sortBtn.setAttribute("aria-expanded", "false"); } });
+
   function renderSide() {
     const side = $('side'), grid = $('app'), signedIn = !!userView();
     side.hidden = !signedIn; grid.classList.toggle('with-side', signedIn);
@@ -945,7 +981,7 @@ function draw() {
       return;
     }
     wl.classList.toggle('fadein', fadeNext);
-    const list = [...WATCH].filter(t => LATEST[t]).sort();
+    const list = sortWatch([...WATCH].filter(t => LATEST[t]));
     if (!list.length) { wl.appendChild(el('div', 'empty', "Tap ☆ on a stock to add it here.")); return; }
     list.forEach(t => {
       const L = LATEST[t], mine = mineOf(t), fair = mine ? mine.base : L.fm.base;   // base everywhere, matching the Fair value block

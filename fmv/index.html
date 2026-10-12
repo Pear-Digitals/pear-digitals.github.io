@@ -968,10 +968,13 @@ function draw() {
   document.addEventListener('click', e => { if (!sortMenu.hidden && !e.target.closest('#sortmenu')) { sortMenu.hidden = true; sortBtn.setAttribute("aria-expanded", "false"); } });
 
   function renderSide() {
+    // The watchlist panel shows for everyone; signed out it's just the hint (the star asks them to sign up).
     const side = $('side'), grid = $('app'), signedIn = !!userView();
-    side.hidden = !signedIn; grid.classList.toggle('with-side', signedIn);
-    if (!signedIn) return;
+    side.hidden = false; grid.classList.add('with-side');
     const wl = $('wl'); wl.textContent = "";
+    sortBtn.hidden = true;
+    const hint = () => wl.appendChild(el('div', 'empty', "Press \u2606 to add stocks to your watchlist."));
+    if (!signedIn) { hint(); return; }
     if (userLoading) {
       for (let i = 0; i < 3; i++) {
         const r = el('div', 'wrow skrow');
@@ -982,7 +985,8 @@ function draw() {
     }
     wl.classList.toggle('fadein', fadeNext);
     const list = sortWatch([...WATCH].filter(t => LATEST[t]));
-    if (!list.length) { wl.appendChild(el('div', 'empty', "Tap ☆ on a stock to add it here.")); return; }
+    if (!list.length) { hint(); return; }
+    sortBtn.hidden = list.length < 2;   // nothing to sort with one stock
     list.forEach(t => {
       const L = LATEST[t], mine = mineOf(t), fair = mine ? mine.base : L.fm.base;   // base everywhere, matching the Fair value block
       const row = button("", "wrow" + (t === sel.value ? " on" : ""), () => { sel.value = t; sel.dispatchEvent(new Event('change')); window.scrollTo({top: 0, behavior: "smooth"}); });

@@ -221,6 +221,7 @@
   .scbar .grow { flex:1; }
   .linkbtn { border:0; background:none; color:var(--green); font:inherit; font-weight:600; cursor:pointer; padding:4px 2px; }
   .linkbtn.danger { color:var(--down); }
+  .linkbtn:disabled { color:var(--muted); opacity:.55; cursor:default; }
   .scpick { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0; }
   .scpick select, .scpick input { font:inherit; font-size:16px; border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fff; color:var(--ink); }
   .scpick input { width:96px; }
@@ -1657,8 +1658,10 @@ function draw() {
     bar.appendChild(el('span', null, sc.active ? `${sc.active.name}${what ? " · " + what : ""}` : what));
     bar.appendChild(el('span', 'grow'));
     const needAccount = fn => () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } fn(); };
-    if (sc.active && !sc.active.starter && scDirty()) {
-      bar.appendChild(button("Save changes", "linkbtn", needAccount(saveChanges)));
+    if (sc.active && !sc.active.starter) {   // a saved screen: Save changes is greyed out until something changes
+      const save = button("Save changes", "linkbtn", needAccount(saveChanges));
+      save.disabled = !scDirty(); if (save.disabled) save.title = "No changes to save";
+      bar.appendChild(save);
       bar.appendChild(button("Save as new", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); })));
     } else if (sc.spec.filters.length && (!sc.active || sc.active.starter)) {   // new screen, or a copy of a starter
       bar.appendChild(button("Save", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); })));

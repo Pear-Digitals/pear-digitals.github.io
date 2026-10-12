@@ -1511,9 +1511,6 @@ function draw() {
       row.appendChild(left); row.appendChild(right); list.appendChild(row);
     });
     box.appendChild(list);
-    if (r.more && r.more_tier) {
-      box.appendChild(el('div', 'scount', `+${r.more.toLocaleString()} more with ${PLAN_NAME[r.more_tier]}`));
-    }
     if (!full) {
       const acts = el('div', 'acts');
       acts.appendChild(button(r.count > 5 ? `Open all ${r.count.toLocaleString()} in Screener` : "Open in Screener", "pill", () => {
@@ -1614,9 +1611,6 @@ function draw() {
       const acts = el('div', 'acts');
       acts.appendChild(button("Load more", "pill light", () => scRun({filters: sc.spec.filters, sort: sc.spec.sort, offset: sc.rows.length}, true)));
       scMain.appendChild(acts);
-    }
-    if (sc.more && sc.moreTier) {
-      scMain.appendChild(el('div', 'scount', `+${sc.more.toLocaleString()} more with ${PLAN_NAME[sc.moreTier]}`));
     }
   }
 

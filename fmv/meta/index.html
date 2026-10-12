@@ -208,6 +208,7 @@
   .card .pill { padding:7px 14px; font-size:.85rem; }
   /* top nav link + screener screen */
   .navlink { color:var(--ink); text-decoration:none; font-weight:600; font-size:.92rem; white-space:nowrap; }
+  #navfmv + #navscreen { margin-left:-6px; }
   .navlink:hover, .navlink.on { color:var(--green); }
   #screener { row-gap:16px; }
   .sctitle { grid-column:1 / -1; font-size:1.6rem; letter-spacing:-.02em; margin:0; }
@@ -354,6 +355,7 @@
       <button type="button" class="cancel" id="qcancel">Cancel</button>
       <div class="results" id="qres" role="listbox" hidden></div>
     </div>
+    <a class="navlink on" id="navfmv" href="/fmv/" aria-label="FMV"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>FMV</span></a>
     <a class="navlink" id="navscreen" href="/fmv/screener/" aria-label="Screener"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg><span>Screener</span></a>
     <div id="navacct"></div>
   </nav>
@@ -1966,6 +1968,7 @@ function draw() {
     if (!$('loading').hidden) return;
     $('app').hidden = screener;
     $('navscreen').classList.toggle('on', screener);
+    $('navfmv').classList.toggle('on', !screener);
     if (screener) { if (window.setChatScreener) window.setChatScreener(); } else if (window.setChatStock) window.setChatStock(sel.value);
     document.querySelectorAll('.seo').forEach(x => { x.hidden = screener || !!userView(); });
   }
@@ -1989,6 +1992,12 @@ function draw() {
   window.showStockView = () => { if (!scWrap.hidden) showView(false); };
   window.screenerReload = () => { if (!scWrap.hidden) { sc.loaded = false; openScreener(false); } };
   $('navscreen').onclick = e => { e.preventDefault(); openScreener(true); };
+  // FMV: back to the fair value view, on the stock you were looking at.
+  $('navfmv').onclick = e => {
+    e.preventDefault();
+    if (scWrap.hidden) { window.scrollTo({top: 0, behavior: "smooth"}); return; }
+    showView(false); syncUrl(); draw(); window.scrollTo({top: 0});
+  };
 
   window.watchParse = txt => {
     const m = txt.match(/```watchlist-proposal\s*([\s\S]*?)```/);

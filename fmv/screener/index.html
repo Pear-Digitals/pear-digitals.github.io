@@ -222,6 +222,7 @@
   .linkbtn { border:0; background:none; color:var(--green); font:inherit; font-weight:600; cursor:pointer; padding:4px 2px; }
   .linkbtn.danger { color:var(--down); }
   .linkbtn:disabled { color:var(--muted); opacity:.55; cursor:default; }
+  .scsave { display:flex; gap:14px; align-items:center; margin:2px 0 4px; font-size:.85rem; }
   .scpick { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0; }
   .scpick select, .scpick input { font:inherit; font-size:16px; border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fff; color:var(--ink); }
   .scpick input { width:96px; }
@@ -1679,6 +1680,23 @@ function draw() {
     scMain.appendChild(chips);
     if (sc.picking === "filter") scMain.appendChild(filterPicker());
 
+    // Save / Clear sit right under the filters (the bar below is just the count and Columns).
+    const sv = el('div', 'scsave');
+    const needAccount = fn => () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } fn(); };
+    if (sc.active && !sc.active.starter) {   // a saved screen: greyed out until something changes
+      const save = button("Save changes", "linkbtn", needAccount(saveChanges));
+      save.disabled = !scDirty(); if (save.disabled) save.title = "No changes to save";
+      sv.appendChild(save);
+      const copy = button("Save as new", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); }));
+      copy.disabled = save.disabled;
+      sv.appendChild(copy);
+    } else if (sc.spec.filters.length && (!sc.active || sc.active.starter)) {   // new screen, or a copy of a starter
+      sv.appendChild(button("Save", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); })));
+    }
+    if (sc.spec.filters.length || sc.active) sv.appendChild(button("Clear", "linkbtn", () => { sc.active = null; scSet({filters: [], sort: DEFAULT_SORT}); }));
+    if (sv.children.length) scMain.appendChild(sv);
+    if (sc.naming) scMain.appendChild(nameForm());
+
     const bar = el('div', 'scbar');
     const what = sc.busy ? "Screening…" : !sc.loaded ? "" : sc.count === 1 ? "1 stock" : `${sc.count.toLocaleString()} stocks`;
     bar.appendChild(el('span', null, sc.active ? `${sc.active.name}${what ? " · " + what : ""}` : what));
@@ -1690,20 +1708,7 @@ function draw() {
     cw.appendChild(cb);
     if (sc.picking === "cols") cw.appendChild(columnMenu());
     bar.appendChild(cw);
-    const needAccount = fn => () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } fn(); };
-    if (sc.active && !sc.active.starter) {   // a saved screen: Save changes is greyed out until something changes
-      const save = button("Save changes", "linkbtn", needAccount(saveChanges));
-      save.disabled = !scDirty(); if (save.disabled) save.title = "No changes to save";
-      bar.appendChild(save);
-      const copy = button("Save as new", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); }));
-      copy.disabled = save.disabled;
-      bar.appendChild(copy);
-    } else if (sc.spec.filters.length && (!sc.active || sc.active.starter)) {   // new screen, or a copy of a starter
-      bar.appendChild(button("Save", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); })));
-    }
-    if (sc.spec.filters.length || sc.active) bar.appendChild(button("Clear", "linkbtn", () => { sc.active = null; scSet({filters: [], sort: DEFAULT_SORT}); }));
     scMain.appendChild(bar);
-    if (sc.naming) scMain.appendChild(nameForm());
     if (sc.err) scMain.appendChild(el('div', 'warn', sc.err));
 
     scMain.appendChild(resultsTable());

@@ -225,6 +225,11 @@
   footer { border-top:1px solid var(--line); padding:28px 0 44px; color:var(--muted); font-size:.85rem; }
   footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
   footer .footlinks { display:flex; flex-wrap:wrap; gap:8px 18px; }
+  @media (max-width:640px) {   /* phones: centered, at most 3 links per row */
+    footer .row { flex-direction:column; align-items:center; text-align:center; }
+    footer .footlinks { justify-content:center; width:100%; max-width:360px; gap:10px 0; }
+    footer .footlinks a { flex:0 0 33.333%; text-align:center; }
+  }
   footer a { color:var(--muted); }
   @media (max-width:640px) { footer { padding-bottom:104px; } }   /* clear the floating chat button */
 

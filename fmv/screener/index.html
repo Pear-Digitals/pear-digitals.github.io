@@ -1626,7 +1626,12 @@ function draw() {
   const scSet = spec => scRun({filters: spec.filters, sort: spec.sort || DEFAULT_SORT});
   const specKey = sp => JSON.stringify({f: (sp.filters || []).map(f => [f.field, f.op, f.num ?? null, f.values ?? null]), s: sp.sort || DEFAULT_SORT});
   const scDirty = () => sc.active && specKey(sc.active.spec) !== specKey(sc.spec);
-  const loadScreen = x => { sc.active = x; sc.naming = null; scMenu = scRenaming = scDeleting = null; scSet(x.spec); };
+  // Tap a screen to load it; tap the selected one again to unselect it (back to all stocks).
+  const loadScreen = x => {
+    sc.naming = null; scMenu = scRenaming = scDeleting = null;
+    if (sc.active && (sc.active.id || sc.active.name) === (x.id || x.name)) { sc.active = null; scSet({filters: [], sort: DEFAULT_SORT}); return; }
+    sc.active = x; scSet(x.spec);
+  };
 
   function renderScMain() {
     scMain.textContent = "";

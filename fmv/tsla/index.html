@@ -411,6 +411,18 @@ let curRange = "1W";
 const RANGE_WORDS = {"1W": "Past week", "1M": "Past month", "3M": "Past 3 months", "6M": "Past 6 months", "1Y": "Past year", "ALL": "All time"};
 
 const priceRows = rows => rows.filter(r => !isWeekend(r.date)).map(r => [r.date, r.c]);
+// Fair values dated on a weekend (e.g. published on a Sunday) count from the previous Friday, the last trading day;
+// a weekend value replaces that Friday's. Input in date order -> [[date, bear, base, bull, row], ...].
+const tradingDay = ds => {
+  const d = new Date(ds + "T00:00:00Z"), w = d.getUTCDay();
+  if (w === 6 || w === 0) d.setUTCDate(d.getUTCDate() - (w === 6 ? 1 : 2));
+  return d.toISOString().slice(0, 10);
+};
+const vintRows = rows => {
+  const byDay = new Map();
+  rows.forEach(r => { const d = tradingDay(r.date); byDay.set(d, [d, r.bear, r.base, r.bull, r]); });
+  return [...byDay.values()].sort((a, b) => (a[0] < b[0] ? -1 : 1));
+};
 const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
 
 // History limits by plan (calendar days): Free 30, Premium 1 year, Pro everything. Enforced by the server;
@@ -445,7 +457,7 @@ function loadFull(t) {
         .then(rows => ({prices: rows, vintages: null})))
       .then(({prices, vintages}) => {
         D[t].p = priceRows(prices);
-        if (vintages && vintages.length) D[t].v = vintages.filter(r => !isWeekend(r.date)).map(r => [r.date, r.bear, r.base, r.bull, r]);
+        if (vintages && vintages.length) D[t].v = vintRows(vintages);
         D[t].full = true;
       });
   }
@@ -463,10 +475,9 @@ async function init() {
       get(`/prices_free?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`)
         .catch(() => get(`/prices_public?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`))
     ]);
-    vintages.forEach(r => {
-      if (isWeekend(r.date)) return;  // safety net: DB should never hold weekend rows
-      (D[r.ticker] = D[r.ticker] || {v: [], p: []}).v.push([r.date, r.bear, r.base, r.bull, r]);
-    });
+    const vByT = {};
+    vintages.forEach(r => { (vByT[r.ticker] = vByT[r.ticker] || []).push(r); });
+    Object.keys(vByT).forEach(t => { (D[t] = D[t] || {v: [], p: []}).v = vintRows(vByT[t]); });
     week.forEach(r => {
       if (isWeekend(r.date)) return;
       (D[r.symbol] = D[r.symbol] || {v: [], p: []}).p.push([r.date, r.c]);
@@ -1142,8 +1153,8 @@ function draw() {
     try {
       const {vintages} = await api('vintages', {});
       const byT = {};
-      vintages.forEach(r => { if (!isWeekend(r.date)) (byT[r.ticker] = byT[r.ticker] || []).push([r.date, r.bear, r.base, r.bull, r]); });
-      Object.keys(byT).forEach(t => { if (D[t]) D[t].v = byT[t]; });
+      vintages.forEach(r => { (byT[r.ticker] = byT[r.ticker] || []).push(r); });
+      Object.keys(byT).forEach(t => { if (D[t]) D[t].v = vintRows(byT[t]); });
       fullHistory = true;
     } catch (e) { console.error(e); }
   }
@@ -1160,7 +1171,7 @@ function draw() {
         const [{prices, vintages}] = await Promise.all([api('chart', {ticker: t}), loadUniverse()]);
         const u = (UNIVERSE || []).find(x => x[0] === t);
         if (u && !NAMES[t]) NAMES[t] = u[1].replace(/,?\s+(Inc\.?|Incorporated|Corporation|Corp\.?|Co\.?|Ltd\.?|plc|N\.V\.|S\.A\.)$/i, "");   // "Advanced Micro Devices"
-        const J = {v: (vintages || []).filter(r => !isWeekend(r.date)).map(r => [r.date, r.bear, r.base, r.bull, r]),
+        const J = {v: vintRows(vintages || []),
                    p: priceRows(prices || []), full: true};
         if (!J.v.length || !J.p.length) return false;
         D[t] = J; FULL[t] = Promise.resolve();

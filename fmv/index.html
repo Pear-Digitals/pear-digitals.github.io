@@ -1026,7 +1026,7 @@ function draw() {
     {id: "free", name: "Free", price: "$0", stocks: "Magnificent 7",
      items: ["Pear Recommended Fair Values & Charts", "Customized Fair Values", "Auto re-ratings after earnings & other significant events",
              "20 Quill messages a day", "1M of Historical Data"]},
-    {id: "premium", name: "Premium", price: "$79/yr", alt: "or $7.99/mo", stocks: "S&P 500",
+    {id: "premium", name: "Premium", price: "$49/yr", alt: "or $4.99/mo", stocks: "S&P 500",
      items: ["Everything in Free", "Unlimited Quill messages", "Daily Fair Buy Alerts", "1Y of Historical Data"]},
     {id: "pro", name: "Pro", price: "$249/yr", alt: "or $29/mo", stocks: "All NYSE & Nasdaq",
      items: ["Everything in Premium", "Real-time Fair Buy Alerts", "Backfilled Pear Recommended and Custom Fair Values", "Unlimited Historical Data"]},
@@ -1256,6 +1256,12 @@ function draw() {
     api('apply', {ticker: p.ticker, preferences: p.preferences, rationale: p.rationale}).then(async res => {
       title.textContent = `\u2713 Saved as your ${name} fair value`;
       body.appendChild(resultView(res));
+      const acts = el('div', 'acts'); card.appendChild(acts);
+      acts.appendChild(button(`View ${p.ticker}`, "pill", async () => {
+        if (sel.value !== p.ticker && await ensureStock(p.ticker)) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
+        if (window.chatClose && matchMedia("(max-width:560px)").matches) window.chatClose();
+        window.scrollTo({top: 0, behavior: "smooth"});
+      }));
       if (sel.value !== p.ticker && await ensureStock(p.ticker)) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
       await refresh();
       backfill(p.ticker);
@@ -1335,7 +1341,8 @@ function draw() {
   };
   fab.onclick = () => setOpen(pop.hidden);
   window.chatAsk = q => { if (pop.hidden) setOpen(true); ask(q); };
-  window.chatReset = () => { hist.length = 0; log.textContent = ""; chips.querySelectorAll('.gen').forEach(b => { b.hidden = false; }); if (!pop.hidden) setOpen(false); };
+  window.chatReset = () => { hist.length = 0; log.textContent = ""; chips.hidden = false; if (!pop.hidden) setOpen(false); };
+  window.chatClose = () => { if (!pop.hidden) setOpen(false); };
   document.getElementById('chatclose').onclick = () => setOpen(false);
   document.addEventListener('keydown', e => { if (e.key === "Escape" && !pop.hidden && !document.querySelector('dialog[open]')) setOpen(false); });
   // Minimal, safe Markdown: text is HTML-escaped first, so only the tags added here can appear.
@@ -1365,7 +1372,7 @@ function draw() {
   async function ask(q) {
     q = q.trim(); if (!q) return;
     hist.push({role: "user", content: q});
-    add('user', q); input.value = ""; btn.disabled = true; chips.querySelectorAll('.gen').forEach(b => { b.hidden = true; });
+    add('user', q); input.value = ""; btn.disabled = true; chips.hidden = true;   // shortcuts only before the chat starts
     const bot = add('bot', "Thinking…");
     try {
       const res = await fetch(CHAT_URL, {
@@ -1406,15 +1413,12 @@ function draw() {
     btn.disabled = false; input.focus();
   }
   form.addEventListener('submit', e => { e.preventDefault(); ask(input.value); });
-  // Shortcut for the stock on screen (always shown) + general starters (hidden once the chat starts).
-  const shortcut = document.createElement('button'); shortcut.type = "button"; shortcut.className = "shortcut";
-  shortcut.addEventListener('click', () => ask(shortcut.textContent));
-  chips.appendChild(shortcut);
-  ["What are bear, base and bull cases?", "What is a DCF?"].forEach(t => {
-    const b = document.createElement('button'); b.type = "button"; b.textContent = t; b.className = "gen";
-    b.addEventListener('click', () => ask(t)); chips.appendChild(b);
-  });
-  window.setChatStock = t => { shortcut.textContent = `Change ${t}'s fair value`; };
+  // Starters for the stock on screen, plus a general one; all hidden once the chat starts.
+  const chip = (cls) => { const b = document.createElement('button'); b.type = "button"; if (cls) b.className = cls;
+    b.addEventListener('click', () => ask(b.textContent)); chips.appendChild(b); return b; };
+  const shortcut = chip("shortcut"), cases = chip(), dcf = chip();
+  dcf.textContent = "What is a DCF?";
+  window.setChatStock = t => { shortcut.textContent = `Change ${t}'s fair value`; cases.textContent = `What are ${t}'s bear, base and bull cases?`; };
   window.setChatStock(sel.value || "AAPL");
 })();
 init();

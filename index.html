@@ -42,7 +42,7 @@
   .tickers a:hover { border-color:var(--green); color:var(--green); }
   footer { border-top:1px solid var(--line); padding:32px 0 48px; color:var(--muted); font-size:.9rem; }
   footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
-  footer a { margin-right:18px; }
+  footer .footlinks { display:flex; flex-wrap:wrap; gap:8px 18px; }
   @media (max-width:760px){ .two{grid-template-columns:1fr;gap:16px} .cards{grid-template-columns:1fr} .hero{padding-top:40px} .links a:not(:nth-last-child(-n+2)){display:none} }
 </style>
 </head>
@@ -123,7 +123,7 @@
   <div class="wrap">
     <div class="row">
       <div>&copy; 2026 Pear Digitals LLC. All rights reserved.</div>
-      <div><a href="/options-ledger/privacy.html">Privacy Policy</a><a href="/fmv/">FMV</a><a href="mailto:support@peardigitals.com">Contact</a></div>
+      <div class="footlinks"><a href="/options-ledger/privacy.html">Privacy Policy</a><a href="/fmv/">FMV</a><a href="mailto:support@peardigitals.com">Contact</a></div>
     </div>
     <p class="note" style="margin-top:16px">Options Ledger is a journaling tool and does not provide investment advice. Options involve risk and are not suitable for all investors. FMV analysis is for informational purposes only.</p>
   </div>

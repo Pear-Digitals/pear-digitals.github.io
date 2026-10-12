@@ -1976,6 +1976,15 @@ function draw() {
     loadSaved();
   }
   window.openScreener = openScreener;
+  // What Quill sees when the user is on the Screener: the screen, its filters and the top results (shown columns).
+  window.screenContext = () => {
+    if (scWrap.hidden || !sc.loaded) return null;
+    const cols = visibleCols().map(c => c[0]);
+    const sortLabel = sc.spec.sort.field === "ticker" ? "Stock" : (COLS.find(c => c[0] === sc.spec.sort.field) || [, sc.spec.sort.field])[1];
+    return {name: sc.active ? sc.active.name : null, filters: sc.spec.filters.map(f => f.label),
+      sort: `${sortLabel} ${sc.spec.sort.dir === "asc" ? "low to high" : "high to low"}`, count: sc.count,
+      top: sc.rows.slice(0, 10).map(r => Object.fromEntries([["ticker", r.ticker], ["name", r.name], ...cols.map(k => [k, r[k]])]))};
+  };
   window.showStockView = () => { if (!scWrap.hidden) showView(false); };
   window.screenerReload = () => { if (!scWrap.hidden) { sc.loaded = false; openScreener(false); } };
   $('navscreen').onclick = e => { e.preventDefault(); openScreener(true); };
@@ -2073,7 +2082,8 @@ function draw() {
       const res = await fetch(CHAT_URL, {
         method: "POST",
         headers: {"content-type": "application/json", apikey: ANON_KEY, authorization: "Bearer " + await authToken()},
-        body: JSON.stringify({messages: hist.slice(-12), ticker: sel.value})
+        body: JSON.stringify({messages: hist.slice(-12), ticker: document.getElementById('screener').hidden ? sel.value : null,
+          screen: window.screenContext ? window.screenContext() : null})
       });
       if (res.status === 429) {   // daily limit
         bot.textContent = await res.text(); hist.pop(); btn.disabled = false;

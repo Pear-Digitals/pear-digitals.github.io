@@ -1513,7 +1513,6 @@ function draw() {
     box.appendChild(list);
     if (r.more && r.more_tier) {
       box.appendChild(el('div', 'scount', `+${r.more.toLocaleString()} more with ${PLAN_NAME[r.more_tier]}`));
-      box.appendChild(window.waitlistNote("screener", r.more_tier));
     }
     if (!full) {
       const acts = el('div', 'acts');
@@ -1618,7 +1617,6 @@ function draw() {
     }
     if (sc.more && sc.moreTier) {
       scMain.appendChild(el('div', 'scount', `+${sc.more.toLocaleString()} more with ${PLAN_NAME[sc.moreTier]}`));
-      scMain.appendChild(window.waitlistNote("screener", sc.moreTier));
     }
   }
 

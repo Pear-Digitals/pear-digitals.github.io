@@ -210,6 +210,8 @@
   #screener { row-gap:16px; }
   .sctitle { grid-column:1 / -1; font-size:1.6rem; letter-spacing:-.02em; margin:0; }
   .navlink svg { display:none; }
+  #app.pending #zone, #app.pending #fair, #app.pending #fairacts, #app.pending #starbtn, #app.pending #custwrap { visibility:hidden; }
+  #app.pending #chart { background:linear-gradient(90deg,#f4f6f3 25%,#fafbf9 50%,#f4f6f3 75%); background-size:200% 100%; animation:shimmer 1.2s linear infinite; border-radius:12px; min-height:260px; }
   @media (max-width:560px) { .navlink span { display:none; } .navlink svg { display:block; } }
   .scform { display:flex; gap:8px; }
   .scform .field { margin:0; font-size:16px; }
@@ -617,6 +619,7 @@ function smooth(pts) {
 }
 
 function draw() {
+  if (document.getElementById('app').classList.contains('pending')) return;   // a stock is opening; it draws when its data arrives
   const t = sel.value, J = D[t];
   const n = RANGES.find(r => r[0] === curRange)[1];
   if (n > 5 && !J.full) {   // longer ranges wait for the background load
@@ -906,11 +909,7 @@ function draw() {
     const st = statusOf(t, tier);
     if (st === "ok") { pick(t); return; }
     q.value = ""; closeSearch(); q.blur();
-    if (st === "load") {
-      toast(`Loading ${name || t}\u2026`);
-      ensureStock(t).then(ok => { if (ok) pick(t); else openPaywall(t, name, "soon"); });
-      return;
-    }
+    if (st === "load") { openStock(t, name); return; }
     openPaywall(t, name, st);
   }
   q.addEventListener('focus', () => { if (phone()) document.body.classList.add('searching'); loadUniverse(); renderSearch(); });
@@ -1304,6 +1303,26 @@ function draw() {
       finally { delete stockLoads[t]; }
     })());
   };
+  // Open a stock right away: switch to its page with placeholders, then fill it in when its data arrives
+  // (paid stocks are fetched on demand). The Mag 7 and already-loaded stocks open instantly.
+  let openSeq = 0;
+  async function openStock(t, name) {
+    const seq = ++openSeq, app = $('app');
+    if (window.showStockView) window.showStockView();
+    window.scrollTo({top: 0});
+    if (LATEST[t]) { app.classList.remove('pending'); if (sel.value !== t) { sel.value = t; sel.dispatchEvent(new Event('change')); } return; }
+    app.classList.add('pending');
+    $('title').textContent = NAMES[t] || String(name || t).replace(/,?\s+(Inc\.?|Incorporated|Corporation|Corp\.?|Co\.?|Ltd\.?|plc)$/i, "");
+    $('px').innerHTML = '<span class="sk" style="width:160px;height:2.4rem"></span>';
+    $('chg').innerHTML = '<span class="sk" style="width:130px;height:1rem"></span>';
+    svg.innerHTML = "";
+    const ok = await ensureStock(t);
+    if (seq !== openSeq) return;   // they opened something else meanwhile
+    app.classList.remove('pending');
+    if (ok) { sel.value = t; sel.dispatchEvent(new Event('change')); }
+    else { draw(); openPaywall(t, name, "soon"); }
+  }
+
   // Drop loaded paid stocks (sign-out or plan change); the ones still allowed are reloaded.
   function dropPaidStocks() {
     noData.clear();
@@ -1467,11 +1486,10 @@ function draw() {
     try { const q = String(JSON.parse(m[1]).query || "").trim(); return q ? q.slice(0, 500) : null; } catch (e) { return null; }
   };
   const ZONE_TAG = {strong_buy: ["Strong Buy", "#00C805"], fair_buy: ["Fair Buy", "#1a7f37"]};
-  async function openFromScreen(t) {
-    if (sel.value !== t && await ensureStock(t)) { sel.value = t; sel.dispatchEvent(new Event('change')); }
+  function openFromScreen(t, name) {
     if ($('screendlg').open) $('screendlg').close();
     if (window.chatClose && matchMedia("(max-width:560px)").matches) window.chatClose();
-    window.scrollTo({top: 0, behavior: "smooth"});
+    openStock(t, name);
   }
   // Draws chips, count and results into `box`; chip removal / sort re-run the screen without the model.
   function drawScreen(box, r, full) {
@@ -1500,7 +1518,7 @@ function draw() {
     box.appendChild(el('div', 'scount', r.count === 1 ? "1 stock" : `${r.count.toLocaleString()} stocks`));
     const list = el('div', full ? 'slist' : null);
     (full ? r.rows : r.rows.slice(0, 5)).forEach(x => {
-      const row = button("", "srow", () => openFromScreen(x.ticker));
+      const row = button("", "srow", () => openFromScreen(x.ticker, x.name));
       const left = el('div'); left.appendChild(el('b', null, x.ticker + " "));
       left.appendChild(el('small', null, (x.name || "").replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Ltd\.?|plc)$/i, "")));
       left.appendChild(el('small', null, x.reason));
@@ -1596,7 +1614,7 @@ function draw() {
 
     const list = el('div');
     sc.rows.forEach(x => {
-      const row = button("", "srow", () => openFromScreen(x.ticker));
+      const row = button("", "srow", () => openFromScreen(x.ticker, x.name));
       const left = el('div'); left.appendChild(el('b', null, x.ticker + " "));
       left.appendChild(el('small', null, (x.name || "").replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Ltd\.?|plc)$/i, "")));
       left.appendChild(el('small', null, x.reason));

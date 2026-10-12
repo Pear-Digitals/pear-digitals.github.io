@@ -222,6 +222,7 @@
   .linkbtn { border:0; background:none; color:var(--green); font:inherit; font-weight:600; cursor:pointer; padding:4px 2px; }
   .linkbtn.danger { color:var(--down); }
   .linkbtn:disabled { color:var(--muted); opacity:.55; cursor:default; }
+  .scmore { min-height:32px; padding:12px 0; text-align:center; color:var(--muted); font-size:.85rem; }
   .scsave { display:flex; gap:14px; align-items:center; margin:2px 0 4px; font-size:.85rem; }
   .scpick { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0; }
   .scpick select, .scpick input { font:inherit; font-size:16px; border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fff; color:var(--ink); }
@@ -1636,7 +1637,8 @@ function draw() {
       const hit = scCache.get(specKey(sc.spec));
       if (hit) { sc.rows = hit.rows; sc.count = hit.count; sc.loaded = true; }
       sc.busy = !hit; sc.refreshing = !!hit;
-    } else sc.busy = true;
+    } else if (append) sc.loadingMore = true;   // infinite scroll: keep the rows, add to the end
+    else sc.busy = true;
     renderScMain(); renderScSide();
     try {
       const r = await runScreen({limit: 50, ...body});
@@ -1646,7 +1648,7 @@ function draw() {
       Object.assign(sc, {count: r.count, loaded: true, sectors: r.sectors || sc.sectors});
       if (!append) { scCache.set(specKey(sc.spec), {rows: r.rows, count: r.count}); if (scCache.size > 20) scCache.delete(scCache.keys().next().value); }
     } catch (e) { if (seq !== scSeq) return; sc.err = errText(e); }
-    sc.busy = false; sc.refreshing = false; renderScMain(); renderScSide();
+    sc.busy = false; sc.refreshing = false; sc.loadingMore = false; renderScMain(); renderScSide();
   }
   const scQuery = q => scRun({query: q, filters: sc.spec.filters});
   const scSet = spec => scRun({filters: spec.filters, sort: spec.sort || DEFAULT_SORT});
@@ -1713,12 +1715,22 @@ function draw() {
 
     scMain.appendChild(resultsTable());
     syncStars();
-    if (sc.rows.length < sc.count && !sc.busy) {
-      const acts = el('div', 'acts');
-      acts.appendChild(button("Load more", "pill light", () => scRun({filters: sc.spec.filters, sort: sc.spec.sort, offset: sc.rows.length}, true)));
-      scMain.appendChild(acts);
-    }
+    if (sc.rows.length < sc.count && !sc.busy) {   // more results: load them as the bottom comes into view
+      const more = el('div', 'scmore', sc.loadingMore ? "Loading more\u2026" : "");
+      scMain.appendChild(more);
+      scIO.disconnect(); scIO.observe(more);
+    } else scIO.disconnect();
   }
+  const scLoadMore = () => {
+    if (!sc.busy && !sc.loadingMore && sc.rows.length < sc.count && !scWrap.hidden)
+      scRun({filters: sc.spec.filters, sort: sc.spec.sort, offset: sc.rows.length}, true);
+  };
+  const scIO = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) scLoadMore(); }, {rootMargin: "400px 0px"});
+  // Backup for browsers that don't report the bottom marker reliably: check on scroll too.
+  window.addEventListener('scroll', () => {
+    const m = scMain.querySelector('.scmore');
+    if (m && m.getBoundingClientRect().top < innerHeight + 400) scLoadMore();
+  }, {passive: true});
 
   // "+ Filter": pick a field, then a value (numbers: under / over; sector and Pear label: a choice).
   function filterPicker() {

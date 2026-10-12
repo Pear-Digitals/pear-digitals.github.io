@@ -989,7 +989,7 @@ function draw() {
   // One sentence per paid plan, used on every paywall.
   const PLAN_BLURB = {
     premium: "The Premium Plan covers every S&P 500 stock with fair values, 1Y historical data, daily alerts, and unlimited Quill.",
-    pro: "The Pro Plan covers every NYSE and Nasdaq stock with fair values, unlimited historical data, real-time alerts, and unlimited Quill.",
+    pro: "The Pro Plan covers every NYSE and Nasdaq stock with fair values, 10Y+ of historical data, real-time alerts, and unlimited Quill.",
   };
   const priceOf = id => { const pl = PLANS.find(x => x.id === id); return pl ? pl.price : ""; };
 
@@ -1029,7 +1029,7 @@ function draw() {
     {id: "premium", name: "Premium", price: "$49/yr", alt: "or $4.99/mo", stocks: "S&P 500",
      items: ["Everything in Free", "Unlimited Quill messages", "Daily Fair Buy Alerts", "1Y of Historical Data"]},
     {id: "pro", name: "Pro", price: "$249/yr", alt: "or $29/mo", stocks: "All NYSE & Nasdaq",
-     items: ["Everything in Premium", "Real-time Fair Buy Alerts", "Backfilled Pear Recommended and Custom Fair Values", "Unlimited Historical Data"]},
+     items: ["Everything in Premium", "Real-time Fair Buy Alerts", "Backfilled Pear Recommended and Custom Fair Values", "10Y+ of Historical Data"]},
   ];
   function openPlans() {
     const g = $('plansgrid'); g.textContent = "";
@@ -1110,7 +1110,7 @@ function draw() {
     const tier = RANGE_DAYS[label] <= PLAN_DAYS.premium ? "premium" : "pro";
     const pl = PLANS.find(x => x.id === tier), acts = $('payacts'), pp = $('payprice');
     acts.textContent = ""; pp.textContent = pl.price; pp.appendChild(el('span', null, ` ${pl.alt} \u00b7 at launch`));
-    $('paytitle').textContent = label === "ALL" ? "Full history is a Pro feature" : `${label} history is a Premium feature`;
+    $('paytitle').textContent = label === "ALL" ? "10Y+ history is a Pro feature" : `${label} history is a Premium feature`;
     $('paytext').textContent = PLAN_BLURB[tier];
     if (waitTier === tier) acts.appendChild(el('div', 'paytext', joinedText(tier)));
     else acts.appendChild(button(`Join the ${PLAN_NAME[tier]} waitlist`, "pill", async ev => {

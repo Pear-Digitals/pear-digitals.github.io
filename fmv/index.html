@@ -954,7 +954,10 @@ function draw() {
   function sortWatch(list) {
     const [field, dir] = sortKey.split("-"), sign = dir === "asc" ? 1 : -1;
     const val = t => field === "price" ? LATEST[t].px : field === "diff" ? diffOf(t) : t;
-    return list.sort((a, b) => { const x = val(a), y = val(b);
+    return list.sort((a, b) => {
+      if (field !== "name" && !LATEST[a] !== !LATEST[b]) return LATEST[a] ? -1 : 1;   // still loading: at the end
+      if (field !== "name" && !LATEST[a]) return a.localeCompare(b);
+      const x = val(a), y = val(b);
       return (x < y ? -1 : x > y ? 1 : 0) * sign || a.localeCompare(b); });
   }
   const sortBtn = $('sortbtn'), sortMenu = $('sortmenu');
@@ -989,10 +992,28 @@ function draw() {
       return;
     }
     wl.classList.toggle('fadein', fadeNext);
-    const list = sortWatch([...WATCH].filter(t => LATEST[t]));
+    // Paid stocks are fetched one by one after the page loads; until they arrive they keep their place as placeholders,
+    // so the list doesn't show the Mag 7 first and then reshuffle.
+    const loadingPaid = t => !LATEST[t] && !noData.has(t) && !MAG7.includes(t) && plan && plan !== "free";
+    const soon = t => !LATEST[t] && noData.has(t) && !MAG7.includes(t);   // watched, but no fair value published yet
+    const list = sortWatch([...WATCH].filter(t => LATEST[t] || loadingPaid(t) || soon(t)));
     if (!list.length) { hint(); return; }
     sortBtn.hidden = list.length < 2;   // nothing to sort with one stock
     list.forEach(t => {
+      if (soon(t)) {
+        const r = el('div', 'wrow skrow'), left = el('div'), tag = el('span', 'tag', "Coming soon");
+        left.appendChild(el('b', null, t)); left.appendChild(el('small', null, NAMES[t] || ""));
+        tag.style.background = "var(--muted)"; r.appendChild(left); r.appendChild(tag); wl.appendChild(r);
+        return;
+      }
+      if (!LATEST[t]) {
+        const r = el('div', 'wrow skrow'), left = el('div');
+        const sub = el('span', 'sk', "\u00a0"); sub.style.cssText = "display:block;width:64px;height:10px;margin-top:5px";
+        const px = el('span', 'sk', "\u00a0"); px.style.cssText = "width:64px;height:14px";
+        left.appendChild(el('b', null, t)); left.appendChild(sub);
+        r.appendChild(left); r.appendChild(px); wl.appendChild(r);
+        return;
+      }
       const L = LATEST[t], mine = mineOf(t), fair = mine ? mine.base : L.fm.base;   // base everywhere, matching the Fair value block
       const row = button("", "wrow" + (t === sel.value ? " on" : ""), () => { sel.value = t; sel.dispatchEvent(new Event('change')); window.scrollTo({top: 0, behavior: "smooth"}); });
       const left = el('div'); left.appendChild(el('b', null, t));
@@ -1205,7 +1226,7 @@ function draw() {
   // Paid stocks (S&P 500 for Premium, any NYSE/Nasdaq for Pro) aren't in the public data, so they're loaded on
   // demand from fmv-user (which checks the plan) and added to the page like the Mag 7. Resolves false if the
   // stock isn't in the plan or has no published fair value yet.
-  const stockLoads = {};
+  const stockLoads = {}, noData = new Set();   // noData: paid stocks with nothing to show yet (or not in the plan)
   const ensureStock = t => {
     if (LATEST[t]) return Promise.resolve(true);
     if (!USER || !plan) return Promise.resolve(false);
@@ -1216,17 +1237,18 @@ function draw() {
         if (u && !NAMES[t]) NAMES[t] = u[1].replace(/,?\s+(Inc\.?|Incorporated|Corporation|Corp\.?|Co\.?|Ltd\.?|plc|N\.V\.|S\.A\.)$/i, "");   // "Advanced Micro Devices"
         const J = {v: vintRows(vintages || []),
                    p: priceRows(prices || []), full: true};
-        if (!J.v.length || !J.p.length) return false;
+        if (!J.v.length || !J.p.length) { noData.add(t); return false; }
         D[t] = J; FULL[t] = Promise.resolve();
         LATEST[t] = {fm: J.v[J.v.length - 1][4], px: J.p[J.p.length - 1][1], pxd: J.p[J.p.length - 1][0]};
         if (![...sel.options].some(o => o.value === t)) { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); }
         return true;
-      } catch (e) { console.error(e); return false; }
+      } catch (e) { console.error(e); noData.add(t); return false; }
       finally { delete stockLoads[t]; }
     })());
   };
   // Drop loaded paid stocks (sign-out or plan change); the ones still allowed are reloaded.
   function dropPaidStocks() {
+    noData.clear();
     Object.keys(D).filter(t => !MAG7.includes(t)).forEach(t => {
       delete D[t]; delete LATEST[t]; delete FULL[t];
       [...sel.options].forEach(o => { if (o.value === t) o.remove(); });

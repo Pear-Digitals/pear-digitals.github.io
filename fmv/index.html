@@ -770,10 +770,10 @@ function draw() {
   // Search priority of each stock tier (index = tier), per plan. Pro has none: best match wins.
   const TIER_ORDER = [[0, 1, 2], [1, 0, 2], null];
   // What tapping a search result does: open it, show the paywall, or say it's coming.
-  const statusOf = (t, tier) => myRank() < tier ? TIER_PLAN[tier] : LATEST[t] ? "ok" : "soon";
+  const statusOf = (t, tier) => myRank() < tier ? TIER_PLAN[tier] : LATEST[t] ? "ok" : USER && tier > 0 ? "load" : "soon";
   function renderSearch() {
     const raw = q.value.trim(), term = raw.toLowerCase();
-    const covered = [...sel.options].map(o => [o.value, NAMES[o.value] || "", 0]);
+    const covered = [...sel.options].filter(o => MAG7.includes(o.value)).map(o => [o.value, NAMES[o.value] || "", 0]);
     let list;
     if (!term) list = covered;
     else {
@@ -807,6 +807,11 @@ function draw() {
     const st = statusOf(t, tier);
     if (st === "ok") { pick(t); return; }
     q.value = ""; closeSearch(); q.blur();
+    if (st === "load") {
+      toast(`Loading ${name || t}\u2026`);
+      ensureStock(t).then(ok => { if (ok) pick(t); else openPaywall(t, name, "soon"); });
+      return;
+    }
     openPaywall(t, name, st);
   }
   q.addEventListener('focus', () => { if (phone()) document.body.classList.add('searching'); loadUniverse(); renderSearch(); });
@@ -1124,6 +1129,38 @@ function draw() {
     } catch (e) { console.error(e); }
   }
 
+  // Paid stocks (S&P 500 for Premium, any NYSE/Nasdaq for Pro) aren't in the public data, so they're loaded on
+  // demand from fmv-user (which checks the plan) and added to the page like the Mag 7. Resolves false if the
+  // stock isn't in the plan or has no published fair value yet.
+  const stockLoads = {};
+  const ensureStock = t => {
+    if (LATEST[t]) return Promise.resolve(true);
+    if (!USER || !plan) return Promise.resolve(false);
+    return stockLoads[t] || (stockLoads[t] = (async () => {
+      try {
+        const [{prices, vintages}] = await Promise.all([api('chart', {ticker: t}), loadUniverse()]);
+        const u = (UNIVERSE || []).find(x => x[0] === t);
+        if (u && !NAMES[t]) NAMES[t] = u[1].replace(/,?\s+(Inc\.?|Incorporated|Corporation|Corp\.?|Co\.?|Ltd\.?|plc|N\.V\.|S\.A\.)$/i, "");   // "Advanced Micro Devices"
+        const J = {v: (vintages || []).filter(r => !isWeekend(r.date)).map(r => [r.date, r.bear, r.base, r.bull, r]),
+                   p: priceRows(prices || []), full: true};
+        if (!J.v.length || !J.p.length) return false;
+        D[t] = J; FULL[t] = Promise.resolve();
+        LATEST[t] = {fm: J.v[J.v.length - 1][4], px: J.p[J.p.length - 1][1], pxd: J.p[J.p.length - 1][0]};
+        if (![...sel.options].some(o => o.value === t)) { const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o); }
+        return true;
+      } catch (e) { console.error(e); return false; }
+      finally { delete stockLoads[t]; }
+    })());
+  };
+  // Drop loaded paid stocks (sign-out or plan change); the ones still allowed are reloaded.
+  function dropPaidStocks() {
+    Object.keys(D).filter(t => !MAG7.includes(t)).forEach(t => {
+      delete D[t]; delete LATEST[t]; delete FULL[t];
+      [...sel.options].forEach(o => { if (o.value === t) o.remove(); });
+    });
+    if (!D[sel.value] && sel.options.length) sel.value = sel.options[0].value;
+  }
+
   let refreshSeq = 0, fadeNext = false, lastViewKey = "anon";
   async function refresh() {
     const seq = ++refreshSeq;
@@ -1152,13 +1189,16 @@ function draw() {
     lastViewKey = viewKey;
     rows = next.rows; plan = next.plan;
     if (planChanged) {   // history window changed: reload charts, drop a range the plan no longer includes
+      dropPaidStocks();
       Object.keys(FULL).forEach(k => delete FULL[k]);
       Object.values(D).forEach(J => { J.full = false; });
       if (!rangeAllowed(curRange)) { curRange = "1W"; [...rangesEl.children].forEach(x => x.classList.toggle('on', x.dataset.r === "1W")); }
       [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)].forEach(t => { if (D[t]) loadFull(t).catch(() => {}); });
     }
     renderRanges(); onWaitlist = next.onWaitlist; waitTier = next.waitTier || null; alertsOn = next.alertsOn !== false;
-    if (plan === "premium" && !fullHistory) await loadFullHistory();
+    const paid = [...new Set([...WATCH, ...Object.keys(rows)])].filter(t => !MAG7.includes(t) && !LATEST[t]);
+    if (USER && plan && plan !== "free" && paid.length)
+      Promise.all(paid.slice(0, 50).map(ensureStock)).then(() => { if (seq === refreshSeq) renderSide(); });
     Object.keys(MY).forEach(k => delete MY[k]);
     Object.values(rows).forEach(r => { if (mineOf(r.ticker)) MY[r.ticker] = r; });
     const wasLoading = userLoading;
@@ -1194,7 +1234,7 @@ function draw() {
     if (!m) return null;
     try {
       const o = JSON.parse(m[1]), t = String(o.ticker || "").toUpperCase();
-      if (!MAG7.includes(t) || typeof o.preferences !== "string" || !o.preferences.trim()) return null;
+      if (!/^[A-Z][A-Z.]{0,6}$/.test(t) || typeof o.preferences !== "string" || !o.preferences.trim()) return null;   // plan is checked server-side
       return {ticker: t, preferences: o.preferences.trim().slice(0, 4000), rationale: o.rationale ? String(o.rationale).slice(0, 2000) : null};
     } catch (e) { return null; }
   };
@@ -1213,7 +1253,7 @@ function draw() {
     api('apply', {ticker: p.ticker, preferences: p.preferences, rationale: p.rationale}).then(async res => {
       title.textContent = `\u2713 Saved as your ${name} fair value`;
       body.appendChild(resultView(res));
-      if (sel.value !== p.ticker) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
+      if (sel.value !== p.ticker && await ensureStock(p.ticker)) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
       await refresh();
       backfill(p.ticker);
     }).catch(e => { title.textContent = `Couldn't save your ${name} fair value`; showErr(body, e); });
@@ -1222,7 +1262,7 @@ function draw() {
   window.resetParse = txt => {
     const m = txt.match(/```fmv-reset\s*([\s\S]*?)```/);
     if (!m) return null;
-    try { const t = String(JSON.parse(m[1]).ticker || "").toUpperCase(); return MAG7.includes(t) && mineOf(t) ? t : null; } catch (e) { return null; }
+    try { const t = String(JSON.parse(m[1]).ticker || "").toUpperCase(); return mineOf(t) ? t : null; } catch (e) { return null; }
   };
   window.resetCard = t => {
     const card = el('div', 'card');
@@ -1241,7 +1281,7 @@ function draw() {
     if (!m) return [];
     try {
       const seen = new Set();
-      return JSON.parse(m[1]).filter(c => c && (c.action === "add" || c.action === "remove") && MAG7.includes(String(c.ticker).toUpperCase()))
+      return JSON.parse(m[1]).filter(c => c && (c.action === "add" || c.action === "remove") && /^[A-Z][A-Z.]{0,6}$/.test(String(c.ticker).toUpperCase()))
         .map(c => ({action: c.action, ticker: String(c.ticker).toUpperCase()}))
         .filter(c => (seen.has(c.ticker) ? false : seen.add(c.ticker)))
         .filter(c => c.action === "add" ? !WATCH.has(c.ticker) : WATCH.has(c.ticker));

@@ -966,7 +966,6 @@ function draw() {
       g.appendChild(c);
     });
     box.appendChild(g);
-    if (o.summary) box.appendChild(el('p', null, o.summary));
     (o.warnings || []).slice(0, 3).forEach(w => box.appendChild(el('div', 'warn', w)));
     return box;
   }

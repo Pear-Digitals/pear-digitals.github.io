@@ -1966,6 +1966,7 @@ function draw() {
     if (!$('loading').hidden) return;
     $('app').hidden = screener;
     $('navscreen').classList.toggle('on', screener);
+    if (screener) { if (window.setChatScreener) window.setChatScreener(); } else if (window.setChatStock) window.setChatStock(sel.value);
     document.querySelectorAll('.seo').forEach(x => { x.hidden = screener || !!userView(); });
   }
   function openScreener(push, spec) {
@@ -2125,7 +2126,9 @@ function draw() {
     b.addEventListener('click', () => ask(b.textContent)); chips.appendChild(b); return b; };
   const shortcut = chip("shortcut"), cases = chip(), dcf = chip();
   dcf.textContent = "What is a DCF?";
-  window.setChatStock = t => { shortcut.textContent = `Change ${t}'s fair value`; cases.textContent = `What are ${t}'s bear, base and bull cases?`; };
+  window.setChatStock = t => { shortcut.textContent = `Change ${t}'s fair value`; cases.textContent = `What are ${t}'s bear, base and bull cases?`; dcf.textContent = "What is a DCF?"; };
+  // On the Screener the starters are about screening.
+  window.setChatScreener = () => { shortcut.textContent = "Find undervalued dividend stocks"; cases.textContent = "Which of these looks cheapest?"; dcf.textContent = "What can I filter on?"; };
   window.setChatStock(sel.value || "AAPL");
 })();
 init();

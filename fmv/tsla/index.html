@@ -221,6 +221,9 @@
   .scbar .grow { flex:1; }
   .linkbtn { border:0; background:none; color:var(--green); font:inherit; font-weight:600; cursor:pointer; padding:4px 2px; }
   .linkbtn.danger { color:var(--down); }
+  .scpick { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0; }
+  .scpick select, .scpick input { font:inherit; font-size:16px; border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fff; color:var(--ink); }
+  .scpick input { width:96px; }
   .sclist { padding:4px 0; }
   .scitemrow { display:flex; align-items:center; }
   #scside .side + .side { margin-top:14px; }
@@ -1577,6 +1580,11 @@ function draw() {
 
   // ---- Screener screen (/fmv/screener/): typed request -> chips, filter picker, sort, load more, saved + starter screens ----
   const scWrap = $('screener'), scMain = $('scmain'), scSide = $('scside');
+  const SC_FIELDS = [["sector", "Sector", ""], ["fmv_zone", "Pear label", ""], ["px_vs_fmv_pct", "Price vs fair value", "%"],
+    ["pe_ttm", "P/E", ""], ["peg", "PEG", ""], ["ev_ebitda", "EV/EBITDA", ""], ["market_cap_b", "Market cap", "$B"],
+    ["rev_growth_yoy", "Revenue growth", "%"], ["eps_growth_yoy", "EPS growth", "%"], ["net_margin", "Net margin", "%"],
+    ["roe", "ROE", "%"], ["debt_equity", "Debt/equity", ""], ["div_yield", "Dividend yield", "%"],
+    ["px_vs_sma50_pct", "Price vs 50-day", "%"], ["rsi14", "RSI (14)", ""], ["dist_52w_high_pct", "vs 52-week high", "%"], ["price", "Price", "$"]];
   const STARTERS = [
     {name: "Strong Buys", spec: {filters: [{field: "fmv_zone", op: "in", values: ["strong_buy"], label: "Strong Buy"}], sort: {field: "px_vs_fmv_pct", dir: "asc"}}},
     {name: "Below fair value with a dividend", spec: {filters: [{field: "fmv_zone", op: "in", values: ["fair_buy", "strong_buy"], label: "At or below Pear fair value"},
@@ -1585,7 +1593,7 @@ function draw() {
   ].map(x => ({...x, starter: true}));
   const DEFAULT_SORT = {field: "px_vs_fmv_pct", dir: "asc"};
   // sc.active: the screen loaded from the list (saved or starter), if any; edits to it can be saved back.
-  let sc = {spec: {filters: [], sort: DEFAULT_SORT}, rows: [], count: 0, busy: false, err: "", loaded: false, active: null, naming: null};
+  let sc = {spec: {filters: [], sort: DEFAULT_SORT}, rows: [], count: 0, busy: false, err: "", loaded: false, active: null, naming: null, sectors: [], picking: false};
   let savedScreens = [], scMenu = null, scRenaming = null, scDeleting = null;
 
   async function scRun(body, append) {
@@ -1594,7 +1602,7 @@ function draw() {
       const r = await runScreen({limit: 50, ...body});
       sc.spec = {filters: r.spec.filters, sort: r.spec.sort};
       sc.rows = append ? sc.rows.concat(r.rows) : r.rows;
-      Object.assign(sc, {count: r.count, loaded: true});
+      Object.assign(sc, {count: r.count, loaded: true, sectors: r.sectors || sc.sectors});
     } catch (e) { sc.err = errText(e); }
     sc.busy = false; renderScMain(); renderScSide();
   }
@@ -1613,15 +1621,15 @@ function draw() {
     form.onsubmit = e => { e.preventDefault(); if (input.value.trim()) scQuery(input.value.trim()); };
     scMain.appendChild(form);
 
-    if (sc.spec.filters.length) {
-      const chips = el('div', 'schips');
-      sc.spec.filters.forEach((f, i) => {
-        const c = el('span', 'schip', f.label);
-        const x = button("×", null, () => scSet({filters: sc.spec.filters.filter((_, j) => j !== i), sort: sc.spec.sort}));
-        x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x); chips.appendChild(c);
-      });
-      scMain.appendChild(chips);
-    }
+    const chips = el('div', 'schips');
+    sc.spec.filters.forEach((f, i) => {
+      const c = el('span', 'schip', f.label);
+      const x = button("×", null, () => scSet({filters: sc.spec.filters.filter((_, j) => j !== i), sort: sc.spec.sort}));
+      x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x); chips.appendChild(c);
+    });
+    chips.appendChild(button("+ Filter", "schip add", () => { sc.picking = !sc.picking; renderScMain(); }));
+    scMain.appendChild(chips);
+    if (sc.picking) scMain.appendChild(filterPicker());
 
     const bar = el('div', 'scbar');
     const what = sc.busy ? "Screening…" : !sc.loaded ? "" : sc.count === 1 ? "1 stock" : `${sc.count.toLocaleString()} stocks`;
@@ -1667,6 +1675,42 @@ function draw() {
       acts.appendChild(button("Load more", "pill light", () => scRun({filters: sc.spec.filters, sort: sc.spec.sort, offset: sc.rows.length}, true)));
       scMain.appendChild(acts);
     }
+  }
+
+  // "+ Filter": pick a field, then a value (numbers: under / over; sector and Pear label: a choice).
+  function filterPicker() {
+    const box = el('div', 'scpick'), field = document.createElement('select');
+    SC_FIELDS.forEach(([k, label]) => { const o = document.createElement('option'); o.value = k; o.textContent = label; field.appendChild(o); });
+    const rest = el('span', 'scpick');
+    const draw = () => {
+      rest.textContent = "";
+      const [k, label, unit] = SC_FIELDS.find(f => f[0] === field.value);
+      if (k === "sector" || k === "fmv_zone") {
+        const v = document.createElement('select');
+        (k === "sector" ? sc.sectors.map(x => [x, x]) : [["strong_buy", "Strong Buy"], ["fair_buy", "Fair Buy"], ["fair_buy,strong_buy", "Fair Buy or Strong Buy"], ["above", "Above fair value"]])
+          .forEach(([val, text]) => { const o = document.createElement('option'); o.value = val; o.textContent = text; v.appendChild(o); });
+        rest.appendChild(v);
+        rest.appendChild(button("Add", "pill", () => addFilter({field: k, op: "in", values: v.value.split(","),
+          label: k === "sector" ? "Sector: " + v.value : v.options[v.selectedIndex].textContent})));
+      } else {
+        const op = document.createElement('select');
+        [["lt", "under"], ["gt", "over"]].forEach(([val, text]) => { const o = document.createElement('option'); o.value = val; o.textContent = text; op.appendChild(o); });
+        const num = el('input'); num.type = "number"; num.step = "any"; num.inputMode = "decimal"; num.placeholder = unit || "value";
+        rest.appendChild(op); rest.appendChild(num);
+        rest.appendChild(button("Add", "pill", () => {
+          const n = Number(num.value); if (num.value === "" || !Number.isFinite(n)) { num.focus(); return; }
+          const shown = unit === "$" || unit === "$B" ? "$" + n + (unit === "$B" ? "B" : "") : n + unit;
+          addFilter({field: k, op: op.value, num: n, label: `${label} ${op.value === "lt" ? "under" : "over"} ${shown}`});
+        }));
+      }
+    };
+    field.onchange = draw; draw();
+    box.appendChild(field); box.appendChild(rest);
+    return box;
+  }
+  function addFilter(f) {
+    sc.picking = false;
+    scSet({filters: [...sc.spec.filters.filter(x => x.field !== f.field), f], sort: sc.spec.sort});
   }
 
   // Create: name the current chips + sort.

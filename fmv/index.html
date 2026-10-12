@@ -361,7 +361,7 @@ const WATCH = new Set();
 let USER = null;
 // supabase-js keeps the session in localStorage. Reading it synchronously lets the first frame show the
 // signed-in layout (avatar, watchlist, skeletons) instead of flashing the signed-out page.
-const SAVED_USER = (() => {
+let SAVED_USER = (() => {
   try {
     const v = JSON.parse(localStorage.getItem(`sb-${new URL(BASE_URL).hostname.split('.')[0]}-auth-token`) || "null");
     return v && v.user && v.user.email ? v.user : null;
@@ -699,12 +699,14 @@ function draw() {
     if (!sb) { authMsg.textContent = "Accounts are unavailable right now."; return; }
     const email = $('authemail').value.trim(), password = $('authpw').value;
     if (password.length < 8) { authMsg.textContent = "Use at least 8 characters."; return; }
-    $('authgo').disabled = true; authMsg.style.color = ""; authMsg.textContent = "";
+    const goLabel = $('authgo').textContent;
+    $('authgo').disabled = true; $('authgo').textContent = authMode === "in" ? "Logging in\u2026" : "Creating account\u2026";
+    authMsg.style.color = ""; authMsg.textContent = "";
     const {data, error} = authMode === "in"
       ? await sb.auth.signInWithPassword({email, password})
       // Confirmation link returns to the page they signed up on (must be listed under Supabase Auth > Redirect URLs).
       : await sb.auth.signUp({email, password, options: {emailRedirectTo: location.origin + location.pathname}});
-    $('authgo').disabled = false;
+    $('authgo').disabled = false; $('authgo').textContent = goLabel;
     if (error) { authMsg.textContent = error.message; return; }
     if (authMode === "up" && !data.session) { authMsg.style.color = "var(--ink)"; authMsg.textContent = "Check your email to confirm, then log in."; return; }
     $('authpw').value = ""; dlg.close();
@@ -1162,6 +1164,12 @@ function draw() {
     fadeNext = false;
   }
   if (sb) sb.auth.onAuthStateChange((_ev, session) => {
+    // Just logged in: show the signed-in layout with skeletons right away, instead of the signed-out page,
+    // until refresh() has the user's data (same loading state as a page load with a saved session).
+    if (session && !USER && !userLoading) {
+      SAVED_USER = session.user; userLoading = true;
+      renderNav(); if (!$('app').hidden) draw(); else renderSide();
+    }
     USER = session ? session.user : null;
     if (!USER && window.chatReset) window.chatReset();
     setTimeout(refresh, 0);        // don't await supabase calls inside this callback

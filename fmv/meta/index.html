@@ -205,6 +205,20 @@
   .card .q { color:var(--muted); font-size:.85rem; margin:4px 0 8px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .card .acts { display:flex; gap:8px; margin-top:10px; }
   .card .pill { padding:7px 14px; font-size:.85rem; }
+  /* screener: chips + result rows (chat card and full view) */
+  .schips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
+  .schip { display:inline-flex; align-items:center; gap:2px; background:var(--soft); border-radius:999px; padding:4px 4px 4px 10px; font-size:.78rem; font-weight:600; }
+  .schip button { border:0; background:none; cursor:pointer; color:var(--muted); font-size:1rem; line-height:1; padding:0 5px; }
+  .schip button:hover { color:var(--ink); }
+  .scount { color:var(--muted); font-size:.8rem; margin:4px 0 2px; }
+  .srow { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:9px 0; border:0; border-top:1px solid var(--line); background:none; font:inherit; text-align:left; cursor:pointer; }
+  .srow:hover b { text-decoration:underline; }
+  .srow b { font-size:.9rem; } .srow small { display:block; color:var(--muted); font-size:.76rem; }
+  .srow .r { text-align:right; flex:none; font-size:.85rem; font-weight:600; }
+  #screendlg { width:min(96vw,640px); padding:22px 22px 16px; }
+  #screendlg .slist { max-height:min(60vh,560px); overflow:auto; }
+  .ssort { font:inherit; font-size:16px; border:1px solid var(--line); border-radius:10px; padding:6px 10px; background:#fff; color:var(--ink); }
+  @media (max-width:560px) { #screendlg { width:100vw; max-width:100vw; height:100dvh; max-height:100dvh; border-radius:0; margin:0; } #screendlg .slist { max-height:none; } }
 
   /* dialogs */
   dialog { border:0; border-radius:20px; padding:26px; width:min(94vw,420px); color:var(--ink); box-shadow:0 20px 60px rgba(15,31,23,.2); }
@@ -320,6 +334,12 @@
   <div class="payprice" id="payprice"></div>
   <p class="paytext" id="paytext"></p>
   <div class="payacts" id="payacts"></div>
+</dialog>
+
+<dialog id="screendlg">
+  <button type="button" class="xbtn" id="screenclose" aria-label="Close">&times;</button>
+  <h2>Screener</h2>
+  <div id="screenbody"></div>
 </dialog>
 
 <dialog id="plansdlg">
@@ -1320,7 +1340,7 @@ function draw() {
   renderNav();
 
   // ---- chat proposals: preferences or watchlist changes, confirmed by the user ----
-  const FENCES = ["```fmv-prefs", "```watchlist-proposal", "```fmv-reset"];
+  const FENCES = ["```fmv-prefs", "```watchlist-proposal", "```fmv-reset", "```fmv-screen"];
   window.fmvStrip = txt => {
     const idx = FENCES.map(f => txt.indexOf(f)).filter(i => i >= 0);
     return (idx.length ? txt.slice(0, Math.min(...idx)) : txt).replace(/`{1,2}$/, "");
@@ -1391,6 +1411,90 @@ function draw() {
     acts.appendChild(go); acts.appendChild(button("Cancel", "pill ghost", () => card.remove()));
     return card;
   };
+  // ---- screener: Quill hands a request to fmv-screen; chips are the filters (tap x to drop one, no AI call) ----
+  const SCREEN_URL = BASE_URL + "/functions/v1/fmv-screen";
+  const SORTS_SCREEN = [["px_vs_fmv_pct", "asc", "Furthest below fair value"], ["px_vs_fmv_pct", "desc", "Furthest above fair value"],
+    ["market_cap_b", "desc", "Largest"], ["pe_ttm", "asc", "Lowest P/E"], ["div_yield", "desc", "Highest dividend yield"],
+    ["rev_growth_yoy", "desc", "Fastest revenue growth"], ["px_vs_sma50_pct", "desc", "Strongest vs 50-day"]];
+  async function runScreen(body) {
+    const res = await fetch(SCREEN_URL, {method: "POST",
+      headers: {"content-type": "application/json", apikey: ANON_KEY, authorization: "Bearer " + await authToken()}, body: JSON.stringify(body)});
+    const data = await res.json().catch(() => ({error: "Unexpected response"}));
+    if (!res.ok) { const e = new Error(data.error || ("HTTP " + res.status)); e.data = data; throw e; }
+    return data;
+  }
+  window.screenParse = txt => {
+    const m = txt.match(/```fmv-screen\s*([\s\S]*?)```/);
+    if (!m) return null;
+    try { const q = String(JSON.parse(m[1]).query || "").trim(); return q ? q.slice(0, 500) : null; } catch (e) { return null; }
+  };
+  const ZONE_TAG = {strong_buy: ["Strong Buy", "#00C805"], fair_buy: ["Fair Buy", "#1a7f37"]};
+  async function openFromScreen(t) {
+    if (sel.value !== t && await ensureStock(t)) { sel.value = t; sel.dispatchEvent(new Event('change')); }
+    if ($('screendlg').open) $('screendlg').close();
+    if (window.chatClose && matchMedia("(max-width:560px)").matches) window.chatClose();
+    window.scrollTo({top: 0, behavior: "smooth"});
+  }
+  // Draws chips, count and results into `box`; chip removal / sort re-run the screen without the model.
+  function drawScreen(box, r, full) {
+    box.textContent = "";
+    const spec = r.spec, again = async (next) => {
+      box.style.opacity = ".5";
+      try { drawScreen(box, await runScreen(next), full); } catch (e) { box.appendChild(el('div', 'warn', errText(e))); }
+      box.style.opacity = "";
+    };
+    const chips = el('div', 'schips');
+    spec.filters.forEach((f, i) => {
+      const c = el('span', 'schip', f.label);
+      const x = button("\u00d7", null, () => again({filters: spec.filters.filter((_, j) => j !== i), sort: spec.sort, limit: full ? 50 : spec.limit}));
+      x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x); chips.appendChild(c);
+    });
+    if (!spec.filters.length) chips.appendChild(el('span', 'scount', "No filters: all stocks in your plan"));
+    box.appendChild(chips);
+    if (full) {
+      const s = document.createElement('select'); s.className = "ssort"; s.setAttribute("aria-label", "Sort");
+      const opts = SORTS_SCREEN.some(([f, d]) => f === spec.sort.field && d === spec.sort.dir) ? SORTS_SCREEN : [[spec.sort.field, spec.sort.dir, "Best match"], ...SORTS_SCREEN];
+      opts.forEach(([f, d, label]) => { const o = document.createElement('option'); o.value = f + ":" + d; o.textContent = label; s.appendChild(o); });
+      s.value = spec.sort.field + ":" + spec.sort.dir;
+      s.onchange = () => { const [field, dir] = s.value.split(":"); again({filters: spec.filters, sort: {field, dir}, limit: 50}); };
+      box.appendChild(s);
+    }
+    box.appendChild(el('div', 'scount', r.count === 1 ? "1 stock" : `${r.count.toLocaleString()} stocks`));
+    const list = el('div', full ? 'slist' : null);
+    (full ? r.rows : r.rows.slice(0, 5)).forEach(x => {
+      const row = button("", "srow", () => openFromScreen(x.ticker));
+      const left = el('div'); left.appendChild(el('b', null, x.ticker + " "));
+      left.appendChild(el('small', null, (x.name || "").replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Ltd\.?|plc)$/i, "")));
+      left.appendChild(el('small', null, x.reason));
+      const right = el('div', 'r', x.price != null ? "$" + Number(x.price).toFixed(2) : "");
+      const z = ZONE_TAG[x.fmv_zone];
+      if (z) { const tg = el('span', 'tag', z[0]); tg.style.background = z[1]; right.appendChild(el('br')); right.appendChild(tg); }
+      row.appendChild(left); row.appendChild(right); list.appendChild(row);
+    });
+    box.appendChild(list);
+    if (r.more && r.more_tier) {
+      box.appendChild(el('div', 'scount', `+${r.more.toLocaleString()} more with ${PLAN_NAME[r.more_tier]}`));
+      box.appendChild(window.waitlistNote("screener", r.more_tier));
+    }
+    if (!full && r.count > 5) {
+      const acts = el('div', 'acts');
+      acts.appendChild(button(`Show all ${Math.min(r.count, 50)}`, "pill", async () => {
+        const body = $('screenbody'); $('screendlg').showModal(); body.textContent = "Loading\u2026";
+        try { drawScreen(body, await runScreen({filters: spec.filters, sort: spec.sort, limit: 50}), true); }
+        catch (e) { body.textContent = errText(e); }
+      }));
+      box.appendChild(acts);
+    }
+  }
+  $('screenclose').onclick = () => $('screendlg').close();
+  window.screenCard = query => {
+    const card = el('div', 'card'), title = el('div', 't', "Screening\u2026"), box = el('div');
+    card.appendChild(title); card.appendChild(box);
+    runScreen({query}).then(r => { title.textContent = "Screen"; drawScreen(box, r, false); })
+      .catch(e => { title.textContent = "Couldn't run that screen"; box.appendChild(el('div', 'warn', errText(e))); });
+    return card;
+  };
+
   window.watchParse = txt => {
     const m = txt.match(/```watchlist-proposal\s*([\s\S]*?)```/);
     if (!m) return [];
@@ -1512,6 +1616,8 @@ function draw() {
       if (rst) bot.appendChild(window.resetCard(rst));
       const wch = window.watchParse(out);
       if (wch.length) bot.appendChild(window.watchCard(wch));
+      const scr = window.screenParse(out);
+      if (scr) bot.appendChild(window.screenCard(scr));
     } catch (e) {
       bot.textContent = "Sorry, that didn't go through. Try again in a moment.";
       hist.pop();

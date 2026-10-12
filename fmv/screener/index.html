@@ -1701,9 +1701,13 @@ function draw() {
     await loadSaved(); renderScMain();
   }
 
+  // Signed in: the starters are copied into the user's own screens once (seed_starter_screens), so they can be
+  // renamed, edited or deleted like any other. Signed out: the starters are shown read-only.
+  let seededFor = null;
   async function loadSaved() {
     savedScreens = [];
     if (sb && USER) {
+      if (seededFor !== USER.id) { seededFor = USER.id; await sb.rpc('seed_starter_screens').then(() => {}, () => {}); }
       const {data} = await sb.from('saved_screens').select('id,name,spec').order('created_at');
       savedScreens = data || [];
     }
@@ -1716,7 +1720,9 @@ function draw() {
     scSide.textContent = "";
     const box = el('div', 'side'); box.appendChild(el('h3', null, "Screens"));
     const list = el('div', 'sclist');
-    [...savedScreens, ...STARTERS].forEach(x => {
+    const items = USER ? savedScreens : STARTERS;
+    if (!items.length) list.appendChild(el('div', 'empty', "No screens yet. Describe one, then Save."));
+    items.forEach(x => {
       const key = x.id || x.name, on = sc.active && (sc.active.id || sc.active.name) === key;
       if (scRenaming === key) {
         const f = el('form', 'screname'), input = el('input', 'field'); input.value = x.name; input.maxLength = 60;

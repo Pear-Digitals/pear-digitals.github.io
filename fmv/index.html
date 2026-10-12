@@ -156,7 +156,6 @@
   .ctagwrap .ctag { cursor:help; }
   .fairacts { display:flex; gap:8px; margin-top:16px; }
   .fairacts .pill { padding:8px 16px; font-size:.88rem; }
-  #resetbtn { color:var(--muted); }
   #resetbtn.confirm { color:#fff; background:var(--down); }
   .tip:focus { outline:none; }
   .tip::after { content:attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 8px); transform:translateX(-50%);
@@ -297,7 +296,7 @@
         <div class="bh"><h2>Fair value <span class="ctagwrap" id="custwrap" hidden><span id="custtag" class="ctag tip" tabindex="0" data-tip="You've overridden the published fair value with your own." aria-label="Custom: you've overridden the published fair value with your own.">Custom</span></span></h2><span id="zone"></span></div>
         <div class="stats" id="fair"></div>
         <div id="fairmore"></div>
-        <div class="fairacts" id="fairacts"><button type="button" class="pill light" id="explainbtn">Explain why</button><button type="button" class="pill light" id="custbtn">Customize</button><button type="button" class="pill ghost" id="resetbtn" hidden>Reset to published</button></div>
+        <div class="fairacts" id="fairacts"><button type="button" class="pill light" id="explainbtn">Explain Why</button><button type="button" class="pill light" id="custbtn">Customize</button><button type="button" class="pill light" id="resetbtn" hidden>Reset</button></div>
         <p id="foot"></p>
         <!--seo:summary--><p class="seo">Bear, base &amp; bull fair values for the Magnificent 7, re-rated after earnings. Not investment advice. · <a href="/fmv/aapl/" title="Apple fair value">AAPL</a> · <a href="/fmv/amzn/" title="Amazon fair value">AMZN</a> · <a href="/fmv/googl/" title="Alphabet fair value">GOOGL</a> · <a href="/fmv/meta/" title="Meta fair value">META</a> · <a href="/fmv/msft/" title="Microsoft fair value">MSFT</a> · <a href="/fmv/nvda/" title="NVIDIA fair value">NVDA</a> · <a href="/fmv/tsla/" title="Tesla fair value">TSLA</a></p><!--/seo:summary-->
       </section>
@@ -739,6 +738,8 @@ function draw() {
   document.addEventListener('click', () => { const m = nav.querySelector('.menu'); if (m) m.hidden = true; });
   function renderNav() {
     nav.textContent = "";
+    // The one-line summary is for signed-out visitors (and search engines); signed-in users don't need it.
+    document.querySelectorAll('.seo').forEach(x => { x.hidden = !!userView(); });
     if (!sb) return;
     if (!USER && userLoading) {   // signed in, still restoring: avatar without the menu yet
       const av = el('span', 'avatar', (SAVED_USER.email || "?")[0].toUpperCase());
@@ -758,11 +759,11 @@ function draw() {
       menu.appendChild(Object.assign(el('div', 'who', `\u2713 You're on the ${PLAN_NAME[waitTier]} waitlist`), {style: "border:0;margin:0"}));
       menu.appendChild(button("Leave the waitlist", null, async () => { await leaveWaitlist(); renderNav(); }));
     }
-    if (plan === "premium" || plan === "pro") menu.appendChild(button(`Email alerts: ${alertsOn ? "On" : "Off"}`, null, async ev => {
+    if (plan === "premium" || plan === "pro") menu.appendChild(button((alertsOn ? "Disable email alerts" : "Enable email alerts"), null, async ev => {
       ev.stopPropagation();
       const next = !alertsOn;
       const {error} = await sb.from('alert_settings').upsert({user_id: USER.id, enabled: next, updated_at: new Date().toISOString()}, {onConflict: 'user_id'});
-      if (!error) { alertsOn = next; ev.target.textContent = `Email alerts: ${alertsOn ? "On" : "Off"}`; toast(alertsOn ? "Fair Buy alerts are on." : "Fair Buy alerts are off."); }
+      if (!error) { alertsOn = next; ev.target.textContent = (alertsOn ? "Disable email alerts" : "Enable email alerts"); toast(alertsOn ? "Fair Buy alerts are on." : "Fair Buy alerts are off."); }
     }));
     if (plan !== "pro") menu.appendChild(button("Compare plans", null, () => { menu.hidden = true; openPlans(); }));
     menu.appendChild(button("Log out", null, () => { menu.hidden = true; sb.auth.signOut(); }));
@@ -904,7 +905,7 @@ function draw() {
   $('custbtn').onclick = () => { if (window.chatAsk) window.chatAsk(`Change ${sel.value}'s fair value`); };
   const resetBtn = $('resetbtn');
   let resetTimer = null;
-  function disarmReset() { clearTimeout(resetTimer); resetBtn.classList.remove('confirm'); resetBtn.textContent = "Reset to published"; }
+  function disarmReset() { clearTimeout(resetTimer); resetBtn.classList.remove('confirm'); resetBtn.textContent = "Reset"; }
   resetBtn.onclick = async () => {
     if (!resetBtn.classList.contains('confirm')) {
       resetBtn.classList.add('confirm'); resetBtn.textContent = "Confirm reset";
@@ -1260,7 +1261,7 @@ function draw() {
   window.prefsCard = p => {
     const card = el('div', 'card');
     const name = NAMES[p.ticker] || p.ticker;
-    const title = el('div', 't', `Saving your ${name} fair value\u2026`); card.appendChild(title);
+    const title = el('div', 't', ""); card.appendChild(title);
     const body = el('div'); card.appendChild(body);
     if (!USER) {
       title.textContent = `Sign up to save this as your ${name} fair value`;
@@ -1268,19 +1269,32 @@ function draw() {
       acts.appendChild(button("Sign up", "pill", () => openAuth("up", "Sign up to save your own fair value.")));
       return card;
     }
-    api('apply', {ticker: p.ticker, preferences: p.preferences, rationale: p.rationale}).then(async res => {
-      title.textContent = `\u2713 Saved as your ${name} fair value`;
+    // Nothing is saved until the user taps Save: preview runs the analysis and keeps it as a draft on the server;
+    // save stores that same draft (no second analysis).
+    title.textContent = `Working out your ${name} fair value\u2026`;
+    const view = async () => {
+      if (sel.value !== p.ticker && await ensureStock(p.ticker)) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
+      if (window.chatClose && matchMedia("(max-width:560px)").matches) window.chatClose();
+      window.scrollTo({top: 0, behavior: "smooth"});
+    };
+    api('preview', {ticker: p.ticker, preferences: p.preferences}).then(res => {
+      title.textContent = `Your ${name} fair value`;
       body.appendChild(resultView(res));
       const acts = el('div', 'acts'); card.appendChild(acts);
-      acts.appendChild(button(`View ${p.ticker}`, "pill", async () => {
-        if (sel.value !== p.ticker && await ensureStock(p.ticker)) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
-        if (window.chatClose && matchMedia("(max-width:560px)").matches) window.chatClose();
-        window.scrollTo({top: 0, behavior: "smooth"});
-      }));
-      if (sel.value !== p.ticker && await ensureStock(p.ticker)) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
-      await refresh();
-      backfill(p.ticker);
-    }).catch(e => { title.textContent = `Couldn't save your ${name} fair value`; showErr(body, e); });
+      const save = button("Save", "pill", async () => {
+        save.disabled = true; discard.disabled = true; save.textContent = "Saving\u2026";
+        try {
+          await api('save', {ticker: p.ticker, preferences: p.preferences, rationale: p.rationale});
+          title.textContent = `\u2713 Saved as your ${name} fair value`;
+          acts.textContent = ""; acts.appendChild(button(`View ${p.ticker}`, "pill", view));
+          if (sel.value !== p.ticker && await ensureStock(p.ticker)) { sel.value = p.ticker; sel.dispatchEvent(new Event('change')); }
+          await refresh();
+          backfill(p.ticker);
+        } catch (e) { save.disabled = false; discard.disabled = false; save.textContent = "Save"; showErr(body, e); }
+      });
+      const discard = button("Discard", "pill ghost", () => { title.textContent = `Not saved. Your ${name} fair value is unchanged.`; body.textContent = ""; acts.remove(); });
+      acts.appendChild(save); acts.appendChild(discard);
+    }).catch(e => { title.textContent = `Couldn't work out your ${name} fair value`; showErr(body, e); });
     return card;
   };
   window.resetParse = txt => {

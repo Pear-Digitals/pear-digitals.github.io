@@ -361,7 +361,7 @@
   <div class="wrap">
     <div class="row">
       <div>&copy; 2026 Pear Digitals LLC</div>
-      <div class="footlinks"><a href="/">Home</a><a href="https://github.com/Pear-Digitals/trading-prompts" target="_blank" rel="noopener">GitHub</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="#plans" id="plansfoot">Plans</a><a href="/fmv/methodology/">Methodology</a><a href="/fmv/privacy.html">Privacy</a><a href="mailto:support@peardigitals.com">Contact</a></div>
+      <div class="footlinks"><a href="/">Home</a><a href="https://github.com/Pear-Digitals/trading-prompts" target="_blank" rel="noopener">GitHub</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="#plans" id="plansfoot">Plans</a><a href="/fmv/terms.html">Terms of Service</a><a href="/fmv/privacy.html">Privacy</a><a href="mailto:support@peardigitals.com">Contact</a></div>
     </div>
   </div>
 </footer>
@@ -404,9 +404,14 @@ async function get(path) {
   return r.json();
 }
 const isWeekend = ds => { const w = new Date(ds + "T00:00:00").getDay(); return w === 0 || w === 6; };
+// The fair value the labels compare against: weighted if the data has one, else base. Null if neither is usable
+// (missing or not positive), so a bad row never shows "Infinity% above FMV".
+const fairValueOf = fm => [fm && fm.weighted, fm && fm.base].map(Number).find(v => Number.isFinite(v) && v > 0) ?? null;
 function zoneOf(px, fm) {
+  const fair = fairValueOf(fm);
+  if (fair == null) return ["Fair value coming soon", "#6b756f"];
   if (fm.sb_below && px < fm.sb_below) return ["Strong Buy", "#00C805"];
-  const pct = (px / fm.weighted - 1) * 100;
+  const pct = (px / fair - 1) * 100;
   if ((fm.fb_hi && px <= fm.fb_hi) || pct < 0.5) return ["Fair Buy", "#1a7f37"];   // rounds to 0% above -> still Fair Buy
   return [pct.toFixed(0) + "% above FMV", pct > 25 ? "#FF5000" : "#b7791f"];
 }
@@ -646,7 +651,7 @@ function draw() {
   const {fm} = LATEST[t];
   let [label, col] = zoneOf(p1, fm);
   if (my) {
-    const pc = (p1 / +my.base - 1) * 100;
+    const pc = +my.base > 0 ? (p1 / +my.base - 1) * 100 : 0;
     label = Math.abs(pc) < 0.5 ? "At your FMV" : `${Math.abs(pc).toFixed(0)}% ${pc < 0 ? "below" : "above"} your FMV`;
     col = pc < 0.5 ? "#1a7f37" : pc > 25 ? "#FF5000" : "#b7791f";
   }
@@ -941,12 +946,12 @@ function draw() {
   // ---- watchlist sort (remembered on this device) ----
   const SORTS = [
     ["name-asc", "Name: A to Z", "A\u2013Z"], ["name-desc", "Name: Z to A", "Z\u2013A"],
-    ["price-desc", "Price: high to low", "Price \u2193"], ["price-asc", "Price: low to high", "Price \u2191"],
-    ["diff-desc", "Fair Value: most above first", "Most above"], ["diff-asc", "Fair Value: most below first", "Most below"],
+    ["price-desc", "Price: High to Low", "Price \u2193"], ["price-asc", "Price: Low to High", "Price \u2191"],
+    ["diff-desc", "Fair Value: Most Above", "FMV Above"], ["diff-asc", "Fair Value: Most Below First", "FMV Below"],
   ];
   let sortKey = (() => { try { const k = localStorage.getItem("fmv-watch-sort"); return SORTS.some(x => x[0] === k) ? k : "name-asc"; } catch (e) { return "name-asc"; } })();
-  const fairOf = t => { const mine = mineOf(t); return mine ? mine.base : LATEST[t].fm.base; };
-  const diffOf = t => LATEST[t].px / fairOf(t) - 1;   // same % as the row's tag: + above fair value, - below
+  const fairOf = t => { const mine = mineOf(t); return mine && +mine.base > 0 ? +mine.base : fairValueOf(LATEST[t].fm); };
+  const diffOf = t => fairOf(t) ? LATEST[t].px / fairOf(t) - 1 : 0;   // same % as the row's tag: + above fair value, - below
   function sortWatch(list) {
     const [field, dir] = sortKey.split("-"), sign = dir === "asc" ? 1 : -1;
     const val = t => field === "price" ? LATEST[t].px : field === "diff" ? diffOf(t) : t;
@@ -994,9 +999,9 @@ function draw() {
       const left = el('div'); left.appendChild(el('b', null, t));
       left.appendChild(el('small', null, (mine ? "Your base " : "Base ") + money(fair)));
       const right = el('div', 'px'); right.appendChild(el('div', null, "$" + L.px.toFixed(2)));
-      const pct = (L.px / fair - 1) * 100;
-      const tag = el('span', 'tag', Math.abs(pct) < 0.5 ? "At base" : `${Math.abs(pct).toFixed(0)}% ${pct < 0 ? "below" : "above"}`);
-      tag.style.background = pct < 0.5 ? "var(--up)" : "var(--down)";
+      const ok = +fair > 0, pct = ok ? (L.px / fair - 1) * 100 : 0;
+      const tag = el('span', 'tag', !ok ? "Coming soon" : Math.abs(pct) < 0.5 ? "At base" : `${Math.abs(pct).toFixed(0)}% ${pct < 0 ? "below" : "above"}`);
+      tag.style.background = !ok ? "var(--muted)" : pct < 0.5 ? "var(--up)" : "var(--down)";
       right.appendChild(tag);
       row.appendChild(left); row.appendChild(right); wl.appendChild(row);
     });

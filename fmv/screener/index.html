@@ -233,6 +233,19 @@
   .sstar:hover { color:var(--ink); background:var(--soft); }
   .sstar.on { color:var(--green); }
   .swhy { font-size:.78rem; padding:2px 0 0; display:block; }
+  .stable-wrap { overflow-x:auto; margin-top:6px; -webkit-overflow-scrolling:touch; }
+  .stable { width:100%; border-collapse:collapse; font-size:.86rem; }
+  .stable th { text-align:right; font-weight:600; color:var(--muted); font-size:.74rem; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; user-select:none; }
+  .stable th.sortable { cursor:pointer; } .stable th.sortable:hover, .stable th.on { color:var(--ink); }
+  .stable th .arr { font-size:.65rem; }
+  .stable td { text-align:right; padding:10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .stable th.tk, .stable td.tk { text-align:left; position:sticky; left:0; background:#fff; z-index:1; padding-left:0; }
+  .stable td.tk small { display:block; color:var(--muted); font-size:.76rem; max-width:170px; overflow:hidden; text-overflow:ellipsis; }
+  .stable tbody tr { cursor:pointer; } .stable tbody tr:hover td { background:var(--soft); }
+  .stable .tag { margin-top:0; }
+  .colpick { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  .colpick button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:4px 11px; font:inherit; font-size:.78rem; font-weight:600; cursor:pointer; color:var(--ink); }
+  .colpick button.on { background:var(--green); border-color:var(--green); color:#fff; }
   .scitemrow:hover, .scitemrow.on { background:var(--soft); }
   .scitemrow.on .scitem { font-weight:600; }
   .scitem { flex:1; padding:10px 6px 10px 18px; border:0; background:none; font:inherit; font-size:.92rem; text-align:left; cursor:pointer; color:var(--ink); }
@@ -1649,14 +1662,15 @@ function draw() {
       const x = button("×", null, () => scSet({filters: sc.spec.filters.filter((_, j) => j !== i), sort: sc.spec.sort}));
       x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x); chips.appendChild(c);
     });
-    chips.appendChild(button("+ Filter", "schip add", () => { sc.picking = !sc.picking; renderScMain(); }));
+    chips.appendChild(button("+ Filter", "schip add", () => { sc.picking = sc.picking === "filter" ? false : "filter"; renderScMain(); }));
     scMain.appendChild(chips);
-    if (sc.picking) scMain.appendChild(filterPicker());
+    if (sc.picking === "filter") scMain.appendChild(filterPicker());
 
     const bar = el('div', 'scbar');
     const what = sc.busy ? "Screening…" : !sc.loaded ? "" : sc.count === 1 ? "1 stock" : `${sc.count.toLocaleString()} stocks`;
     bar.appendChild(el('span', null, sc.active ? `${sc.active.name}${what ? " · " + what : ""}` : what));
     bar.appendChild(el('span', 'grow'));
+    bar.appendChild(button("Columns", "linkbtn", () => { sc.picking = sc.picking === "cols" ? false : "cols"; renderScMain(); }));
     const needAccount = fn => () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } fn(); };
     if (sc.active && !sc.active.starter) {   // a saved screen: Save changes is greyed out until something changes
       const save = button("Save changes", "linkbtn", needAccount(saveChanges));
@@ -1671,37 +1685,8 @@ function draw() {
     if (sc.naming) scMain.appendChild(nameForm());
     if (sc.err) scMain.appendChild(el('div', 'warn', sc.err));
 
-    const list = el('div');
-    if (sc.busy) {   // placeholder rows while the results load
-      for (let i = 0; i < 6; i++) {
-        const r = el('div', 'srow skrow'), left = el('div');
-        const a = el('span', 'sk', "\u00a0"), b = el('span', 'sk', "\u00a0"), c = el('span', 'sk', "\u00a0");
-        a.style.cssText = "display:block;width:70px;height:14px"; b.style.cssText = "display:block;width:150px;height:10px;margin-top:7px";
-        c.style.cssText = "width:60px;height:14px";
-        left.appendChild(a); left.appendChild(b); r.appendChild(left); r.appendChild(c); list.appendChild(r);
-      }
-    }
-    (sc.busy ? [] : sc.rows).forEach(x => {
-      const row = el('div', 'srow'), open = () => openFromScreen(x.ticker, x.name);
-      row.tabIndex = 0; row.setAttribute("role", "button"); row.onclick = open;
-      row.onkeydown = e => { if (e.key === "Enter") open(); };
-      const left = el('div'), head = el('div', 'shead');
-      const on = WATCH.has(x.ticker), star = button(on ? "\u2605" : "\u2606", "sstar" + (on ? " on" : ""), e => { e.stopPropagation(); toggleWatch(x.ticker); });
-      star.dataset.t = x.ticker;
-      head.appendChild(el('b', null, x.ticker)); head.appendChild(star); left.appendChild(head);
-      left.appendChild(el('small', null, (x.name || "").replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Ltd\.?|plc)$/i, "")));
-      left.appendChild(el('small', null, x.reason));
-      const why = button("Explain Why", "linkbtn swhy", e => {
-        e.stopPropagation();
-        if (window.chatAsk) window.chatAsk(`Explain why ${x.ticker} shows up in this screen` + (x.reason ? `: ${x.reason}` : ""));
-      });
-      left.appendChild(why);
-      const right = el('div', 'r', x.price != null ? "$" + Number(x.price).toFixed(2) : "");
-      const z = ZONE_TAG[x.fmv_zone];
-      if (z) { const tg = el('span', 'tag', z[0]); tg.style.background = z[1]; right.appendChild(el('br')); right.appendChild(tg); }
-      row.appendChild(left); row.appendChild(right); list.appendChild(row);
-    });
-    scMain.appendChild(list);
+    if (sc.picking === "cols") scMain.appendChild(columnPicker());
+    scMain.appendChild(resultsTable());
     syncStars();
     if (sc.rows.length < sc.count && !sc.busy) {
       const acts = el('div', 'acts');
@@ -1744,6 +1729,103 @@ function draw() {
   function addFilter(f) {
     sc.picking = false;
     scSet({filters: [...sc.spec.filters.filter(x => x.field !== f.field), f], sort: sc.spec.sort});
+  }
+
+  // ---- results table: a column per filtered field (plus defaults), click a header to sort, show / hide columns ----
+  const pctTxt = v => `${Math.abs(v) >= 100 ? Math.round(Math.abs(v)).toLocaleString() : Math.abs(v).toFixed(0)}%`;
+  const signed = v => `${v >= 0 ? "+" : "\u2212"}${pctTxt(v)}`;
+  const COLS = [   // [field, header, format]
+    ["price", "Price", v => "$" + Number(v).toFixed(2)],
+    ["px_vs_fmv_pct", "vs Fair Value", v => Math.abs(v) < 0.5 ? "At fair value" : `${pctTxt(v)} ${v < 0 ? "below" : "above"}`],
+    ["fmv_zone", "Label", v => v],
+    ["sector", "Sector", v => v],
+    ["market_cap_b", "Market Cap", v => "$" + (v >= 100 ? Math.round(v).toLocaleString() : Number(v).toFixed(1)) + "B"],
+    ["pe_ttm", "P/E", v => Number(v).toFixed(1)],
+    ["peg", "PEG", v => Number(v).toFixed(2)],
+    ["ev_ebitda", "EV/EBITDA", v => Number(v).toFixed(1)],
+    ["rev_growth_yoy", "Revenue Growth", signed],
+    ["eps_growth_yoy", "EPS Growth", signed],
+    ["net_margin", "Net Margin", v => pctTxt(v)],
+    ["roe", "ROE", v => pctTxt(v)],
+    ["debt_equity", "Debt/Equity", v => Number(v).toFixed(2)],
+    ["div_yield", "Dividend Yield", v => Number(v).toFixed(1) + "%"],
+    ["px_vs_sma50_pct", "vs 50-Day", signed],
+    ["rsi14", "RSI", v => Number(v).toFixed(0)],
+    ["dist_52w_high_pct", "vs 52W High", signed],
+  ];
+  const DEFAULT_COLS = ["price", "px_vs_fmv_pct", "fmv_zone"];
+  const ASC_FIRST = new Set(["px_vs_fmv_pct", "pe_ttm", "peg", "ev_ebitda", "debt_equity", "rsi14", "dist_52w_high_pct", "price"]);   // "cheaper first"
+  let colPrefs = (() => { try { const p = JSON.parse(localStorage.getItem("fmv-screen-cols") || "{}"); return {shown: p.shown || [], hidden: p.hidden || []}; } catch (e) { return {shown: [], hidden: []}; } })();
+  // Visible: defaults + whatever the screen filters on + columns turned on, minus columns turned off.
+  const visibleCols = () => COLS.filter(([k]) => !colPrefs.hidden.includes(k)
+    && (DEFAULT_COLS.includes(k) || colPrefs.shown.includes(k) || sc.spec.filters.some(f => f.field === k)));
+  function toggleCol(k, on) {
+    colPrefs = {shown: colPrefs.shown.filter(x => x !== k), hidden: colPrefs.hidden.filter(x => x !== k)};
+    (on ? colPrefs.shown : colPrefs.hidden).push(k);
+    try { localStorage.setItem("fmv-screen-cols", JSON.stringify(colPrefs)); } catch (e) {}
+    renderScMain();
+  }
+  function columnPicker() {
+    const box = el('div', 'colpick'), vis = new Set(visibleCols().map(c => c[0]));
+    COLS.forEach(([k, label]) => {
+      const b = button(label, vis.has(k) ? "on" : null, () => toggleCol(k, !vis.has(k)));
+      b.setAttribute("aria-pressed", vis.has(k) ? "true" : "false"); box.appendChild(b);
+    });
+    return box;
+  }
+  function resultsTable() {
+    const cols = visibleCols(), wrap = el('div', 'stable-wrap'), t = el('table', 'stable');
+    const head = el('tr'), sortBy = (k) => {
+      const dir = sc.spec.sort.field === k ? (sc.spec.sort.dir === "asc" ? "desc" : "asc") : (ASC_FIRST.has(k) || k === "ticker" ? "asc" : "desc");
+      scSet({filters: sc.spec.filters, sort: {field: k, dir}});
+    };
+    const th = (k, label, sortable, cls) => {
+      const h = el('th', cls || null, label);
+      if (sortable) {
+        h.classList.add('sortable'); h.tabIndex = 0;
+        h.onclick = () => sortBy(k); h.onkeydown = e => { if (e.key === "Enter") sortBy(k); };
+        if (sc.spec.sort.field === k) { h.classList.add('on'); h.appendChild(el('span', 'arr', sc.spec.sort.dir === "asc" ? " \u25b2" : " \u25bc")); }
+      }
+      head.appendChild(h);
+    };
+    th("ticker", "Stock", true, "tk");
+    cols.forEach(([k, label]) => th(k, label, k !== "sector" && k !== "fmv_zone"));
+    const thead = el('thead'); thead.appendChild(head); t.appendChild(thead);
+    const body = el('tbody');
+    if (sc.busy) {   // placeholder rows while the results load
+      for (let i = 0; i < 6; i++) {
+        const tr = el('tr', 'skrow'), a = el('td', 'tk'), s1 = el('span', 'sk', "\u00a0");
+        s1.style.cssText = "width:90px;height:14px"; a.appendChild(s1); tr.appendChild(a);
+        cols.forEach(() => { const td = el('td'), s2 = el('span', 'sk', "\u00a0"); s2.style.cssText = "width:48px;height:12px"; td.appendChild(s2); tr.appendChild(td); });
+        body.appendChild(tr);
+      }
+    } else sc.rows.forEach(x => {
+      const tr = el('tr'), open = () => openFromScreen(x.ticker, x.name);
+      tr.tabIndex = 0; tr.onclick = open; tr.onkeydown = e => { if (e.key === "Enter") open(); };
+      const tk = el('td', 'tk'), head = el('div', 'shead');
+      const star = button("\u2606", "sstar", e => { e.stopPropagation(); toggleWatch(x.ticker); }); star.dataset.t = x.ticker;
+      head.appendChild(el('b', null, x.ticker)); head.appendChild(star); tk.appendChild(head);
+      tk.appendChild(el('small', null, (x.name || "").replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Ltd\.?|plc)$/i, "")));
+      tk.appendChild(button("Explain Why", "linkbtn swhy", e => {
+        e.stopPropagation();
+        if (window.chatAsk) window.chatAsk(`Explain why ${x.ticker} shows up in this screen` + (x.reason ? `: ${x.reason}` : ""));
+      }));
+      tr.appendChild(tk);
+      cols.forEach(([k, , f]) => {
+        const td = el('td'), v = x[k];
+        if (v == null || v === "") td.textContent = "\u2014";
+        else if (k === "fmv_zone") { const z = ZONE_TAG[v]; if (z) { const tg = el('span', 'tag', z[0]); tg.style.background = z[1]; td.appendChild(tg); } else td.textContent = "Above"; }
+        else {
+          td.textContent = f(v);
+          if (k === "px_vs_fmv_pct") td.style.color = v < 0.5 ? "var(--up)" : "var(--down)";
+        }
+        tr.appendChild(td);
+      });
+      body.appendChild(tr);
+    });
+    t.appendChild(body); wrap.appendChild(t);
+    if (!sc.busy && sc.loaded && !sc.rows.length) wrap.appendChild(el('div', 'empty', "No stocks match. Try removing a filter."));
+    return wrap;
   }
 
   // Create: name the current chips + sort.

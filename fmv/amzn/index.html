@@ -3,16 +3,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!--seo:head-->
 <title>Amazon (AMZN) Fair Value: Bear, Base &amp; Bull | Pear Digitals</title>
-<meta name="description" content="Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 9, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta name="description" content="Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 12, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
 <link rel="canonical" href="https://peardigitals.com/fmv/amzn/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pear Digitals">
 <meta property="og:title" content="Amazon (AMZN) Fair Value: Bear, Base &amp; Bull | Pear Digitals">
-<meta property="og:description" content="Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 9, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta property="og:description" content="Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 12, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
 <meta property="og:url" content="https://peardigitals.com/fmv/amzn/">
 <meta property="og:image" content="https://peardigitals.com/assets/og/amzn.png">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Amazon (AMZN) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/amzn/", "description": "Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 9, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-09", "about": {"@type": "Corporation", "name": "Amazon.com, Inc.", "tickerSymbol": "NASDAQ:AMZN"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Amazon (AMZN) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/amzn/", "description": "Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 12, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-12", "about": {"@type": "Corporation", "name": "Amazon.com, Inc.", "tickerSymbol": "NASDAQ:AMZN"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
 <!--/seo:head-->
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <style>
@@ -137,6 +137,7 @@
   .side h3 { margin:0; padding:12px 12px 12px 18px; font-size:1rem; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
   .sortbtn { border:0; background:none; color:var(--muted); font:inherit; font-size:.8rem; font-weight:600; padding:6px 8px; border-radius:8px; cursor:pointer; }
   .sortbtn:hover { background:var(--soft); color:var(--ink); }
+  .wwrap { position:relative; }
   .sortmenu { top:50px; right:8px; min-width:230px; }
   .sortmenu button.on { font-weight:700; }
   .sortmenu button.on::after { content:"\2713"; float:right; color:var(--green); }
@@ -226,7 +227,7 @@
   .scpick input { width:96px; }
   .sclist { padding:4px 0; }
   .scitemrow { display:flex; align-items:center; }
-  #scside .side + .side { margin-top:14px; }
+  #scside .wwrap { margin-top:14px; }
   .shead { display:flex; align-items:center; gap:4px; }
   .sstar { border:0; background:none; cursor:pointer; color:#9aa39d; font-size:1.05rem; line-height:1; padding:2px 4px; border-radius:6px; }
   .sstar:hover { color:var(--ink); background:var(--soft); }
@@ -367,8 +368,11 @@
       </section>
     </main>
     <aside id="side" hidden>
-      <div class="side"><h3>Watchlist<button type="button" class="sortbtn" id="sortbtn" aria-haspopup="menu" aria-expanded="false"></button></h3><div id="wl"></div></div>
-      <div class="menu sortmenu" id="sortmenu" role="menu" hidden></div>
+      <!-- One watchlist, moved between the stock page and the screener (keeps its sort and state) -->
+      <div class="wwrap" id="wwrap">
+        <div class="side"><h3>Watchlist<button type="button" class="sortbtn" id="sortbtn" aria-haspopup="menu" aria-expanded="false"></button></h3><div id="wl"></div></div>
+        <div class="menu sortmenu" id="sortmenu" role="menu" hidden></div>
+      </div>
     </aside>
   </div>
   <div class="grid with-side" id="screener" hidden>
@@ -1055,7 +1059,6 @@ function draw() {
     const side = $('side'), grid = $('app');
     side.hidden = false; grid.classList.add('with-side');
     fillWatch($('wl'), true);
-    const sw = $('scwl'); if (sw) fillWatch(sw, false);   // the screener page's copy
     syncStars();
   }
   // Screener result stars follow the watchlist (after toggles and after it reloads).
@@ -1596,15 +1599,29 @@ function draw() {
   let sc = {spec: {filters: [], sort: DEFAULT_SORT}, rows: [], count: 0, busy: false, err: "", loaded: false, active: null, naming: null, sectors: [], picking: false};
   let savedScreens = [], scMenu = null, scRenaming = null, scDeleting = null;
 
+  // Results respond instantly: chips switch right away, a screen seen before shows its last results (refreshed in the
+  // background), otherwise placeholder rows show until the data arrives. Only the latest request updates the page.
+  const scCache = new Map();   // specKey -> {rows, count}, last 20 screens
+  let scSeq = 0;
   async function scRun(body, append) {
-    sc.busy = true; sc.err = ""; renderScMain();
+    const seq = ++scSeq;
+    sc.err = "";
+    if (!append && !body.query && body.filters) {
+      sc.spec = {filters: body.filters, sort: body.sort || DEFAULT_SORT};
+      const hit = scCache.get(specKey(sc.spec));
+      if (hit) { sc.rows = hit.rows; sc.count = hit.count; sc.loaded = true; }
+      sc.busy = !hit; sc.refreshing = !!hit;
+    } else sc.busy = true;
+    renderScMain(); renderScSide();
     try {
       const r = await runScreen({limit: 50, ...body});
+      if (seq !== scSeq) return;   // a newer request replaced this one
       sc.spec = {filters: r.spec.filters, sort: r.spec.sort};
       sc.rows = append ? sc.rows.concat(r.rows) : r.rows;
       Object.assign(sc, {count: r.count, loaded: true, sectors: r.sectors || sc.sectors});
-    } catch (e) { sc.err = errText(e); }
-    sc.busy = false; renderScMain(); renderScSide();
+      if (!append) { scCache.set(specKey(sc.spec), {rows: r.rows, count: r.count}); if (scCache.size > 20) scCache.delete(scCache.keys().next().value); }
+    } catch (e) { if (seq !== scSeq) return; sc.err = errText(e); }
+    sc.busy = false; sc.refreshing = false; renderScMain(); renderScSide();
   }
   const scQuery = q => scRun({query: q, filters: sc.spec.filters});
   const scSet = spec => scRun({filters: spec.filters, sort: spec.sort || DEFAULT_SORT});
@@ -1648,7 +1665,16 @@ function draw() {
     if (sc.err) scMain.appendChild(el('div', 'warn', sc.err));
 
     const list = el('div');
-    sc.rows.forEach(x => {
+    if (sc.busy) {   // placeholder rows while the results load
+      for (let i = 0; i < 6; i++) {
+        const r = el('div', 'srow skrow'), left = el('div');
+        const a = el('span', 'sk', "\u00a0"), b = el('span', 'sk', "\u00a0"), c = el('span', 'sk', "\u00a0");
+        a.style.cssText = "display:block;width:70px;height:14px"; b.style.cssText = "display:block;width:150px;height:10px;margin-top:7px";
+        c.style.cssText = "width:60px;height:14px";
+        left.appendChild(a); left.appendChild(b); r.appendChild(left); r.appendChild(c); list.appendChild(r);
+      }
+    }
+    (sc.busy ? [] : sc.rows).forEach(x => {
       const row = el('div', 'srow'), open = () => openFromScreen(x.ticker, x.name);
       row.tabIndex = 0; row.setAttribute("role", "button"); row.onclick = open;
       row.onkeydown = e => { if (e.key === "Enter") open(); };
@@ -1756,7 +1782,7 @@ function draw() {
 
   // One list: your saved screens, then the starters. Saved ones have a menu to rename or delete.
   function renderScSide() {
-    scSide.textContent = "";
+    [...scSide.children].forEach(c => { if (c.id !== "wwrap") c.remove(); });
     const box = el('div', 'side'); box.appendChild(el('h3', null, "Screens"));
     const list = el('div', 'sclist');
     const items = USER ? savedScreens : STARTERS;
@@ -1799,14 +1825,15 @@ function draw() {
       }
     });
     box.appendChild(list); scSide.appendChild(box);
-    const wbox = el('div', 'side'), wl = el('div');
-    wl.id = "scwl"; wbox.appendChild(el('h3', null, "Watchlist")); wbox.appendChild(wl); scSide.appendChild(wbox);
-    fillWatch(wl, false);
+    if ($('wwrap').parentNode === scSide) scSide.appendChild($('wwrap'));   // keep the watchlist below the screens
   }
 
   // Switch between the stock view and the screener (same page, own URL).
   function showView(screener) {
     scWrap.hidden = !screener;
+    // Move the one watchlist panel (not a copy) so its sort and state carry across.
+    const ww = $('wwrap'), home = screener ? scSide : $('side');
+    if (ww.parentNode !== home) home.appendChild(ww);
     if (!$('loading').hidden) return;
     $('app').hidden = screener;
     $('navscreen').classList.toggle('on', screener);

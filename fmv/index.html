@@ -222,6 +222,12 @@
   .linkbtn.danger { color:var(--down); }
   .sclist { padding:4px 0; }
   .scitemrow { display:flex; align-items:center; }
+  #scside .side + .side { margin-top:14px; }
+  .shead { display:flex; align-items:center; gap:4px; }
+  .sstar { border:0; background:none; cursor:pointer; color:#9aa39d; font-size:1.05rem; line-height:1; padding:2px 4px; border-radius:6px; }
+  .sstar:hover { color:var(--ink); background:var(--soft); }
+  .sstar.on { color:var(--green); }
+  .swhy { font-size:.78rem; padding:2px 0 0; display:block; }
   .scitemrow:hover, .scitemrow.on { background:var(--soft); }
   .scitemrow.on .scitem { font-weight:600; }
   .scitem { flex:1; padding:10px 6px 10px 18px; border:0; background:none; font:inherit; font-size:.92rem; text-align:left; cursor:pointer; color:var(--ink); }
@@ -940,23 +946,27 @@ function draw() {
     star.hidden = !sb;
     star.style.visibility = userLoading ? "hidden" : "";
   }
-  $('starbtn').onclick = async () => {
+  // Add / remove a stock from the watchlist (stock page star and screener stars). Instant: update the stars and the
+  // watchlist now, save in the background, undo if the save fails.
+  async function toggleWatch(t) {
     if (!USER) { openAuth("up", "Sign up to build a watchlist."); return; }
-    const t = sel.value, on = WATCH.has(t);
-    // Instant: update the star and the watchlist now, save in the background, undo if the save fails.
+    const on = WATCH.has(t);
+    const redraw = () => { renderHeader(sel.value); renderSide(); };
     on ? WATCH.delete(t) : WATCH.add(t);
-    renderHeader(t); renderSide();
+    redraw();
     const {error} = on
       ? await sb.from('watchlist').delete().eq('ticker', t)
       : await sb.from('watchlist').upsert({user_id: USER.id, ticker: t}, {onConflict: 'user_id,ticker', ignoreDuplicates: true});
     if (error) {
       on ? WATCH.add(t) : WATCH.delete(t);
-      renderHeader(t); renderSide();
+      redraw();
       alert("Couldn't update your watchlist.");
       return;
     }
+    if (!on && !LATEST[t]) ensureStock(t).then(() => renderSide());   // a paid stock added from the screener
     refresh();   // sync personal fair values quietly; no need to wait
-  };
+  }
+  $('starbtn').onclick = () => toggleWatch(sel.value);
 
   // ---- fair value block: just the numbers; a custom analysis replaces the published one ----
   const mineOf = t => { const r = rows[t]; return r && r.preferences && r.base != null ? r : null; };
@@ -1038,10 +1048,24 @@ function draw() {
 
   function renderSide() {
     // The watchlist panel shows for everyone; signed out it's just the hint (the star asks them to sign up).
-    const side = $('side'), grid = $('app'), signedIn = !!userView();
+    const side = $('side'), grid = $('app');
     side.hidden = false; grid.classList.add('with-side');
-    const wl = $('wl'); wl.textContent = "";
-    sortBtn.hidden = true;
+    fillWatch($('wl'), true);
+    const sw = $('scwl'); if (sw) fillWatch(sw, false);   // the screener page's copy
+    syncStars();
+  }
+  // Screener result stars follow the watchlist (after toggles and after it reloads).
+  function syncStars() {
+    document.querySelectorAll('#scmain .sstar').forEach(b => {
+      const on = WATCH.has(b.dataset.t);
+      b.textContent = on ? "\u2605" : "\u2606"; b.classList.toggle('on', on);
+      b.setAttribute("aria-label", on ? `Remove ${b.dataset.t} from watchlist` : `Add ${b.dataset.t} to watchlist`);
+    });
+  }
+  function fillWatch(wl, main) {
+    const signedIn = !!userView();
+    wl.textContent = "";
+    if (main) sortBtn.hidden = true;
     const hint = () => wl.appendChild(el('div', 'empty', "Press \u2606 to add stocks to your watchlist."));
     if (!signedIn) { hint(); return; }
     if (userLoading) {
@@ -1059,7 +1083,7 @@ function draw() {
     const soon = t => !LATEST[t] && noData.has(t) && !MAG7.includes(t);   // watched, but no fair value published yet
     const list = sortWatch([...WATCH].filter(t => LATEST[t] || loadingPaid(t) || soon(t)));
     if (!list.length) { hint(); return; }
-    sortBtn.hidden = list.length < 2;   // nothing to sort with one stock
+    if (main) sortBtn.hidden = list.length < 2;   // nothing to sort with one stock
     list.forEach(t => {
       if (soon(t)) {
         const r = el('div', 'wrow skrow'), left = el('div'), tag = el('span', 'tag', "Coming soon");
@@ -1622,16 +1646,27 @@ function draw() {
 
     const list = el('div');
     sc.rows.forEach(x => {
-      const row = button("", "srow", () => openFromScreen(x.ticker, x.name));
-      const left = el('div'); left.appendChild(el('b', null, x.ticker + " "));
+      const row = el('div', 'srow'), open = () => openFromScreen(x.ticker, x.name);
+      row.tabIndex = 0; row.setAttribute("role", "button"); row.onclick = open;
+      row.onkeydown = e => { if (e.key === "Enter") open(); };
+      const left = el('div'), head = el('div', 'shead');
+      const on = WATCH.has(x.ticker), star = button(on ? "\u2605" : "\u2606", "sstar" + (on ? " on" : ""), e => { e.stopPropagation(); toggleWatch(x.ticker); });
+      star.dataset.t = x.ticker;
+      head.appendChild(el('b', null, x.ticker)); head.appendChild(star); left.appendChild(head);
       left.appendChild(el('small', null, (x.name || "").replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Ltd\.?|plc)$/i, "")));
       left.appendChild(el('small', null, x.reason));
+      const why = button("Explain Why", "linkbtn swhy", e => {
+        e.stopPropagation();
+        if (window.chatAsk) window.chatAsk(`Explain why ${x.ticker} shows up in this screen` + (x.reason ? `: ${x.reason}` : ""));
+      });
+      left.appendChild(why);
       const right = el('div', 'r', x.price != null ? "$" + Number(x.price).toFixed(2) : "");
       const z = ZONE_TAG[x.fmv_zone];
       if (z) { const tg = el('span', 'tag', z[0]); tg.style.background = z[1]; right.appendChild(el('br')); right.appendChild(tg); }
       row.appendChild(left); row.appendChild(right); list.appendChild(row);
     });
     scMain.appendChild(list);
+    syncStars();
     if (sc.rows.length < sc.count && !sc.busy) {
       const acts = el('div', 'acts');
       acts.appendChild(button("Load more", "pill light", () => scRun({filters: sc.spec.filters, sort: sc.spec.sort, offset: sc.rows.length}, true)));
@@ -1719,6 +1754,9 @@ function draw() {
       }
     });
     box.appendChild(list); scSide.appendChild(box);
+    const wbox = el('div', 'side'), wl = el('div');
+    wl.id = "scwl"; wbox.appendChild(el('h3', null, "Watchlist")); wbox.appendChild(wl); scSide.appendChild(wbox);
+    fillWatch(wl, false);
   }
 
   // Switch between the stock view and the screener (same page, own URL).

@@ -204,6 +204,35 @@
   .card .q { color:var(--muted); font-size:.85rem; margin:4px 0 8px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .card .acts { display:flex; gap:8px; margin-top:10px; }
   .card .pill { padding:7px 14px; font-size:.85rem; }
+  /* top nav link + screener screen */
+  .navlink { color:var(--ink); text-decoration:none; font-weight:600; font-size:.92rem; white-space:nowrap; }
+  .navlink:hover, .navlink.on { color:var(--green); }
+  #screener { row-gap:16px; }
+  .sctitle { grid-column:1 / -1; font-size:1.6rem; letter-spacing:-.02em; margin:0; }
+  .navlink svg { display:none; }
+  @media (max-width:560px) { .navlink span { display:none; } .navlink svg { display:block; } }
+  .scform { display:flex; gap:8px; }
+  .scform .field { margin:0; font-size:16px; }
+  .schip.add { border:1px dashed #c9cfc8; background:none; color:var(--green); padding:4px 10px; cursor:pointer; font:inherit; font-size:.78rem; font-weight:600; }
+  .scpick { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0; }
+  .scpick select, .scpick input { font:inherit; font-size:16px; border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fff; color:var(--ink); }
+  .scpick input { width:96px; }
+  .scbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:10px 0 2px; color:var(--muted); font-size:.85rem; }
+  .scbar .grow { flex:1; }
+  .linkbtn { border:0; background:none; color:var(--green); font:inherit; font-weight:600; cursor:pointer; padding:4px 2px; }
+  .sclist { padding:4px 0; }
+  .scitem { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:10px 18px; border:0; background:none; font:inherit; font-size:.92rem; text-align:left; cursor:pointer; }
+  .scitem:hover, .scitem.on { background:var(--soft); }
+  .scitem small { color:var(--muted); }
+  .scitem .del { color:var(--muted); padding:0 4px; font-size:1rem; }
+  .scitem .del:hover { color:var(--down); }
+  #scside .side + .side { margin-top:14px; }
+  @media (max-width:900px) {
+    .sctitle { order:-2; }
+    #scside { order:-1; }
+    .sclist { display:flex; flex-wrap:wrap; gap:6px; padding:12px; }
+    .sclist .scitem { width:auto; border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:.85rem; }
+  }
   /* screener: chips + result rows (chat card and full view) */
   .schips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
   .schip { display:inline-flex; align-items:center; gap:2px; background:var(--soft); border-radius:999px; padding:4px 4px 4px 10px; font-size:.78rem; font-weight:600; }
@@ -290,6 +319,7 @@
       <button type="button" class="cancel" id="qcancel">Cancel</button>
       <div class="results" id="qres" role="listbox" hidden></div>
     </div>
+    <a class="navlink" id="navscreen" href="/fmv/screener/" aria-label="Screener"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg><span>Screener</span></a>
     <div id="navacct"></div>
   </nav>
   <div id="loading">Loading&hellip;</div>
@@ -324,6 +354,11 @@
       <div class="side"><h3>Watchlist<button type="button" class="sortbtn" id="sortbtn" aria-haspopup="menu" aria-expanded="false"></button></h3><div id="wl"></div></div>
       <div class="menu sortmenu" id="sortmenu" role="menu" hidden></div>
     </aside>
+  </div>
+  <div class="grid with-side" id="screener" hidden>
+    <h2 class="sctitle">Screener</h2>
+    <main id="scmain"></main>
+    <aside id="scside"></aside>
   </div>
 </div>
 
@@ -546,14 +581,17 @@ async function init() {
   // Start on the stock in the URL (/fmv/nvda/) if we cover it.
   const fromPath = (location.pathname.match(/^\/fmv\/([a-z0-9.\-]+)\/?$/i) || [])[1];
   if (fromPath && [...sel.options].some(o => o.value === fromPath.toUpperCase())) sel.value = fromPath.toUpperCase();
-  sel.addEventListener('change', () => { syncUrl(); draw(); });
+  sel.addEventListener('change', () => { if (window.showStockView) window.showStockView(); syncUrl(); draw(); });
   window.addEventListener('popstate', () => {
+    if (/^\/fmv\/screener\/?$/.test(location.pathname)) { if (window.openScreener) window.openScreener(false); return; }
+    if (window.showStockView) window.showStockView();
     const t = (location.pathname.match(/^\/fmv\/([a-z0-9.\-]+)\/?$/i) || [])[1];
     const want = t ? t.toUpperCase() : (sel.options[0] && sel.options[0].value);
     if (want && want !== sel.value && [...sel.options].some(o => o.value === want)) { sel.value = want; draw(); }
   });
   draw();
   if (window.onFmvReady) window.onFmvReady();
+  if (/^\/fmv\/screener\/?$/.test(location.pathname) && window.openScreener) window.openScreener(false);
 
   // Everything else loads asynchronously, selected ticker first.
   const order = [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)];
@@ -1305,6 +1343,7 @@ function draw() {
     rows = next.rows; plan = next.plan;
     if (planChanged) {   // history window changed: reload charts, drop a range the plan no longer includes
       dropPaidStocks();
+      if (window.screenerReload) setTimeout(window.screenerReload, 0);   // results depend on the plan
       Object.keys(FULL).forEach(k => delete FULL[k]);
       Object.values(D).forEach(J => { J.full = false; });
       if (!rangeAllowed(curRange)) { curRange = "1W"; [...rangesEl.children].forEach(x => x.classList.toggle('on', x.dataset.r === "1W")); }
@@ -1475,12 +1514,11 @@ function draw() {
       box.appendChild(el('div', 'scount', `+${r.more.toLocaleString()} more with ${PLAN_NAME[r.more_tier]}`));
       box.appendChild(window.waitlistNote("screener", r.more_tier));
     }
-    if (!full && r.count > 5) {
+    if (!full) {
       const acts = el('div', 'acts');
-      acts.appendChild(button(`Show all ${Math.min(r.count, 50)}`, "pill", async () => {
-        const body = $('screenbody'); $('screendlg').showModal(); body.textContent = "Loading\u2026";
-        try { drawScreen(body, await runScreen({filters: spec.filters, sort: spec.sort, limit: 50}), true); }
-        catch (e) { body.textContent = errText(e); }
+      acts.appendChild(button(r.count > 5 ? `Open all ${r.count.toLocaleString()} in Screener` : "Open in Screener", "pill", () => {
+        if (window.chatClose && matchMedia("(max-width:560px)").matches) window.chatClose();
+        openScreener(true, {filters: spec.filters, sort: spec.sort});
       }));
       box.appendChild(acts);
     }
@@ -1493,6 +1531,203 @@ function draw() {
       .catch(e => { title.textContent = "Couldn't run that screen"; box.appendChild(el('div', 'warn', errText(e))); });
     return card;
   };
+
+  // ---- Screener screen (/fmv/screener/): typed request -> chips, filter picker, sort, load more, saved + starter screens ----
+  const scWrap = $('screener'), scMain = $('scmain'), scSide = $('scside');
+  const SC_FIELDS = [["sector", "Sector", ""], ["fmv_zone", "Pear label", ""], ["px_vs_fmv_pct", "Price vs fair value", "%"],
+    ["pe_ttm", "P/E", ""], ["peg", "PEG", ""], ["ev_ebitda", "EV/EBITDA", ""], ["market_cap_b", "Market cap", "$B"],
+    ["rev_growth_yoy", "Revenue growth", "%"], ["eps_growth_yoy", "EPS growth", "%"], ["net_margin", "Net margin", "%"],
+    ["roe", "ROE", "%"], ["debt_equity", "Debt/equity", ""], ["div_yield", "Dividend yield", "%"],
+    ["px_vs_sma50_pct", "Price vs 50-day", "%"], ["rsi14", "RSI (14)", ""], ["dist_52w_high_pct", "vs 52-week high", "%"], ["price", "Price", "$"]];
+  const STARTERS = [
+    {name: "Strong Buys", spec: {filters: [{field: "fmv_zone", op: "in", values: ["strong_buy"], label: "Strong Buy"}], sort: {field: "px_vs_fmv_pct", dir: "asc"}}},
+    {name: "Below fair value with a dividend", spec: {filters: [{field: "fmv_zone", op: "in", values: ["fair_buy", "strong_buy"], label: "At or below Pear fair value"},
+      {field: "div_yield", op: "gt", num: 0, label: "Pays a dividend"}], sort: {field: "div_yield", dir: "desc"}}},
+    {name: "Near 52-week lows", spec: {filters: [{field: "dist_52w_high_pct", op: "lte", num: -30, label: "30%+ below 52-week high"}], sort: {field: "dist_52w_high_pct", dir: "asc"}}},
+  ];
+  const DEFAULT_SORT = {field: "px_vs_fmv_pct", dir: "asc"};
+  let sc = {spec: {filters: [], sort: DEFAULT_SORT}, rows: [], count: 0, more: 0, moreTier: null, sectors: [], busy: false, err: "", loaded: false, picking: false, naming: false};
+  let savedScreens = [], scCounts = {};
+
+  async function scRun(body, append) {
+    sc.busy = true; sc.err = ""; renderScMain();
+    try {
+      const r = await runScreen({limit: 50, ...body});
+      sc.spec = {filters: r.spec.filters, sort: r.spec.sort};
+      sc.rows = append ? sc.rows.concat(r.rows) : r.rows;
+      Object.assign(sc, {count: r.count, more: r.more, moreTier: r.more_tier, sectors: r.sectors || sc.sectors, loaded: true});
+    } catch (e) { sc.err = errText(e); }
+    sc.busy = false; renderScMain();
+  }
+  const scQuery = q => scRun({query: q, filters: sc.spec.filters});
+  const scSet = spec => scRun({filters: spec.filters, sort: spec.sort || DEFAULT_SORT});
+
+  function renderScMain() {
+    scMain.textContent = "";
+    const form = el('form', 'scform'), input = el('input', 'field');
+    input.placeholder = "Describe a screen, e.g. cheap tech stocks starting to move"; input.setAttribute("aria-label", "Describe a screen");
+    form.appendChild(input); form.appendChild(button("Screen", "pill"));
+    form.lastChild.type = "submit";
+    form.onsubmit = e => { e.preventDefault(); if (input.value.trim()) scQuery(input.value.trim()); };
+    scMain.appendChild(form);
+
+    const chips = el('div', 'schips');
+    sc.spec.filters.forEach((f, i) => {
+      const c = el('span', 'schip', f.label);
+      const x = button("\u00d7", null, () => scSet({filters: sc.spec.filters.filter((_, j) => j !== i), sort: sc.spec.sort}));
+      x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x); chips.appendChild(c);
+    });
+    chips.appendChild(button("+ Filter", "schip add", () => { sc.picking = !sc.picking; renderScMain(); }));
+    scMain.appendChild(chips);
+    if (sc.picking) scMain.appendChild(filterPicker());
+
+    const bar = el('div', 'scbar');
+    bar.appendChild(el('span', null, sc.busy ? "Screening\u2026" : !sc.loaded ? "" : sc.count === 1 ? "1 stock" : `${sc.count.toLocaleString()} stocks`));
+    bar.appendChild(el('span', 'grow'));
+    const sortSel = document.createElement('select'); sortSel.className = "ssort"; sortSel.setAttribute("aria-label", "Sort");
+    const opts = SORTS_SCREEN.some(([f, d]) => f === sc.spec.sort.field && d === sc.spec.sort.dir) ? SORTS_SCREEN : [[sc.spec.sort.field, sc.spec.sort.dir, "Best match"], ...SORTS_SCREEN];
+    opts.forEach(([f, d, label]) => { const o = document.createElement('option'); o.value = f + ":" + d; o.textContent = label; sortSel.appendChild(o); });
+    sortSel.value = sc.spec.sort.field + ":" + sc.spec.sort.dir;
+    sortSel.onchange = () => { const [field, dir] = sortSel.value.split(":"); scSet({filters: sc.spec.filters, sort: {field, dir}}); };
+    bar.appendChild(sortSel);
+    if (sc.spec.filters.length) {
+      bar.appendChild(button("Save", "linkbtn", () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } sc.naming = true; renderScMain(); }));
+      bar.appendChild(button("Clear", "linkbtn", () => scSet({filters: [], sort: DEFAULT_SORT})));
+    }
+    scMain.appendChild(bar);
+    if (sc.naming) scMain.appendChild(nameForm());
+    if (sc.err) scMain.appendChild(el('div', 'warn', sc.err));
+
+    const list = el('div');
+    sc.rows.forEach(x => {
+      const row = button("", "srow", () => openFromScreen(x.ticker));
+      const left = el('div'); left.appendChild(el('b', null, x.ticker + " "));
+      left.appendChild(el('small', null, (x.name || "").replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Ltd\.?|plc)$/i, "")));
+      left.appendChild(el('small', null, x.reason));
+      const right = el('div', 'r', x.price != null ? "$" + Number(x.price).toFixed(2) : "");
+      const z = ZONE_TAG[x.fmv_zone];
+      if (z) { const tg = el('span', 'tag', z[0]); tg.style.background = z[1]; right.appendChild(el('br')); right.appendChild(tg); }
+      row.appendChild(left); row.appendChild(right); list.appendChild(row);
+    });
+    scMain.appendChild(list);
+    if (sc.rows.length < sc.count && !sc.busy) {
+      const acts = el('div', 'acts');
+      acts.appendChild(button("Load more", "pill light", () => scRun({filters: sc.spec.filters, sort: sc.spec.sort, offset: sc.rows.length}, true)));
+      scMain.appendChild(acts);
+    }
+    if (sc.more && sc.moreTier) {
+      scMain.appendChild(el('div', 'scount', `+${sc.more.toLocaleString()} more with ${PLAN_NAME[sc.moreTier]}`));
+      scMain.appendChild(window.waitlistNote("screener", sc.moreTier));
+    }
+  }
+
+  // "+ Filter": pick a field, then a value (numbers: under / over; sector and Pear label: a choice).
+  function filterPicker() {
+    const box = el('div', 'scpick'), field = document.createElement('select');
+    SC_FIELDS.forEach(([k, label]) => { const o = document.createElement('option'); o.value = k; o.textContent = label; field.appendChild(o); });
+    const rest = el('span', 'scpick');
+    const draw = () => {
+      rest.textContent = "";
+      const [k, label, unit] = SC_FIELDS.find(f => f[0] === field.value);
+      if (k === "sector" || k === "fmv_zone") {
+        const v = document.createElement('select');
+        (k === "sector" ? sc.sectors.map(x => [x, x]) : [["strong_buy", "Strong Buy"], ["fair_buy", "Fair Buy"], ["fair_buy,strong_buy", "Fair Buy or Strong Buy"], ["above", "Above fair value"]])
+          .forEach(([val, text]) => { const o = document.createElement('option'); o.value = val; o.textContent = text; v.appendChild(o); });
+        rest.appendChild(v);
+        rest.appendChild(button("Add", "pill", () => addFilter({field: k, op: "in", values: v.value.split(","),
+          label: k === "sector" ? "Sector: " + v.value : v.options[v.selectedIndex].textContent})));
+      } else {
+        const op = document.createElement('select');
+        [["lt", "under"], ["gt", "over"]].forEach(([val, text]) => { const o = document.createElement('option'); o.value = val; o.textContent = text; op.appendChild(o); });
+        const num = el('input'); num.type = "number"; num.step = "any"; num.inputMode = "decimal"; num.placeholder = unit || "value";
+        rest.appendChild(op); rest.appendChild(num);
+        rest.appendChild(button("Add", "pill", () => {
+          const n = Number(num.value); if (num.value === "" || !Number.isFinite(n)) { num.focus(); return; }
+          const shown = unit === "$" || unit === "$B" ? "$" + n + (unit === "$B" ? "B" : "") : n + unit;
+          addFilter({field: k, op: op.value, num: n, label: `${label} ${op.value === "lt" ? "under" : "over"} ${shown}`});
+        }));
+      }
+    };
+    field.onchange = draw; draw();
+    box.appendChild(field); box.appendChild(rest);
+    return box;
+  }
+  function addFilter(f) {
+    sc.picking = false;
+    scSet({filters: [...sc.spec.filters.filter(x => x.field !== f.field), f], sort: sc.spec.sort});
+  }
+
+  function nameForm() {
+    const f = el('form', 'scform'), input = el('input', 'field');
+    input.placeholder = "Name this screen"; input.maxLength = 60;
+    f.appendChild(input); f.appendChild(button("Save", "pill")); f.lastChild.type = "submit";
+    f.appendChild(button("Cancel", "pill ghost", () => { sc.naming = false; renderScMain(); }));
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const name = input.value.trim(); if (!name) return;
+      const {error} = await sb.from('saved_screens').insert({name, spec: {filters: sc.spec.filters, sort: sc.spec.sort}});
+      if (error) { toast(/20 screens/.test(error.message) ? "You can save up to 20 screens." : "Couldn't save that screen."); return; }
+      sc.naming = false; toast(`Saved \u201c${name}\u201d.`); renderScMain(); await loadSaved();
+    };
+    setTimeout(() => input.focus(), 0);
+    return f;
+  }
+
+  async function loadSaved() {
+    savedScreens = [];
+    if (sb && USER) {
+      const {data} = await sb.from('saved_screens').select('id,name,spec').order('created_at');
+      savedScreens = data || [];
+    }
+    renderScSide();
+    const all = [...savedScreens, ...STARTERS];
+    if (all.length) runScreen({counts: all.map(x => x.spec)}).then(r => {
+      all.forEach((x, i) => { scCounts[x.id || x.name] = r.counts[i]; }); renderScSide();
+    }).catch(() => {});
+  }
+  function renderScSide() {
+    scSide.textContent = "";
+    const section = (title, items, emptyText, deletable) => {
+      const box = el('div', 'side'); box.appendChild(el('h3', null, title));
+      const list = el('div', 'sclist');
+      if (!items.length) list.appendChild(el('div', 'empty', emptyText));
+      items.forEach(x => {
+        const n = scCounts[x.id || x.name];
+        const b = button("", "scitem", () => scSet(x.spec));
+        b.appendChild(el('span', null, x.name));
+        const right = el('small', null, n == null ? "" : n.toLocaleString());
+        if (deletable) {
+          const d = el('span', 'del', "\u00d7"); d.setAttribute("role", "button"); d.setAttribute("aria-label", "Delete " + x.name);
+          d.onclick = async ev => { ev.stopPropagation(); await sb.from('saved_screens').delete().eq('id', x.id); loadSaved(); };
+          right.appendChild(document.createTextNode(" ")); right.appendChild(d);
+        }
+        b.appendChild(right); list.appendChild(b);
+      });
+      box.appendChild(list); scSide.appendChild(box);
+    };
+    section("Saved screens", savedScreens, USER ? "Add filters, then Save to keep a screen here." : "Sign up to save screens.", true);
+    section("Starter screens", STARTERS, "", false);
+  }
+
+  // Switch between the stock view and the screener (same page, own URL).
+  function showView(screener) {
+    scWrap.hidden = !screener;
+    if (!$('loading').hidden) return;
+    $('app').hidden = screener;
+    $('navscreen').classList.toggle('on', screener);
+    document.querySelectorAll('.seo').forEach(x => { x.hidden = screener || !!userView(); });
+  }
+  function openScreener(push, spec) {
+    if (push && location.pathname !== "/fmv/screener/") history.pushState({screener: true}, "", "/fmv/screener/");
+    document.title = "Stock Screener | Pear Digitals";
+    showView(true); window.scrollTo({top: 0});
+    if (spec) scSet(spec); else if (!sc.loaded && !sc.busy) scSet(sc.spec); else renderScMain();
+    loadSaved();
+  }
+  window.openScreener = openScreener;
+  window.showStockView = () => { if (!scWrap.hidden) showView(false); };
+  window.screenerReload = () => { if (!scWrap.hidden) { sc.loaded = false; openScreener(false); } };
+  $('navscreen').onclick = e => { e.preventDefault(); openScreener(true); };
 
   window.watchParse = txt => {
     const m = txt.match(/```watchlist-proposal\s*([\s\S]*?)```/);

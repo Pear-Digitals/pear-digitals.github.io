@@ -102,11 +102,25 @@ def main():
     if write_if_changed(os.path.join(ROOT, "fmv", "index.html"), replace_between(template, "seo:summary", intro)):
         changed.append("fmv/ (intro)")
 
+    # Screener: same app at /fmv/screener/ (the page opens the screener view from the URL).
+    e = html.escape
+    url = f"{SITE}/fmv/screener/"
+    title, desc = "Stock Screener | Pear Digitals", "Screen stocks in plain English: valuation, growth, momentum, dividends and Pear fair value."
+    head = (f"\n<title>{e(title)}</title>\n<meta name=\"description\" content=\"{e(desc)}\">\n<link rel=\"canonical\" href=\"{url}\">\n"
+            f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Pear Digitals">\n'
+            f'<meta property="og:title" content="{e(title)}">\n<meta property="og:description" content="{e(desc)}">\n'
+            f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{SITE}/assets/og/fmv.png">\n'
+            f'<meta name="twitter:card" content="summary_large_image">\n')
+    page = replace_between(replace_between(template, "seo:head", head), "seo:summary",
+                           f'<p class="seo">{e(desc)} Not investment advice. · {links}</p>')
+    if write_if_changed(os.path.join(ROOT, "fmv", "screener", "index.html"), page):
+        changed.append("fmv/screener/")
+
     # lastmod only where we know a real date (the latest fair value), so the file only changes when data does.
     newest = max(latest[t]["date"] for t in tickers)
     urls = [(f"{SITE}/", None), (f"{SITE}/fmv/", newest)]
     urls += [(f"{SITE}/fmv/{t.lower()}/", latest[t]["date"]) for t in tickers]
-    urls += [(f"{SITE}/fmv/methodology/", None), (f"{SITE}/fmv/privacy", None), (f"{SITE}/options-ledger/privacy", None)]
+    urls += [(f"{SITE}/fmv/screener/", None), (f"{SITE}/fmv/methodology/", None), (f"{SITE}/fmv/privacy", None), (f"{SITE}/options-ledger/privacy", None)]
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                + "".join(f"  <url><loc>{u}</loc>" + (f"<lastmod>{d}</lastmod>" if d else "") + "</url>\n" for u, d in urls)
                + "</urlset>\n")

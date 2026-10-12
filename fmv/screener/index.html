@@ -243,9 +243,11 @@
   .stable td.tk small { display:block; color:var(--muted); font-size:.76rem; max-width:170px; overflow:hidden; text-overflow:ellipsis; }
   .stable tbody tr { cursor:pointer; } .stable tbody tr:hover td { background:var(--soft); }
   .stable .tag { margin-top:0; }
-  .colpick { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
-  .colpick button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:4px 11px; font:inherit; font-size:.78rem; font-weight:600; cursor:pointer; color:var(--ink); }
-  .colpick button.on { background:var(--green); border-color:var(--green); color:#fff; }
+  .colwrap { position:relative; }
+  .colmenu { top:30px; right:0; min-width:200px; max-height:min(60vh,420px); overflow:auto; }
+  .colmenu button { font-size:.9rem; color:var(--ink); }
+  .colmenu button.on { font-weight:600; }
+  .colmenu button.on::after { content:"\2713"; float:right; color:var(--green); }
   .scitemrow:hover, .scitemrow.on { background:var(--soft); }
   .scitemrow.on .scitem { font-weight:600; }
   .scitem { flex:1; padding:10px 6px 10px 18px; border:0; background:none; font:inherit; font-size:.92rem; text-align:left; cursor:pointer; color:var(--ink); }
@@ -1084,6 +1086,13 @@ function draw() {
   }
   function fillWatch(wl, main) {
     const signedIn = !!userView();
+    // Ticker with a star next to it: tap the star to remove (or re-add) without opening the stock.
+    const tick = t => {
+      const h = el('div', 'shead'), on = WATCH.has(t);
+      const st = button(on ? "\u2605" : "\u2606", "sstar" + (on ? " on" : ""), e => { e.stopPropagation(); toggleWatch(t); });
+      st.setAttribute("aria-label", on ? `Remove ${t} from watchlist` : `Add ${t} to watchlist`);
+      h.appendChild(el('b', null, t)); h.appendChild(st); return h;
+    };
     wl.textContent = "";
     if (main) sortBtn.hidden = true;
     const hint = () => wl.appendChild(el('div', 'empty', "Press \u2606 to add stocks to your watchlist."));
@@ -1107,7 +1116,7 @@ function draw() {
     list.forEach(t => {
       if (soon(t)) {
         const r = el('div', 'wrow skrow'), left = el('div'), tag = el('span', 'tag', "Coming soon");
-        left.appendChild(el('b', null, t)); left.appendChild(el('small', null, NAMES[t] || ""));
+        left.appendChild(tick(t)); left.appendChild(el('small', null, NAMES[t] || ""));
         tag.style.background = "var(--muted)"; r.appendChild(left); r.appendChild(tag); wl.appendChild(r);
         return;
       }
@@ -1115,13 +1124,15 @@ function draw() {
         const r = el('div', 'wrow skrow'), left = el('div');
         const sub = el('span', 'sk', "\u00a0"); sub.style.cssText = "display:block;width:64px;height:10px;margin-top:5px";
         const px = el('span', 'sk', "\u00a0"); px.style.cssText = "width:64px;height:14px";
-        left.appendChild(el('b', null, t)); left.appendChild(sub);
+        left.appendChild(tick(t)); left.appendChild(sub);
         r.appendChild(left); r.appendChild(px); wl.appendChild(r);
         return;
       }
       const L = LATEST[t], mine = mineOf(t), fair = mine ? mine.base : L.fm.base;   // base everywhere, matching the Fair value block
-      const row = button("", "wrow" + (t === sel.value ? " on" : ""), () => { sel.value = t; sel.dispatchEvent(new Event('change')); window.scrollTo({top: 0, behavior: "smooth"}); });
-      const left = el('div'); left.appendChild(el('b', null, t));
+      // A div (not a button) so the star inside can be its own button.
+      const row = el('div', 'wrow' + (t === sel.value ? " on" : "")), go = () => { sel.value = t; sel.dispatchEvent(new Event('change')); window.scrollTo({top: 0, behavior: "smooth"}); };
+      row.tabIndex = 0; row.setAttribute("role", "button"); row.onclick = go; row.onkeydown = e => { if (e.key === "Enter") go(); };
+      const left = el('div'); left.appendChild(tick(t));
       left.appendChild(el('small', null, (mine ? "Your base " : "Base ") + money(fair)));
       const right = el('div', 'px'); right.appendChild(el('div', null, "$" + L.px.toFixed(2)));
       const ok = +fair > 0, pct = ok ? (L.px / fair - 1) * 100 : 0;
@@ -1670,7 +1681,13 @@ function draw() {
     const what = sc.busy ? "Screening…" : !sc.loaded ? "" : sc.count === 1 ? "1 stock" : `${sc.count.toLocaleString()} stocks`;
     bar.appendChild(el('span', null, sc.active ? `${sc.active.name}${what ? " · " + what : ""}` : what));
     bar.appendChild(el('span', 'grow'));
-    bar.appendChild(button("Columns", "linkbtn", () => { sc.picking = sc.picking === "cols" ? false : "cols"; renderScMain(); }));
+    // Columns: a dropdown of checkable columns (stays open while toggling; click outside to close).
+    const cw = el('span', 'colwrap');
+    const cb = button("Columns \u25be", "linkbtn", e => { e.stopPropagation(); sc.picking = sc.picking === "cols" ? false : "cols"; renderScMain(); });
+    cb.setAttribute("aria-haspopup", "menu"); cb.setAttribute("aria-expanded", sc.picking === "cols" ? "true" : "false");
+    cw.appendChild(cb);
+    if (sc.picking === "cols") cw.appendChild(columnMenu());
+    bar.appendChild(cw);
     const needAccount = fn => () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } fn(); };
     if (sc.active && !sc.active.starter) {   // a saved screen: Save changes is greyed out until something changes
       const save = button("Save changes", "linkbtn", needAccount(saveChanges));
@@ -1685,7 +1702,6 @@ function draw() {
     if (sc.naming) scMain.appendChild(nameForm());
     if (sc.err) scMain.appendChild(el('div', 'warn', sc.err));
 
-    if (sc.picking === "cols") scMain.appendChild(columnPicker());
     scMain.appendChild(resultsTable());
     syncStars();
     if (sc.rows.length < sc.count && !sc.busy) {
@@ -1765,14 +1781,16 @@ function draw() {
     try { localStorage.setItem("fmv-screen-cols", JSON.stringify(colPrefs)); } catch (e) {}
     renderScMain();
   }
-  function columnPicker() {
-    const box = el('div', 'colpick'), vis = new Set(visibleCols().map(c => c[0]));
+  function columnMenu() {
+    const m = el('div', 'menu colmenu'), vis = new Set(visibleCols().map(c => c[0]));
+    m.setAttribute("role", "menu"); m.onclick = e => e.stopPropagation();
     COLS.forEach(([k, label]) => {
       const b = button(label, vis.has(k) ? "on" : null, () => toggleCol(k, !vis.has(k)));
-      b.setAttribute("aria-pressed", vis.has(k) ? "true" : "false"); box.appendChild(b);
+      b.setAttribute("role", "menuitemcheckbox"); b.setAttribute("aria-checked", vis.has(k) ? "true" : "false"); m.appendChild(b);
     });
-    return box;
+    return m;
   }
+  document.addEventListener('click', () => { if (sc.picking === "cols") { sc.picking = false; renderScMain(); } });
   function resultsTable() {
     const cols = visibleCols(), wrap = el('div', 'stable-wrap'), t = el('table', 'stable');
     const head = el('tr'), sortBy = (k) => {

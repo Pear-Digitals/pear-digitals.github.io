@@ -941,7 +941,7 @@ function draw() {
   const SORTS = [
     ["name-asc", "Name: A to Z", "A\u2013Z"], ["name-desc", "Name: Z to A", "Z\u2013A"],
     ["price-desc", "Price: high to low", "Price \u2193"], ["price-asc", "Price: low to high", "Price \u2191"],
-    ["diff-desc", "vs fair value: most above first", "Most above"], ["diff-asc", "vs fair value: most below first", "Most below"],
+    ["diff-desc", "Fair Value: most above first", "Most above"], ["diff-asc", "Fair Value: most below first", "Most below"],
   ];
   let sortKey = (() => { try { const k = localStorage.getItem("fmv-watch-sort"); return SORTS.some(x => x[0] === k) ? k : "name-asc"; } catch (e) { return "name-asc"; } })();
   const fairOf = t => { const mine = mineOf(t); return mine ? mine.base : LATEST[t].fm.base; };

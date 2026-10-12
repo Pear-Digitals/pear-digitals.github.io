@@ -1627,12 +1627,6 @@ function draw() {
     const what = sc.busy ? "Screening…" : !sc.loaded ? "" : sc.count === 1 ? "1 stock" : `${sc.count.toLocaleString()} stocks`;
     bar.appendChild(el('span', null, sc.active ? `${sc.active.name}${what ? " · " + what : ""}` : what));
     bar.appendChild(el('span', 'grow'));
-    const sortSel = document.createElement('select'); sortSel.className = "ssort"; sortSel.setAttribute("aria-label", "Sort");
-    const opts = SORTS_SCREEN.some(([f, d]) => f === sc.spec.sort.field && d === sc.spec.sort.dir) ? SORTS_SCREEN : [[sc.spec.sort.field, sc.spec.sort.dir, "Best match"], ...SORTS_SCREEN];
-    opts.forEach(([f, d, label]) => { const o = document.createElement('option'); o.value = f + ":" + d; o.textContent = label; sortSel.appendChild(o); });
-    sortSel.value = sc.spec.sort.field + ":" + sc.spec.sort.dir;
-    sortSel.onchange = () => { const [field, dir] = sortSel.value.split(":"); scSet({filters: sc.spec.filters, sort: {field, dir}}); };
-    bar.appendChild(sortSel);
     const needAccount = fn => () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } fn(); };
     if (sc.active && !sc.active.starter && scDirty()) {
       bar.appendChild(button("Save changes", "linkbtn", needAccount(saveChanges)));

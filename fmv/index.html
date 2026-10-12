@@ -216,24 +216,28 @@
   .scform { display:flex; gap:8px; }
   .scform .field { margin:0; font-size:16px; }
   .schip.add { border:1px dashed #c9cfc8; background:none; color:var(--green); padding:4px 10px; cursor:pointer; font:inherit; font-size:.78rem; font-weight:600; }
-  .scpick { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0; }
-  .scpick select, .scpick input { font:inherit; font-size:16px; border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fff; color:var(--ink); }
-  .scpick input { width:96px; }
   .scbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:10px 0 2px; color:var(--muted); font-size:.85rem; }
   .scbar .grow { flex:1; }
   .linkbtn { border:0; background:none; color:var(--green); font:inherit; font-weight:600; cursor:pointer; padding:4px 2px; }
+  .linkbtn.danger { color:var(--down); }
   .sclist { padding:4px 0; }
-  .scitem { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; padding:10px 18px; border:0; background:none; font:inherit; font-size:.92rem; text-align:left; cursor:pointer; }
-  .scitem:hover, .scitem.on { background:var(--soft); }
-  .scitem small { color:var(--muted); }
-  .scitem .del { color:var(--muted); padding:0 4px; font-size:1rem; }
-  .scitem .del:hover { color:var(--down); }
-  #scside .side + .side { margin-top:14px; }
+  .scitemrow { display:flex; align-items:center; }
+  .scitemrow:hover, .scitemrow.on { background:var(--soft); }
+  .scitemrow.on .scitem { font-weight:600; }
+  .scitem { flex:1; padding:10px 6px 10px 18px; border:0; background:none; font:inherit; font-size:.92rem; text-align:left; cursor:pointer; color:var(--ink); }
+  .scmenu { border:0; background:none; color:var(--muted); font-size:1.1rem; cursor:pointer; padding:6px 14px; border-radius:8px; }
+  .scmenu:hover { color:var(--ink); }
+  .scacts { display:flex; gap:14px; padding:0 18px 8px; } .scacts .linkbtn { font-size:.85rem; }
+  .screname { display:flex; gap:6px; align-items:center; padding:6px 12px; }
+  .screname .field { margin:0; padding:7px 10px; font-size:16px; }
   @media (max-width:900px) {
     .sctitle { order:-2; }
     #scside { order:-1; }
     .sclist { display:flex; flex-wrap:wrap; gap:6px; padding:12px; }
-    .sclist .scitem { width:auto; border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:.85rem; }
+    .sclist .scitemrow { border:1px solid var(--line); border-radius:999px; }
+    .sclist .scitem { padding:6px 4px 6px 12px; font-size:.85rem; }
+    .sclist .scmenu { padding:4px 10px 4px 4px; }
+    .sclist .scacts, .sclist .screname { width:100%; padding:4px 4px 8px; }
   }
   /* screener: chips + result rows (chat card and full view) */
   .schips { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
@@ -1548,20 +1552,16 @@ function draw() {
 
   // ---- Screener screen (/fmv/screener/): typed request -> chips, filter picker, sort, load more, saved + starter screens ----
   const scWrap = $('screener'), scMain = $('scmain'), scSide = $('scside');
-  const SC_FIELDS = [["sector", "Sector", ""], ["fmv_zone", "Pear label", ""], ["px_vs_fmv_pct", "Price vs fair value", "%"],
-    ["pe_ttm", "P/E", ""], ["peg", "PEG", ""], ["ev_ebitda", "EV/EBITDA", ""], ["market_cap_b", "Market cap", "$B"],
-    ["rev_growth_yoy", "Revenue growth", "%"], ["eps_growth_yoy", "EPS growth", "%"], ["net_margin", "Net margin", "%"],
-    ["roe", "ROE", "%"], ["debt_equity", "Debt/equity", ""], ["div_yield", "Dividend yield", "%"],
-    ["px_vs_sma50_pct", "Price vs 50-day", "%"], ["rsi14", "RSI (14)", ""], ["dist_52w_high_pct", "vs 52-week high", "%"], ["price", "Price", "$"]];
   const STARTERS = [
     {name: "Strong Buys", spec: {filters: [{field: "fmv_zone", op: "in", values: ["strong_buy"], label: "Strong Buy"}], sort: {field: "px_vs_fmv_pct", dir: "asc"}}},
     {name: "Below fair value with a dividend", spec: {filters: [{field: "fmv_zone", op: "in", values: ["fair_buy", "strong_buy"], label: "At or below Pear fair value"},
       {field: "div_yield", op: "gt", num: 0, label: "Pays a dividend"}], sort: {field: "div_yield", dir: "desc"}}},
     {name: "Near 52-week lows", spec: {filters: [{field: "dist_52w_high_pct", op: "lte", num: -30, label: "30%+ below 52-week high"}], sort: {field: "dist_52w_high_pct", dir: "asc"}}},
-  ];
+  ].map(x => ({...x, starter: true}));
   const DEFAULT_SORT = {field: "px_vs_fmv_pct", dir: "asc"};
-  let sc = {spec: {filters: [], sort: DEFAULT_SORT}, rows: [], count: 0, more: 0, moreTier: null, sectors: [], busy: false, err: "", loaded: false, picking: false, naming: false};
-  let savedScreens = [], scCounts = {};
+  // sc.active: the screen loaded from the list (saved or starter), if any; edits to it can be saved back.
+  let sc = {spec: {filters: [], sort: DEFAULT_SORT}, rows: [], count: 0, busy: false, err: "", loaded: false, active: null, naming: null};
+  let savedScreens = [], scMenu = null, scRenaming = null, scDeleting = null;
 
   async function scRun(body, append) {
     sc.busy = true; sc.err = ""; renderScMain();
@@ -1569,34 +1569,38 @@ function draw() {
       const r = await runScreen({limit: 50, ...body});
       sc.spec = {filters: r.spec.filters, sort: r.spec.sort};
       sc.rows = append ? sc.rows.concat(r.rows) : r.rows;
-      Object.assign(sc, {count: r.count, more: r.more, moreTier: r.more_tier, sectors: r.sectors || sc.sectors, loaded: true});
+      Object.assign(sc, {count: r.count, loaded: true});
     } catch (e) { sc.err = errText(e); }
-    sc.busy = false; renderScMain();
+    sc.busy = false; renderScMain(); renderScSide();
   }
   const scQuery = q => scRun({query: q, filters: sc.spec.filters});
   const scSet = spec => scRun({filters: spec.filters, sort: spec.sort || DEFAULT_SORT});
+  const specKey = sp => JSON.stringify({f: (sp.filters || []).map(f => [f.field, f.op, f.num ?? null, f.values ?? null]), s: sp.sort || DEFAULT_SORT});
+  const scDirty = () => sc.active && specKey(sc.active.spec) !== specKey(sc.spec);
+  const loadScreen = x => { sc.active = x; sc.naming = null; scMenu = scRenaming = scDeleting = null; scSet(x.spec); };
 
   function renderScMain() {
     scMain.textContent = "";
     const form = el('form', 'scform'), input = el('input', 'field');
-    input.placeholder = "Describe a screen, e.g. cheap tech stocks starting to move"; input.setAttribute("aria-label", "Describe a screen");
-    form.appendChild(input); form.appendChild(button("Screen", "pill"));
-    form.lastChild.type = "submit";
+    input.placeholder = sc.active ? "Refine this screen, e.g. only ones with dividends" : "Describe a screen, e.g. cheap tech stocks starting to move";
+    input.setAttribute("aria-label", "Describe a screen");
+    form.appendChild(input); form.appendChild(button("Screen", "pill")); form.lastChild.type = "submit";
     form.onsubmit = e => { e.preventDefault(); if (input.value.trim()) scQuery(input.value.trim()); };
     scMain.appendChild(form);
 
-    const chips = el('div', 'schips');
-    sc.spec.filters.forEach((f, i) => {
-      const c = el('span', 'schip', f.label);
-      const x = button("\u00d7", null, () => scSet({filters: sc.spec.filters.filter((_, j) => j !== i), sort: sc.spec.sort}));
-      x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x); chips.appendChild(c);
-    });
-    chips.appendChild(button("+ Filter", "schip add", () => { sc.picking = !sc.picking; renderScMain(); }));
-    scMain.appendChild(chips);
-    if (sc.picking) scMain.appendChild(filterPicker());
+    if (sc.spec.filters.length) {
+      const chips = el('div', 'schips');
+      sc.spec.filters.forEach((f, i) => {
+        const c = el('span', 'schip', f.label);
+        const x = button("×", null, () => scSet({filters: sc.spec.filters.filter((_, j) => j !== i), sort: sc.spec.sort}));
+        x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x); chips.appendChild(c);
+      });
+      scMain.appendChild(chips);
+    }
 
     const bar = el('div', 'scbar');
-    bar.appendChild(el('span', null, sc.busy ? "Screening\u2026" : !sc.loaded ? "" : sc.count === 1 ? "1 stock" : `${sc.count.toLocaleString()} stocks`));
+    const what = sc.busy ? "Screening…" : !sc.loaded ? "" : sc.count === 1 ? "1 stock" : `${sc.count.toLocaleString()} stocks`;
+    bar.appendChild(el('span', null, sc.active ? `${sc.active.name}${what ? " · " + what : ""}` : what));
     bar.appendChild(el('span', 'grow'));
     const sortSel = document.createElement('select'); sortSel.className = "ssort"; sortSel.setAttribute("aria-label", "Sort");
     const opts = SORTS_SCREEN.some(([f, d]) => f === sc.spec.sort.field && d === sc.spec.sort.dir) ? SORTS_SCREEN : [[sc.spec.sort.field, sc.spec.sort.dir, "Best match"], ...SORTS_SCREEN];
@@ -1604,10 +1608,14 @@ function draw() {
     sortSel.value = sc.spec.sort.field + ":" + sc.spec.sort.dir;
     sortSel.onchange = () => { const [field, dir] = sortSel.value.split(":"); scSet({filters: sc.spec.filters, sort: {field, dir}}); };
     bar.appendChild(sortSel);
-    if (sc.spec.filters.length) {
-      bar.appendChild(button("Save", "linkbtn", () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } sc.naming = true; renderScMain(); }));
-      bar.appendChild(button("Clear", "linkbtn", () => scSet({filters: [], sort: DEFAULT_SORT})));
+    const needAccount = fn => () => { if (!USER) { openAuth("up", "Sign up to save screens."); return; } fn(); };
+    if (sc.active && !sc.active.starter && scDirty()) {
+      bar.appendChild(button("Save changes", "linkbtn", needAccount(saveChanges)));
+      bar.appendChild(button("Save as new", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); })));
+    } else if (sc.spec.filters.length && (!sc.active || sc.active.starter)) {   // new screen, or a copy of a starter
+      bar.appendChild(button("Save", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); })));
     }
+    if (sc.spec.filters.length || sc.active) bar.appendChild(button("Clear", "linkbtn", () => { sc.active = null; scSet({filters: [], sort: DEFAULT_SORT}); }));
     scMain.appendChild(bar);
     if (sc.naming) scMain.appendChild(nameForm());
     if (sc.err) scMain.appendChild(el('div', 'warn', sc.err));
@@ -1631,56 +1639,31 @@ function draw() {
     }
   }
 
-  // "+ Filter": pick a field, then a value (numbers: under / over; sector and Pear label: a choice).
-  function filterPicker() {
-    const box = el('div', 'scpick'), field = document.createElement('select');
-    SC_FIELDS.forEach(([k, label]) => { const o = document.createElement('option'); o.value = k; o.textContent = label; field.appendChild(o); });
-    const rest = el('span', 'scpick');
-    const draw = () => {
-      rest.textContent = "";
-      const [k, label, unit] = SC_FIELDS.find(f => f[0] === field.value);
-      if (k === "sector" || k === "fmv_zone") {
-        const v = document.createElement('select');
-        (k === "sector" ? sc.sectors.map(x => [x, x]) : [["strong_buy", "Strong Buy"], ["fair_buy", "Fair Buy"], ["fair_buy,strong_buy", "Fair Buy or Strong Buy"], ["above", "Above fair value"]])
-          .forEach(([val, text]) => { const o = document.createElement('option'); o.value = val; o.textContent = text; v.appendChild(o); });
-        rest.appendChild(v);
-        rest.appendChild(button("Add", "pill", () => addFilter({field: k, op: "in", values: v.value.split(","),
-          label: k === "sector" ? "Sector: " + v.value : v.options[v.selectedIndex].textContent})));
-      } else {
-        const op = document.createElement('select');
-        [["lt", "under"], ["gt", "over"]].forEach(([val, text]) => { const o = document.createElement('option'); o.value = val; o.textContent = text; op.appendChild(o); });
-        const num = el('input'); num.type = "number"; num.step = "any"; num.inputMode = "decimal"; num.placeholder = unit || "value";
-        rest.appendChild(op); rest.appendChild(num);
-        rest.appendChild(button("Add", "pill", () => {
-          const n = Number(num.value); if (num.value === "" || !Number.isFinite(n)) { num.focus(); return; }
-          const shown = unit === "$" || unit === "$B" ? "$" + n + (unit === "$B" ? "B" : "") : n + unit;
-          addFilter({field: k, op: op.value, num: n, label: `${label} ${op.value === "lt" ? "under" : "over"} ${shown}`});
-        }));
-      }
-    };
-    field.onchange = draw; draw();
-    box.appendChild(field); box.appendChild(rest);
-    return box;
-  }
-  function addFilter(f) {
-    sc.picking = false;
-    scSet({filters: [...sc.spec.filters.filter(x => x.field !== f.field), f], sort: sc.spec.sort});
-  }
-
+  // Create: name the current chips + sort.
   function nameForm() {
     const f = el('form', 'scform'), input = el('input', 'field');
     input.placeholder = "Name this screen"; input.maxLength = 60;
     f.appendChild(input); f.appendChild(button("Save", "pill")); f.lastChild.type = "submit";
-    f.appendChild(button("Cancel", "pill ghost", () => { sc.naming = false; renderScMain(); }));
+    f.appendChild(button("Cancel", "pill ghost", () => { sc.naming = null; renderScMain(); }));
     f.onsubmit = async e => {
       e.preventDefault();
       const name = input.value.trim(); if (!name) return;
-      const {error} = await sb.from('saved_screens').insert({name, spec: {filters: sc.spec.filters, sort: sc.spec.sort}});
+      const spec = {filters: sc.spec.filters, sort: sc.spec.sort};
+      const {data, error} = await sb.from('saved_screens').insert({name, spec}).select('id,name,spec').single();
       if (error) { toast(/20 screens/.test(error.message) ? "You can save up to 20 screens." : "Couldn't save that screen."); return; }
-      sc.naming = false; toast(`Saved \u201c${name}\u201d.`); renderScMain(); await loadSaved();
+      sc.naming = null; sc.active = data || {name, spec}; toast(`Saved “${name}”.`);
+      await loadSaved(); renderScMain();
     };
     setTimeout(() => input.focus(), 0);
     return f;
+  }
+  // Update: save the current chips + sort over the loaded screen.
+  async function saveChanges() {
+    const spec = {filters: sc.spec.filters, sort: sc.spec.sort};
+    const {error} = await sb.from('saved_screens').update({spec}).eq('id', sc.active.id);
+    if (error) { toast("Couldn't save changes."); return; }
+    sc.active = {...sc.active, spec}; toast(`Updated “${sc.active.name}”.`);
+    await loadSaved(); renderScMain();
   }
 
   async function loadSaved() {
@@ -1689,34 +1672,53 @@ function draw() {
       const {data} = await sb.from('saved_screens').select('id,name,spec').order('created_at');
       savedScreens = data || [];
     }
+    if (sc.active && !sc.active.starter && !savedScreens.some(x => x.id === sc.active.id)) sc.active = null;
     renderScSide();
-    const all = [...savedScreens, ...STARTERS];
-    if (all.length) runScreen({counts: all.map(x => x.spec)}).then(r => {
-      all.forEach((x, i) => { scCounts[x.id || x.name] = r.counts[i]; }); renderScSide();
-    }).catch(() => {});
   }
+
+  // One list: your saved screens, then the starters. Saved ones have a menu to rename or delete.
   function renderScSide() {
     scSide.textContent = "";
-    const section = (title, items, emptyText, deletable) => {
-      const box = el('div', 'side'); box.appendChild(el('h3', null, title));
-      const list = el('div', 'sclist');
-      if (!items.length) list.appendChild(el('div', 'empty', emptyText));
-      items.forEach(x => {
-        const n = scCounts[x.id || x.name];
-        const b = button("", "scitem", () => scSet(x.spec));
-        b.appendChild(el('span', null, x.name));
-        const right = el('small', null, n == null ? "" : n.toLocaleString());
-        if (deletable) {
-          const d = el('span', 'del', "\u00d7"); d.setAttribute("role", "button"); d.setAttribute("aria-label", "Delete " + x.name);
-          d.onclick = async ev => { ev.stopPropagation(); await sb.from('saved_screens').delete().eq('id', x.id); loadSaved(); };
-          right.appendChild(document.createTextNode(" ")); right.appendChild(d);
-        }
-        b.appendChild(right); list.appendChild(b);
-      });
-      box.appendChild(list); scSide.appendChild(box);
-    };
-    section("Saved screens", savedScreens, USER ? "Add filters, then Save to keep a screen here." : "Sign up to save screens.", true);
-    section("Starter screens", STARTERS, "", false);
+    const box = el('div', 'side'); box.appendChild(el('h3', null, "Screens"));
+    const list = el('div', 'sclist');
+    [...savedScreens, ...STARTERS].forEach(x => {
+      const key = x.id || x.name, on = sc.active && (sc.active.id || sc.active.name) === key;
+      if (scRenaming === key) {
+        const f = el('form', 'screname'), input = el('input', 'field'); input.value = x.name; input.maxLength = 60;
+        f.appendChild(input); f.appendChild(button("Save", "linkbtn")); f.lastChild.type = "submit";
+        f.appendChild(button("Cancel", "linkbtn", () => { scRenaming = null; renderScSide(); }));
+        f.onsubmit = async e => {
+          e.preventDefault(); const name = input.value.trim(); if (!name) return;
+          const {error} = await sb.from('saved_screens').update({name}).eq('id', x.id);
+          if (error) { toast("Couldn't rename that screen."); return; }
+          if (on) sc.active = {...sc.active, name};
+          scRenaming = null; await loadSaved(); renderScMain();
+        };
+        list.appendChild(f); setTimeout(() => input.focus(), 0);
+        return;
+      }
+      const row = el('div', 'scitemrow' + (on ? " on" : ""));
+      const b = button(x.name, "scitem", () => loadScreen(x));
+      row.appendChild(b);
+      if (!x.starter) {
+        const m = button("⋯", "scmenu", ev => { ev.stopPropagation(); scMenu = scMenu === key ? null : key; scDeleting = null; renderScSide(); });
+        m.setAttribute("aria-label", "Options for " + x.name); row.appendChild(m);
+      }
+      list.appendChild(row);
+      if (scMenu === key) {
+        const acts = el('div', 'scacts');
+        acts.appendChild(button("Rename", "linkbtn", () => { scRenaming = key; scMenu = null; renderScSide(); }));
+        acts.appendChild(button(scDeleting === key ? "Confirm delete" : "Delete", "linkbtn danger", async () => {
+          if (scDeleting !== key) { scDeleting = key; renderScSide(); return; }
+          const {error} = await sb.from('saved_screens').delete().eq('id', x.id);
+          if (error) { toast("Couldn't delete that screen."); return; }
+          if (on) sc.active = null;
+          scMenu = scDeleting = null; toast(`Deleted “${x.name}”.`); await loadSaved(); renderScMain();
+        }));
+        list.appendChild(acts);
+      }
+    });
+    box.appendChild(list); scSide.appendChild(box);
   }
 
   // Switch between the stock view and the screener (same page, own URL).
@@ -1731,7 +1733,7 @@ function draw() {
     if (push && location.pathname !== "/fmv/screener/") history.pushState({screener: true}, "", "/fmv/screener/");
     document.title = "Stock Screener | Pear Digitals";
     showView(true); window.scrollTo({top: 0});
-    if (spec) scSet(spec); else if (!sc.loaded && !sc.busy) scSet(sc.spec); else renderScMain();
+    if (spec) { sc.active = null; scSet(spec); } else if (!sc.loaded && !sc.busy) scSet(sc.spec); else renderScMain();
     loadSaved();
   }
   window.openScreener = openScreener;

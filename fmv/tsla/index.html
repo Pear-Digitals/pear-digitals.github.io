@@ -1054,8 +1054,8 @@ function draw() {
 
   // One sentence per paid plan, used on every paywall.
   const PLAN_BLURB = {
-    premium: "The Premium Plan covers every S&P 500 stock with fair values, 1Y historical data, daily alerts, and 1,000 Quill messages a month.",
-    pro: "The Pro Plan covers every NYSE and Nasdaq stock with fair values, 10Y+ of historical data, real-time alerts, and unlimited Quill.",
+    premium: "The Premium Plan covers every S&P 500 stock with fair values, 1Y historical data, daily email alerts, and 1,000 Quill messages a month.",
+    pro: "The Pro Plan covers every NYSE and Nasdaq stock with fair values, 10Y+ of historical data, real-time email and text alerts, and unlimited Quill.",
   };
   const priceOf = id => { const pl = PLANS.find(x => x.id === id); return pl ? pl.price : ""; };
 
@@ -1093,9 +1093,9 @@ function draw() {
      items: ["Pear Recommended Fair Values & Charts", "Customized Fair Values", "Auto re-ratings after earnings & other significant events",
              "20 Quill messages a day", "1M of Historical Data"]},
     {id: "premium", name: "Premium", price: "$49/yr", alt: "or $4.99/mo", stocks: "S&P 500",
-     items: ["Everything in Free", "1,000 Quill messages a month", "Daily Fair Buy Alerts", "1Y of Historical Data"]},
+     items: ["Everything in Free", "1,000 Quill messages a month", "Daily Fair Buy Email Alerts", "1Y of Historical Data"]},
     {id: "pro", name: "Pro", price: "$249/yr", alt: "or $29/mo", stocks: "All NYSE & Nasdaq",
-     items: ["Everything in Premium", "Unlimited Quill messages", "Real-time Fair Buy Alerts", "Backfilled Pear Recommended and Custom Fair Values", "10Y+ of Historical Data"]},
+     items: ["Everything in Premium", "Unlimited Quill messages", "Real-time Fair Buy Email & Text Alerts", "Backfilled Pear Recommended and Custom Fair Values", "10Y+ of Historical Data"]},
   ];
   function openPlans() {
     const g = $('plansgrid'); g.textContent = "";

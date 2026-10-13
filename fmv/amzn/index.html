@@ -429,7 +429,7 @@
   <button type="button" class="xbtn" id="plansclose" aria-label="Close">&times;</button>
   <h2>Plans</h2>
   <div class="plans" id="plansgrid"></div>
-  <p class="plansnote">Premium and Pro coming soon.</p>
+  <p class="plansnote">Without an account: the Magnificent 7. Premium and Pro coming soon.</p>
 </dialog>
 
 <dialog id="authdlg">
@@ -799,8 +799,9 @@ function draw() {
   const SC = ["bear", "base", "bull"], CAP = {bear: "Bear", base: "Base", bull: "Bull"};
   let rows = {}, authMode = "in", plan = null, fullHistory = false, onWaitlist = false, waitTier = null, alertsOn = true;
   const PLAN_NAME = {free: "Free", premium: "Premium", pro: "Pro"};
-  const RANK = {free: 0, premium: 1, pro: 2};
-  const myRank = () => RANK[plan || "free"];
+  // Access levels: signed out 0 (Mag 7), Free 1 (+ S&P 500), Premium 2 (every NYSE / Nasdaq stock), Pro 3 (+ OTC).
+  const RANK = {free: 1, premium: 2, pro: 3};
+  const myRank = () => userView() ? RANK[plan || "free"] : 0;
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const button = (text, cls, fn) => { const b = el('button', cls, text); b.type = "button"; if (fn) b.onclick = fn; return b; };
   const money = v => v == null ? "—" : "$" + Math.round(+v).toLocaleString();
@@ -917,9 +918,10 @@ function draw() {
   let UNIVERSE = null, universeLoading = null;
   const loadUniverse = () => universeLoading || (universeLoading = fetch("/fmv/universe.json").then(r => r.json())
     .then(d => { UNIVERSE = d; if (!qres.hidden) renderSearch(); }).catch(() => { universeLoading = null; }));
-  const TIER_PLAN = ["free", "premium", "pro"];
+  // What a stock tier needs: Mag 7 nothing, S&P 500 a free account, other NYSE / Nasdaq stocks Premium.
+  const TIER_PLAN = ["free", "free", "premium"];
   // Search priority of each stock tier (index = tier), per plan. Pro has none: best match wins.
-  const TIER_ORDER = [[0, 1, 2], [1, 0, 2], null];
+  const TIER_ORDER = [[0, 1, 2], [1, 0, 2], null, null];   // by access level: signed out, Free, Premium, Pro
   // What tapping a search result does: open it, show the paywall, or say it's coming.
   const statusOf = (t, tier) => myRank() < tier ? TIER_PLAN[tier] : LATEST[t] ? "ok" : USER && tier > 0 ? "load" : "soon";
   function renderSearch() {
@@ -1124,7 +1126,7 @@ function draw() {
     wl.classList.toggle('fadein', fadeNext);
     // Paid stocks are fetched one by one after the page loads; until they arrive they keep their place as placeholders,
     // so the list doesn't show the Mag 7 first and then reshuffle.
-    const loadingPaid = t => !LATEST[t] && !noData.has(t) && !MAG7.includes(t) && plan && plan !== "free";
+    const loadingPaid = t => !LATEST[t] && !noData.has(t) && !MAG7.includes(t) && !!plan;
     const soon = t => !LATEST[t] && noData.has(t) && !MAG7.includes(t);   // watched, but no fair value published yet
     const list = sortWatch([...WATCH].filter(t => LATEST[t] || loadingPaid(t) || soon(t)));
     if (!list.length) { hint(); return; }
@@ -1211,8 +1213,8 @@ function draw() {
 
   // One sentence per paid plan, used on every paywall.
   const PLAN_BLURB = {
-    premium: "The Premium Plan covers every S&P 500 stock with fair values, 1Y historical data, daily email alerts, Agentic Trading, and 2,500 Quill messages a month.",
-    pro: "The Pro Plan covers every NYSE and Nasdaq stock with fair values, 10Y+ of historical data, real-time email and text alerts, Agentic Trading, and unlimited Quill.",
+    premium: "The Premium Plan covers every NYSE and Nasdaq stock with fair values, 1Y historical data, daily email alerts, Agentic Trading, and 2,500 Quill messages a month.",
+    pro: "The Pro Plan covers every NYSE, Nasdaq and OTC stock with fair values, 10Y+ of historical data, real-time email and text alerts, Agentic Trading, and unlimited Quill.",
   };
   const priceOf = id => { const pl = PLANS.find(x => x.id === id); return pl ? pl.price : ""; };
 
@@ -1222,7 +1224,12 @@ function draw() {
   function openPaywall(t, name, st) {
     const acts = $('payacts'); acts.textContent = "";
     const pp = $('payprice'); pp.textContent = "";
-    if (st === "soon") {
+    if (st === "free") {   // signed out: S&P 500 stocks need a free account
+      $('paytitle').textContent = `${t} is free with an account`;
+      $('paytext').textContent = `Sign up free to see ${name || t} and every S&P 500 stock: fair values, charts and Quill.`;
+      acts.appendChild(button("Sign up free", "pill", () => { pay.close(); openAuth("up"); }));
+      acts.appendChild(button("Log in", "pill light", () => { pay.close(); openAuth("in"); }));
+    } else if (st === "soon") {
       $('paytitle').textContent = `${t} is coming soon`;
       $('paytext').textContent = `${name || t} is included in your plan. We're adding its fair value soon.`;
       acts.appendChild(button("OK", "pill", () => pay.close()));
@@ -1246,12 +1253,12 @@ function draw() {
   $('plansclose').onclick = () => plansDlg.close();
   $('plansfoot').onclick = e => { e.preventDefault(); openPlans(); };
   const PLANS = [
-    {id: "free", name: "Free", price: "$0", stocks: "Magnificent 7",
+    {id: "free", name: "Free", price: "$0", stocks: "S&P 500",
      items: ["Pear Recommended Fair Values & Charts", "Customized Fair Values", "Auto re-ratings after earnings & other significant events",
-             "Stock Screener", "50 Quill messages a day", "1M of Historical Data"]},
-    {id: "premium", name: "Premium", price: "$49/yr", alt: "or $4.99/mo", stocks: "S&P 500",
+             "Stock Screener", "25 Quill messages a day", "1M of Historical Data"]},
+    {id: "premium", name: "Premium", price: "$49/yr", alt: "or $4.99/mo", stocks: "All NYSE & Nasdaq",
      items: ["Everything in Free", "Agentic Trading", "2,500 Quill messages a month", "Daily Fair Buy Email Alerts", "1Y of Historical Data"]},
-    {id: "pro", name: "Pro", price: "$249/yr", alt: "or $29/mo", stocks: "All NYSE & Nasdaq",
+    {id: "pro", name: "Pro", price: "$249/yr", alt: "or $29/mo", stocks: "NYSE, Nasdaq & OTC",
      items: ["Everything in Premium", "Unlimited Quill messages", "Real-time Fair Buy Email & Text Alerts", "Backfilled Pear Recommended and Custom Fair Values", "10Y+ of Historical Data"]},
   ];
   function openPlans() {
@@ -1445,7 +1452,7 @@ function draw() {
     }
     renderRanges(); onWaitlist = next.onWaitlist; waitTier = next.waitTier || null; alertsOn = next.alertsOn !== false;
     const paid = [...new Set([...WATCH, ...Object.keys(rows)])].filter(t => !MAG7.includes(t) && !LATEST[t]);
-    if (USER && plan && plan !== "free" && paid.length)
+    if (USER && plan && paid.length)
       Promise.all(paid.slice(0, 50).map(ensureStock)).then(() => { if (seq === refreshSeq) renderSide(); });
     Object.keys(MY).forEach(k => delete MY[k]);
     Object.values(rows).forEach(r => { if (mineOf(r.ticker)) MY[r.ticker] = r; });

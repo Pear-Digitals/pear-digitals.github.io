@@ -1564,6 +1564,8 @@ function draw() {
     try { const q = String(JSON.parse(m[1]).query || "").trim(); return q ? q.slice(0, 500) : null; } catch (e) { return null; }
   };
   const ZONE_TAG = {strong_buy: ["Strong Buy", "#00C805"], fair_buy: ["Fair Buy", "#1a7f37"]};
+  // Badge for a result's Pear label; "above" uses the stock page's colors (amber, or orange-red when 25%+ above).
+  const zoneTag = x => ZONE_TAG[x.fmv_zone] || (x.fmv_zone === "above" ? ["Above", (x.px_vs_fmv_pct ?? 0) > 25 ? "#FF5000" : "#b7791f"] : null);
   function openFromScreen(t, name) {
     if ($('screendlg').open) $('screendlg').close();
     if (window.chatClose && matchMedia("(max-width:560px)").matches) window.chatClose();
@@ -1601,7 +1603,7 @@ function draw() {
       left.appendChild(el('small', null, (x.name || "").replace(/,?\s+(Inc\.?|Corporation|Corp\.?|Ltd\.?|plc)$/i, "")));
       left.appendChild(el('small', null, x.reason));
       const right = el('div', 'r', x.price != null ? "$" + Number(x.price).toFixed(2) : "");
-      const z = ZONE_TAG[x.fmv_zone];
+      const z = zoneTag(x);
       if (z) { const tg = el('span', 'tag', z[0]); tg.style.background = z[1]; right.appendChild(el('br')); right.appendChild(tg); }
       row.appendChild(left); row.appendChild(right); list.appendChild(row);
     });
@@ -1870,7 +1872,7 @@ function draw() {
       cols.forEach(([k, , f]) => {
         const td = el('td'), v = x[k];
         if (v == null || v === "") td.textContent = "\u2014";
-        else if (k === "fmv_zone") { const z = ZONE_TAG[v]; if (z) { const tg = el('span', 'tag', z[0]); tg.style.background = z[1]; td.appendChild(tg); } else td.textContent = "Above"; }
+        else if (k === "fmv_zone") { const z = zoneTag(x); if (z) { const tg = el('span', 'tag', z[0]); tg.style.background = z[1]; td.appendChild(tg); } }
         else {
           td.textContent = f(v);
           if (k === "px_vs_fmv_pct") td.style.color = v < 0.5 ? "var(--up)" : "var(--down)";

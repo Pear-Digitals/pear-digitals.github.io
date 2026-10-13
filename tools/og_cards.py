@@ -19,8 +19,7 @@ TEMPLATE = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
   html, body {{ margin:0; width:1200px; height:630px; overflow:hidden; background:#fff; color:#0f1f17;
     font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Helvetica,Arial,sans-serif; }}
   .card {{ position:relative; box-sizing:border-box; width:1200px; height:630px; padding:72px 80px; }}
-  .brand {{ font-size:34px; font-weight:700; letter-spacing:-.01em; }}
-  .brand span {{ color:#14532d; }}
+  .brand img {{ display:block; height:64px; width:auto; }}
   h1 {{ font-size:{size}px; line-height:1; letter-spacing:-.04em; margin:84px 0 18px; font-weight:800; }}
   .sub {{ font-size:40px; color:#4a5650; }}
   .lines {{ position:absolute; left:80px; right:80px; bottom:72px; height:84px; }}
@@ -30,7 +29,7 @@ TEMPLATE = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
   .bear {{ bottom:0; border-top:6px dotted #e5484d; }}
   .tags {{ position:absolute; right:80px; top:72px; font-size:28px; color:#4a5650; }}
 </style></head><body><div class="card">
-  <div class="brand"><span>Pear</span> Digitals</div>
+  <div class="brand"><img src="{logo}" alt="Pear Digitals"></div>
   <div class="tags">Bear &middot; Base &middot; Bull</div>
   <h1>{title}</h1>
   <div class="sub">{sub}</div>
@@ -45,7 +44,8 @@ def main():
             sub = f"{name} fair value" if slug != "fmv" else "Bear, base &amp; bull fair values for US stocks"
             page = os.path.join(tmp, f"{slug}.html")
             with open(page, "w") as f:
-                f.write(TEMPLATE.format(title=html.escape(title), sub=sub, size=150 if slug != "fmv" else 104))
+                f.write(TEMPLATE.format(title=html.escape(title), sub=sub, size=150 if slug != "fmv" else 104,
+                                        logo="file://" + os.path.join(ROOT, "assets", "logo.svg")))
             png = os.path.join(OUT, f"{slug}.png")
             if os.path.exists(png):
                 os.remove(png)

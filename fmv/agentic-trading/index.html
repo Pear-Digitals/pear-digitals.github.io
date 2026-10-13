@@ -552,9 +552,12 @@ function renderRanges() {
 // Each covered stock has its own page (/fmv/<ticker>/, built by tools/seo_build.py). Keep the address and tab
 // title in step with the stock on screen so links are shareable and the back button works.
 const PAGED = ["AAPL","AMZN","GOOGL","META","MSFT","NVDA","TSLA"];   // stocks with a page (tools/seo_build.py NAMES)
+// The URL names the stock on screen, so a refresh or a shared link opens it again: the Mag 7 have their own pages
+// (/fmv/nvda/), any other stock is /fmv/?s=AMD.
+const stockInUrl = () => { const v = (new URLSearchParams(location.search).get("s") || "").toUpperCase(); return /^[A-Z][A-Z0-9.\-]{0,9}$/.test(v) ? v : null; };
 function syncUrl() {
-  const t = sel.value, path = PAGED.includes(t) ? `/fmv/${t.toLowerCase()}/` : "/fmv/";
-  if (location.pathname !== path) history.pushState({t}, "", path + location.hash);
+  const t = sel.value, path = PAGED.includes(t) ? `/fmv/${t.toLowerCase()}/` : `/fmv/?s=${encodeURIComponent(t)}`;
+  if (location.pathname + location.search !== path) history.pushState({t}, "", path + location.hash);
   document.title = (window.stockName ? window.stockName(t) : t) + ` (${t}) Fair Value | Pear Digitals`;
 }
 
@@ -630,6 +633,8 @@ async function init() {
     if (/^\/fmv\/screener\/?$/.test(location.pathname)) { if (window.openScreener) window.openScreener(false); return; }
     if (/^\/fmv\/agentic-trading\/?$/.test(location.pathname)) { if (window.openAgentic) window.openAgentic(false); return; }
     if (window.showStockView) window.showStockView();
+    const s = stockInUrl();
+    if (s && s !== sel.value && window.openStockFromUrl) { window.openStockFromUrl(s); return; }
     const t = (location.pathname.match(/^\/fmv\/([a-z0-9.\-]+)\/?$/i) || [])[1];
     const want = t ? t.toUpperCase() : (sel.options[0] && sel.options[0].value);
     if (want && want !== sel.value && [...sel.options].some(o => o.value === want)) { sel.value = want; draw(); }
@@ -951,6 +956,20 @@ function draw() {
     if (term && !hits.length) qres.appendChild(el('div', 'none', UNIVERSE ? `No NYSE or Nasdaq stock matches \u201c${raw}\u201d.` : "Searching\u2026"));
     qres.hidden = false; q.setAttribute("aria-expanded", "true");
   }
+  // /fmv/?s=AMD: open that stock once we know who's signed in (paid stocks load on demand; others get the right paywall).
+  let pendingStock = stockInUrl();
+  if (pendingStock && !MAG7.includes(pendingStock)) $('app').classList.add('pending');   // placeholders, not the default stock
+  async function openStockFromUrl(t) {
+    const redraw = () => { if (D[sel.value] && LATEST[sel.value]) draw(); };   // the page's own data may still be loading
+    if (LATEST[t]) { $('app').classList.remove('pending'); if (sel.value !== t) { sel.value = t; sel.dispatchEvent(new Event('change')); } else redraw(); return; }
+    await loadUniverse();
+    const u = (UNIVERSE || []).find(x => x[0] === t);
+    const st = statusOf(t, u ? u[2] : 2);
+    if (st === "load") { openStock(t, u ? u[1] : t); return; }      // keeps the placeholders until the data arrives
+    $('app').classList.remove('pending'); redraw();                  // paywall / coming soon: back to the stock behind it
+    choose(t, u ? u[1] : t, u ? u[2] : 2);
+  }
+  window.openStockFromUrl = openStockFromUrl;
   function choose(t, name, tier) {
     const st = statusOf(t, tier);
     if (st === "ok") { pick(t); return; }
@@ -1456,6 +1475,7 @@ function draw() {
     renderNav();
     if (!$('app').hidden) draw(); else renderSide();
     if (window.agenticReload) window.agenticReload();
+    if (pendingStock && curView === "stock") { const t = pendingStock; pendingStock = null; openStockFromUrl(t); }
     if (wasLoading) svg.classList.add('fadein');
     fadeNext = false;
   }

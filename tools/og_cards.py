@@ -10,7 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "assets", "og")
 CHROME = os.environ.get("CHROME", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 CARDS = {
-    "fmv": ("Fair Market Value", "Magnificent 7"),
+    "fmv": ("Fair Market Value", "US stocks"),
     "aapl": ("AAPL", "Apple"), "amzn": ("AMZN", "Amazon"), "googl": ("GOOGL", "Alphabet"), "meta": ("META", "Meta"),
     "msft": ("MSFT", "Microsoft"), "nvda": ("NVDA", "NVIDIA"), "tsla": ("TSLA", "Tesla"),
 }
@@ -42,7 +42,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         for slug, (title, name) in CARDS.items():
-            sub = f"{name} fair value" if slug != "fmv" else "Bear, base &amp; bull fair values for the Magnificent 7"
+            sub = f"{name} fair value" if slug != "fmv" else "Bear, base &amp; bull fair values for US stocks"
             page = os.path.join(tmp, f"{slug}.html")
             with open(page, "w") as f:
                 f.write(TEMPLATE.format(title=html.escape(title), sub=sub, size=150 if slug != "fmv" else 104))

@@ -97,7 +97,7 @@ def main():
             changed.append(f"fmv/{t.lower()}/")
 
     # Main page: a short intro with links to every stock page (helps search engines find them).
-    intro = ('<p class="seo">Bear, base &amp; bull fair values for the Magnificent 7, re-rated after earnings. '
+    intro = ('<p class="seo">Bear, base &amp; bull fair values for US stocks, re-rated after earnings. '
              f"Not investment advice. · {links}</p>")
     if write_if_changed(os.path.join(ROOT, "fmv", "index.html"), replace_between(template, "seo:summary", intro)):
         changed.append("fmv/ (intro)")

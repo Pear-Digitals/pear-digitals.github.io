@@ -1620,6 +1620,7 @@ function draw() {
     });
     if (!spec.filters.length) chips.appendChild(el('span', 'scount', "No filters: all stocks in your plan"));
     box.appendChild(chips);
+    if (r.locked) box.appendChild(pegNote());
     if (full) {
       const s = document.createElement('select'); s.className = "ssort"; s.setAttribute("aria-label", "Sort");
       const opts = SORTS_SCREEN.some(([f, d]) => f === spec.sort.field && d === spec.sort.dir) ? SORTS_SCREEN : [[spec.sort.field, spec.sort.dir, "Best match"], ...SORTS_SCREEN];
@@ -1659,6 +1660,11 @@ function draw() {
     return card;
   };
 
+  // PEG is Premium (licensed data): locked in + Filter and Columns below Premium; the server drops PEG filters too.
+  const pegOk = () => myRank() >= 2;
+  const lockedCol = k => k === "peg" && !pegOk();
+  const pegNote = () => { const n = el('div', 'warn', "PEG is a Premium filter. "); n.appendChild(button("Compare plans", "linkbtn", () => openPlans())); return n; };
+
   // ---- Screener screen (/fmv/screener/): typed request -> chips, filter picker, sort, load more, saved + starter screens ----
   const scWrap = $('screener'), scMain = $('scmain'), scSide = $('scside');
   const SC_FIELDS = [["sector", "Sector", ""], ["fmv_zone", "Pear label", ""], ["px_vs_fmv_pct", "Price vs fair value", "%"],
@@ -1697,7 +1703,7 @@ function draw() {
       if (seq !== scSeq) return;   // a newer request replaced this one
       sc.spec = {filters: r.spec.filters, sort: r.spec.sort};
       sc.rows = append ? sc.rows.concat(r.rows) : r.rows;
-      Object.assign(sc, {count: r.count, loaded: true, sectors: r.sectors || sc.sectors});
+      Object.assign(sc, {count: r.count, loaded: true, sectors: r.sectors || sc.sectors, locked: !!r.locked});
       if (!append) { scCache.set(specKey(sc.spec), {rows: r.rows, count: r.count}); if (scCache.size > 20) scCache.delete(scCache.keys().next().value); }
     } catch (e) { if (seq !== scSeq) return; sc.err = errText(e); }
     sc.busy = false; sc.refreshing = false; sc.loadingMore = false; renderScMain(); renderScSide();
@@ -1764,6 +1770,7 @@ function draw() {
     bar.appendChild(cw);
     scMain.appendChild(bar);
     if (sc.err) scMain.appendChild(el('div', 'warn', sc.err));
+    else if (sc.locked) scMain.appendChild(pegNote());
 
     scMain.appendChild(resultsTable());
     syncStars();
@@ -1787,11 +1794,12 @@ function draw() {
   // "+ Filter": pick a field, then a value (numbers: under / over; sector and Pear label: a choice).
   function filterPicker() {
     const box = el('div', 'scpick'), field = document.createElement('select');
-    SC_FIELDS.forEach(([k, label]) => { const o = document.createElement('option'); o.value = k; o.textContent = label; field.appendChild(o); });
+    SC_FIELDS.forEach(([k, label]) => { const o = document.createElement('option'); o.value = k; o.textContent = lockedCol(k) ? label + " (Premium)" : label; field.appendChild(o); });
     const rest = el('span', 'scpick');
     const draw = () => {
       rest.textContent = "";
       const [k, label, unit] = SC_FIELDS.find(f => f[0] === field.value);
+      if (lockedCol(k)) { rest.appendChild(button("Compare plans", "pill", () => openPlans())); return; }
       if (k === "sector" || k === "fmv_zone") {
         const v = document.createElement('select');
         (k === "sector" ? sc.sectors.map(x => [x, x]) : [["strong_buy", "Strong Buy"], ["fair_buy", "Fair Buy"], ["fair_buy,strong_buy", "Fair Buy or Strong Buy"], ["above", "Above fair value"]])
@@ -1846,7 +1854,7 @@ function draw() {
   const ASC_FIRST = new Set(["px_vs_fmv_pct", "pe_ttm", "peg", "ev_ebitda", "debt_equity", "rsi14", "dist_52w_high_pct", "price"]);   // "cheaper first"
   let colPrefs = (() => { try { const p = JSON.parse(localStorage.getItem("fmv-screen-cols") || "{}"); return {shown: p.shown || [], hidden: p.hidden || []}; } catch (e) { return {shown: [], hidden: []}; } })();
   // Visible: defaults + whatever the screen filters on + columns turned on, minus columns turned off.
-  const visibleCols = () => COLS.filter(([k]) => !colPrefs.hidden.includes(k)
+  const visibleCols = () => COLS.filter(([k]) => !colPrefs.hidden.includes(k) && !lockedCol(k)
     && (DEFAULT_COLS.includes(k) || colPrefs.shown.includes(k) || sc.spec.filters.some(f => f.field === k)));
   function toggleCol(k, on) {
     colPrefs = {shown: colPrefs.shown.filter(x => x !== k), hidden: colPrefs.hidden.filter(x => x !== k)};
@@ -1858,7 +1866,8 @@ function draw() {
     const m = el('div', 'menu colmenu'), vis = new Set(visibleCols().map(c => c[0]));
     m.setAttribute("role", "menu"); m.onclick = e => e.stopPropagation();
     COLS.forEach(([k, label]) => {
-      const b = button(label, vis.has(k) ? "on" : null, () => toggleCol(k, !vis.has(k)));
+      const b = lockedCol(k) ? button(label + " (Premium)", null, () => { sc.picking = false; renderScMain(); openPlans(); })
+        : button(label, vis.has(k) ? "on" : null, () => toggleCol(k, !vis.has(k)));
       b.setAttribute("role", "menuitemcheckbox"); b.setAttribute("aria-checked", vis.has(k) ? "true" : "false"); m.appendChild(b);
     });
     return m;

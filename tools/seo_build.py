@@ -127,7 +127,7 @@ def main():
 
     # lastmod only where we know a real date (the latest fair value), so the file only changes when data does.
     newest = max(latest[t]["date"] for t in tickers)
-    urls = [(f"{SITE}/", None), (f"{SITE}/fmv/", newest)]
+    urls = [(f"{SITE}/", None), (f"{SITE}/about/", None), (f"{SITE}/fmv/", newest)]
     urls += [(f"{SITE}/fmv/{t.lower()}/", latest[t]["date"]) for t in tickers]
     urls += [(f"{SITE}/fmv/screener/", None), (f"{SITE}/fmv/methodology/", None), (f"{SITE}/fmv/privacy", None), (f"{SITE}/options-ledger/privacy", None)]
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

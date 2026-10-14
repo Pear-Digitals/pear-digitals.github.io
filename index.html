@@ -14,136 +14,318 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<title>Pear Digitals LLC — Options trading for everyone</title>
-<meta name="description" content="Pear Digitals builds tools that democratize options trading. Maker of Options Ledger for iPhone.">
+<title>Pear FMV: transparent fair values for US stocks | Pear Digitals</title>
+<meta name="description" content="Bear, base and bull fair values for US stocks, built for retail investors and traders. See every assumption, adjust valuations in plain English, and save your own.">
+<link rel="canonical" href="https://peardigitals.com/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pear FMV: transparent fair values for US stocks">
+<meta property="og:description" content="See every assumption, adjust valuations in plain English, and save your own.">
+<meta property="og:url" content="https://peardigitals.com/">
+<meta property="og:image" content="https://peardigitals.com/assets/og/fmv.png">
+<meta name="twitter:card" content="summary_large_image">
 <style>
-  :root { --ink:#0f1f17; --muted:#4a5650; --bg:#f7f8f5; --card:#fff; --line:#e2e4e0; --green:#14532d; --accent:#00c805; }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Helvetica,Arial,sans-serif;
-         line-height:1.6; color:var(--ink); background:var(--bg); }
+  :root { --ink:#0f1f17; --muted:#5b6660; --bg:#f7f8f5; --card:#fff; --line:#e2e4e0; --green:#14532d; --accent:#00c805; --red:#ff5000; --amber:#b7791f; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Helvetica,Arial,sans-serif; line-height:1.6; color:var(--ink); background:var(--bg); }
   a { color:var(--green); }
-  .wrap { max-width:1040px; margin:0 auto; padding:0 24px; }
-  nav { display:flex; justify-content:space-between; align-items:center; padding:20px 0; }
-  nav .brand { font-weight:700; letter-spacing:-.01em; color:var(--ink); text-decoration:none; font-size:1.05rem; }
-  nav .links a { margin-left:22px; text-decoration:none; color:var(--muted); font-size:.95rem; }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 24px; }
+  nav { display:flex; align-items:center; gap:22px; padding:18px 0; }
+  nav .brand { display:flex; align-items:center; gap:10px; font-weight:700; color:var(--ink); text-decoration:none; }
+  nav .links { margin-left:auto; display:flex; align-items:center; gap:22px; }
+  nav .links a { text-decoration:none; color:var(--muted); font-size:.95rem; }
   nav .links a:hover { color:var(--ink); }
-  .hero { padding:72px 0 56px; max-width:760px; }
-  .eyebrow { color:var(--green); font-weight:600; font-size:.85rem; letter-spacing:.08em; text-transform:uppercase; }
-  h1 { font-size:clamp(2.2rem,6vw,3.6rem); line-height:1.08; letter-spacing:-.03em; margin:.3em 0 .4em; }
-  .lead { font-size:1.2rem; color:var(--muted); max-width:620px; }
-  .btns { margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; }
-  .btn { display:inline-block; padding:12px 22px; border-radius:999px; font-weight:600; text-decoration:none; font-size:.98rem; }
+  .btn { display:inline-block; padding:12px 22px; border-radius:999px; font-weight:600; text-decoration:none; font-size:.98rem; border:0; cursor:pointer; font-family:inherit; }
   .btn.primary { background:var(--green); color:#fff; }
   .btn.ghost { border:1px solid var(--line); color:var(--ink); background:var(--card); }
-  section { padding:56px 0; border-top:1px solid var(--line); }
-  h2 { font-size:clamp(1.5rem,3.5vw,2.1rem); letter-spacing:-.02em; margin:0 0 .5em; }
-  .two { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
-  .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:24px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; }
-  .card h3 { margin:0 0 .3em; font-size:1.05rem; }
+  .btn.sm { padding:8px 16px; font-size:.9rem; }
+  nav .links a.btn.primary { color:#fff; }
+
+  .hero { display:grid; grid-template-columns:1.05fr .95fr; gap:56px; align-items:center; padding:64px 0 72px; }
+  .eyebrow { color:var(--green); font-weight:600; font-size:.82rem; letter-spacing:.08em; text-transform:uppercase; }
+  h1 { font-size:clamp(2.3rem,5.4vw,3.7rem); line-height:1.06; letter-spacing:-.035em; margin:.35em 0 .4em; }
+  .lead { font-size:1.18rem; color:var(--muted); max-width:560px; margin:0; }
+  .btns { margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; }
+  .fine { font-size:.85rem; color:var(--muted); margin-top:14px; }
+
+  /* the stock card mock */
+  .mock { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:24px; box-shadow:0 18px 50px rgba(15,31,23,.10); }
+  .mock .row { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  .mock .name { font-weight:700; font-size:1.25rem; letter-spacing:-.01em; }
+  .mock .tk { color:var(--muted); font-weight:600; font-size:.9rem; }
+  .mock .px { font-size:2.1rem; font-weight:700; letter-spacing:-.02em; margin:4px 0 2px; }
+  .tag { display:inline-block; color:#fff; font-weight:700; font-size:.8rem; padding:3px 10px; border-radius:999px; background:var(--accent); }
+  .range { position:relative; height:10px; border-radius:999px; margin:30px 4px 8px;
+           background:linear-gradient(90deg,#00c805 0%,#7bd88f 38%,#f1d27a 62%,#ff8a5c 100%); }
+  .range .pin { position:absolute; top:-7px; width:24px; height:24px; margin-left:-12px; border-radius:50%; background:var(--ink); border:4px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.25); transition:left .6s ease; }
+  .range .pin span { position:absolute; bottom:28px; left:50%; transform:translateX(-50%); white-space:nowrap; font-size:.75rem; font-weight:700; background:var(--ink); color:#fff; padding:2px 8px; border-radius:6px; }
+  .scen { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px; }
+  .scen div { border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+  .scen small { display:block; color:var(--muted); font-size:.78rem; }
+  .scen b { font-size:1.15rem; }
+  .why { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); font-size:.88rem; color:var(--muted); }
+  .why b { color:var(--ink); }
+
+  section { padding:72px 0; border-top:1px solid var(--line); }
+  h2 { font-size:clamp(1.6rem,3.6vw,2.4rem); letter-spacing:-.025em; line-height:1.15; margin:.3em 0 .4em; }
+  .sub { color:var(--muted); font-size:1.08rem; max-width:640px; margin:0; }
+  .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:32px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:24px; }
+  .card .ico { width:38px; height:38px; border-radius:10px; background:#e9f5ec; color:var(--green); display:flex; align-items:center; justify-content:center; font-weight:800; margin-bottom:14px; }
+  .card h3 { margin:0 0 .35em; font-size:1.08rem; letter-spacing:-.01em; }
   .card p { margin:0; color:var(--muted); font-size:.96rem; }
-  .shots { display:flex; gap:20px; overflow-x:auto; padding:8px 24px 20px; margin:28px -24px 0; scroll-snap-type:x mandatory; }
-  .shot { flex:0 0 240px; scroll-snap-align:start; margin:0; }
-  .shot img { width:100%; height:auto; display:block; border-radius:26px; border:1px solid var(--line); box-shadow:0 8px 24px rgba(15,31,23,.08); }
-  .shot figcaption { font-size:.88rem; color:var(--muted); margin-top:10px; text-align:center; }
-  .note { font-size:.85rem; color:var(--muted); }
-  .tickers { display:flex; flex-wrap:wrap; gap:8px; margin:20px 0 0; }
-  .tickers a { padding:6px 14px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--ink); text-decoration:none; font-weight:600; font-size:.9rem; }
-  .tickers a:hover { border-color:var(--green); color:var(--green); }
+
+  /* natural-language demo */
+  .demo { display:grid; grid-template-columns:.9fr 1.1fr; gap:48px; align-items:center; }
+  .chat { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:20px; box-shadow:0 18px 50px rgba(15,31,23,.08); }
+  .msg { max-width:88%; padding:11px 15px; border-radius:16px; font-size:.95rem; margin-bottom:12px; }
+  .msg.me { margin-left:auto; background:var(--green); color:#fff; border-bottom-right-radius:4px; }
+  .msg.q { background:#f1f3ef; border-bottom-left-radius:4px; }
+  .msg.q b.who { display:block; font-size:.78rem; color:var(--green); margin-bottom:2px; }
+  .res { border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:4px; }
+  .res .t { font-weight:700; font-size:.92rem; margin-bottom:8px; }
+  .res table { width:100%; border-collapse:collapse; font-size:.92rem; }
+  .res td { padding:4px 0; }
+  .res td:nth-child(2), .res td:nth-child(3) { text-align:right; font-variant-numeric:tabular-nums; }
+  .res td:nth-child(2) { color:var(--muted); text-decoration:line-through; }
+  .res td:nth-child(3) { font-weight:700; }
+  .res .acts { display:flex; gap:8px; margin-top:12px; }
+  .res .acts span { padding:7px 16px; border-radius:999px; font-size:.85rem; font-weight:600; }
+  .res .save { background:var(--green); color:#fff; }
+  .res .discard { border:1px solid var(--line); }
+  .prompts { display:flex; flex-direction:column; gap:10px; margin-top:24px; }
+  .prompts span { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 14px; font-size:.95rem; }
+  .prompts span::before { content:"\201C"; color:var(--green); font-weight:800; margin-right:2px; }
+  .prompts span::after { content:"\201D"; color:var(--green); font-weight:800; margin-left:1px; }
+
+  .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:32px; counter-reset:s; }
+  .steps div { counter-increment:s; }
+  .steps div::before { content:counter(s); display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:50%; background:var(--ink); color:#fff; font-weight:700; font-size:.9rem; margin-bottom:12px; }
+  .steps h3 { margin:0 0 .3em; font-size:1.05rem; }
+  .steps p { margin:0; color:var(--muted); font-size:.96rem; }
+
+  .screen { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+  .chip { background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-size:.88rem; font-weight:600; }
+
+  .plans { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:32px; }
+  .plan { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:24px; display:flex; flex-direction:column; }
+  .plan.hl { border:2px solid var(--green); }
+  .plan h3 { margin:0; font-size:1.1rem; }
+  .plan .price { font-size:1.9rem; font-weight:700; letter-spacing:-.02em; margin:6px 0 0; }
+  .plan .price span { font-size:.9rem; color:var(--muted); font-weight:500; }
+  .plan .stocks { color:var(--green); font-weight:600; font-size:.92rem; margin:4px 0 14px; }
+  .plan ul { margin:0; padding-left:1.1rem; color:var(--muted); font-size:.94rem; }
+  .plan li { margin:.3rem 0; }
+
+  .cta { text-align:center; }
+  .cta .sub { margin:0 auto; }
+  .join { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:26px; }
+  .join input { width:min(100%,320px); padding:12px 18px; border-radius:999px; border:1px solid var(--line); font-size:1rem; font-family:inherit; background:#fff; }
+  .join input:focus { outline:2px solid var(--green); outline-offset:1px; }
+  .joinmsg { min-height:1.5em; margin-top:12px; font-size:.95rem; }
+
+  .ledger { display:grid; grid-template-columns:1fr auto; gap:24px; align-items:center; }
+  .ledger p { color:var(--muted); margin:0; }
+
   footer { border-top:1px solid var(--line); padding:32px 0 48px; color:var(--muted); font-size:.9rem; }
   footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
   footer .footlinks { display:flex; flex-wrap:wrap; gap:8px 18px; }
+  .note { font-size:.85rem; color:var(--muted); }
+
+  @media (max-width:900px) {
+    .hero, .demo { grid-template-columns:1fr; gap:36px; }
+    .hero { padding-top:36px; }
+    .cards, .steps, .plans { grid-template-columns:1fr; }
+    nav .links a:not(.btn) { display:none; }
+    .ledger { grid-template-columns:1fr; }
+  }
   @media (max-width:640px) {   /* phones: centered, at most 3 links per row */
     footer .row { flex-direction:column; align-items:center; text-align:center; }
     footer .footlinks { justify-content:center; width:100%; max-width:360px; gap:10px 0; }
     footer .footlinks a { flex:0 0 33.333%; text-align:center; }
     footer .note { text-align:center; }
+    .scen b { font-size:1rem; }
   }
-  @media (max-width:760px){ .two{grid-template-columns:1fr;gap:16px} .cards{grid-template-columns:1fr} .hero{padding-top:40px} .links a:not(:nth-last-child(-n+2)){display:none} }
 </style>
 </head>
 <body>
 <div class="wrap">
   <nav>
-    <a class="brand" href="/">Pear Digitals</a>
-    <div class="links"><a href="#mission">Mission</a><a href="#options-ledger">Options Ledger</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="#contact">Contact</a></div>
+    <a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="22" height="29">Pear FMV</a>
+    <div class="links">
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/fmv/methodology/">Methodology</a>
+      <a class="btn primary sm" href="/fmv/">Open the app</a>
+    </div>
   </nav>
 
   <header class="hero">
-    <div class="eyebrow">Pear Digitals LLC</div>
-    <h1>Options trading, for everyone.</h1>
-    <p class="lead">We build clear, approachable tools that put options trading within reach of everyday investors, not just professionals.</p>
-    <div class="btns">
-      <a class="btn primary" href="#options-ledger">Meet Options Ledger</a>
-      <a class="btn ghost" href="/fmv/">View FMV analysis</a>
+    <div>
+      <div class="eyebrow">Built for retail investors and traders</div>
+      <h1>Know what a stock is worth. Then make it your own.</h1>
+      <p class="lead">Bear, base and bull fair values for US stocks, with every assumption in the open. Disagree with one? Say why in plain English and Pear re-values it for you.</p>
+      <div class="btns">
+        <a class="btn primary" href="#join">Join the waitlist</a>
+        <a class="btn ghost" href="/fmv/">Try it free</a>
+      </div>
+      <p class="fine">The Magnificent 7 are free to explore today, no account needed.</p>
     </div>
+
+    <a class="mock" href="/fmv/aapl/" style="text-decoration:none;color:inherit;display:block" aria-label="Apple fair value">
+      <div class="row"><span class="name" id="mname">Apple</span><span class="tk">AAPL</span></div>
+      <div class="row"><span class="px" id="mpx">$341.33</span><span class="tag" id="mtag" style="background:var(--red)">27% above FMV</span></div>
+      <div class="range" aria-hidden="true"><div class="pin" id="mpin" style="left:96%"><span>Price</span></div></div>
+      <div class="scen">
+        <div><small>Bear</small><b id="mbear">$206</b></div>
+        <div><small>Base</small><b id="mbase">$270</b></div>
+        <div><small>Bull</small><b id="mbull">$326</b></div>
+      </div>
+      <div class="why"><b>Why $270?</b> Revenue growth, margins and the multiple behind each scenario are written out, so you can check the reasoning, not just the number.</div>
+    </a>
   </header>
 
-  <section id="mission">
-    <div class="two">
-      <div>
-        <div class="eyebrow">Our mission</div>
-        <h2>Democratize options trading.</h2>
-      </div>
-      <div>
-        <p>Options have long been treated as a specialist's game, wrapped in jargon and scattered across spreadsheets. We believe anyone willing to learn should be able to understand their trades and keep a clear record of them.</p>
-        <p>Pear Digitals builds software that makes options simple to follow: honest numbers, plain language, and your data kept in your hands.</p>
-      </div>
-    </div>
+  <section id="features">
+    <div class="eyebrow">Why Pear FMV</div>
+    <h2>Valuation you can see through.</h2>
+    <p class="sub">Most price targets are a single number with no explanation. Pear shows the whole range and the reasoning behind it.</p>
     <div class="cards">
-      <div class="card"><h3>Accessible</h3><p>Plain-language tools designed for people at every level of experience.</p></div>
-      <div class="card"><h3>Transparent</h3><p>You see exactly what was recorded and how results are calculated.</p></div>
-      <div class="card"><h3>Private</h3><p>Your journal lives on your device. No ads, no selling your data.</p></div>
+      <div class="card"><div class="ico">1</div><h3>Transparent valuation metrics</h3><p>Every stock gets a bear, base and bull fair value, with the growth, margin and multiple assumptions behind each one, built from SEC filings.</p></div>
+      <div class="card"><div class="ico">2</div><h3>Adjust in plain English</h3><p>Think the market is wrong? Tell Quill, our AI analyst. It changes the right assumptions, re-runs the valuation and shows you what moved.</p></div>
+      <div class="card"><div class="ico">3</div><h3>Save it and it stays current</h3><p>Your valuations are saved to your watchlist and re-run after earnings and other big news, so your view never goes stale.</p></div>
     </div>
+  </section>
+
+  <section id="adjust">
+    <div class="demo">
+      <div>
+        <div class="eyebrow">Natural-language valuations</div>
+        <h2>Disagree? Just say so.</h2>
+        <p class="sub">You know things the model doesn't: a product you think will flop, a competitor you're worried about, an article you just read. Describe your view and Pear turns it into numbers.</p>
+        <div class="prompts">
+          <span>I don't think the next iPhone will sell well.</span>
+          <span>Tesla's margins won't recover until 2028.</span>
+          <span>Value NVIDIA on 30x earnings instead.</span>
+        </div>
+      </div>
+      <div class="chat" aria-label="Example conversation with Quill">
+        <div class="msg me">I don't think the next iPhone will sell well.</div>
+        <div class="msg q"><b class="who">Quill</b>Got it. I've cut iPhone revenue growth from +6% to flat next year and lowered margins slightly. Here's your updated Apple fair value. Tap Save to keep it.</div>
+        <div class="res">
+          <div class="t">Your Apple fair value</div>
+          <table>
+            <tr><td>Bear</td><td>$206</td><td>$188</td></tr>
+            <tr><td>Base</td><td>$270</td><td>$247</td></tr>
+            <tr><td>Bull</td><td>$326</td><td>$301</td></tr>
+          </table>
+          <div class="acts"><span class="save">Save</span><span class="discard">Discard</span></div>
+        </div>
+        <p class="note" style="margin:12px 0 0">Illustrative example.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="eyebrow">How it works</div>
+    <h2>From price to fair value in three steps.</h2>
+    <div class="steps">
+      <div><h3>Pick a stock</h3><p>Search any NYSE or Nasdaq stock, or screen for ideas in plain English: <em>“cheap tech stocks that are starting to move.”</em></p></div>
+      <div><h3>See the range</h3><p>Compare today's price with the bear, base and bull fair values, and see whether it's in the Fair Buy zone.</p></div>
+      <div><h3>Make it yours</h3><p>Adjust the assumptions with Quill, save your version, and get an email when a stock you watch drops into your buy zone.</p></div>
+    </div>
+    <div class="screen" aria-label="Example screen">
+      <span class="chip">Sector: Technology</span><span class="chip">At or below Pear fair value</span><span class="chip">Above 50-day average</span><span class="chip">P/E under 30</span>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="eyebrow">Pricing</div>
+    <h2>Start free.</h2>
+    <p class="sub">Accounts open soon. Join the waitlist and we'll email you on launch day.</p>
+    <div class="plans">
+      <div class="plan"><h3>Free</h3><div class="price">$0</div><div class="stocks">S&amp;P 500</div>
+        <ul><li>Pear fair values and charts</li><li>Your own custom fair values</li><li>Re-valued after earnings and big news</li><li>Stock screener</li><li>50 Quill messages a day</li></ul></div>
+      <div class="plan hl"><h3>Premium</h3><div class="price">$49<span>/yr or $4.99/mo</span></div><div class="stocks">NYSE &amp; Nasdaq</div>
+        <ul><li>Everything in Free</li><li>2,500 Quill messages a month</li><li>Daily Fair Buy email alerts</li><li>1 year of history</li><li>Agentic Trading</li></ul></div>
+      <div class="plan"><h3>Pro</h3><div class="price">$249<span>/yr or $29/mo</span></div><div class="stocks">NYSE, Nasdaq, &amp; OTC</div>
+        <ul><li>Everything in Premium</li><li>Unlimited Quill messages</li><li>Real-time email and text alerts</li><li>Backfilled fair value history</li><li>10+ years of history</li></ul></div>
+    </div>
+  </section>
+
+  <section id="join" class="cta">
+    <h2>Be first in line.</h2>
+    <p class="sub">Pear FMV opens to everyone soon. Leave your email and we'll let you know when it does.</p>
+    <form class="join" id="joinform">
+      <input id="joinemail" type="email" placeholder="you@example.com" autocomplete="email" required aria-label="Email">
+      <button class="btn primary" id="joingo" type="submit">Join the waitlist</button>
+    </form>
+    <div class="joinmsg" id="joinmsg" role="status"></div>
   </section>
 
   <section id="options-ledger">
-    <div class="eyebrow">Our product</div>
-    <h2>Options Ledger for iPhone</h2>
-    <p class="lead" style="max-width:680px">A private, manual journal for options traders. Record contracts, partial closes and fees, then see income, returns and cash flow over time.</p>
-    <div class="shots" aria-label="Options Ledger screenshots">
-      <figure class="shot"><img src="assets/options-ledger/01-open-positions.jpg" alt="Open positions list" loading="lazy"><figcaption>Your open positions</figcaption></figure>
-      <figure class="shot"><img src="assets/options-ledger/02-position-detail.jpg" alt="Position detail with contracts and notes" loading="lazy"><figcaption>Contracts, shares and notes</figcaption></figure>
-      <figure class="shot"><img src="assets/options-ledger/03-quill-chat.jpg" alt="Quill portfolio review chat" loading="lazy"><figcaption>Quill, on-device assistant</figcaption></figure>
-      <figure class="shot"><img src="assets/options-ledger/04-trade-journal.jpg" alt="Trade journal of openings and closings" loading="lazy"><figcaption>Openings, partial closes and fees</figcaption></figure>
-      <figure class="shot"><img src="assets/options-ledger/05-performance.jpg" alt="Performance statistics and charts" loading="lazy"><figcaption>Income, returns and cash flow</figcaption></figure>
-    </div>
-    <p class="note">Screenshots show a sample portfolio with synthetic data.</p>
-    <div class="cards">
-      <div class="card"><h3>Track every contract</h3><p>Log openings, partial closes and fees across all your positions.</p></div>
-      <div class="card"><h3>Understand performance</h3><p>Charts and statistics for income, returns and cash flow.</p></div>
-      <div class="card"><h3>Ask Quill</h3><p>An on-device assistant powered by Apple Intelligence to review your portfolio.</p></div>
-    </div>
-    <div class="btns">
+    <div class="ledger">
+      <div>
+        <div class="eyebrow">Also from Pear Digitals</div>
+        <h2 style="font-size:1.5rem">Options Ledger for iPhone</h2>
+        <p>A private journal for options traders. Record contracts, partial closes and fees, then see income, returns and cash flow over time.</p>
+      </div>
       <a class="btn ghost" href="/options-ledger/privacy.html">Privacy Policy</a>
     </div>
-  </section>
-
-  <section id="fmv">
-    <div class="eyebrow">Research</div>
-    <h2>FMV analysis</h2>
-    <p>Our fair market value dashboard compares US stock prices against a bear-to-bull fair value range.</p>
-    <p class="tickers"><a href="/fmv/aapl/" title="Apple fair value">AAPL</a><a href="/fmv/amzn/" title="Amazon fair value">AMZN</a><a href="/fmv/googl/" title="Alphabet fair value">GOOGL</a><a href="/fmv/meta/" title="Meta fair value">META</a><a href="/fmv/msft/" title="Microsoft fair value">MSFT</a><a href="/fmv/nvda/" title="NVIDIA fair value">NVDA</a><a href="/fmv/tsla/" title="Tesla fair value">TSLA</a></p>
-    <div class="btns"><a class="btn primary" href="/fmv/">Open the FMV dashboard</a><a class="btn ghost" href="/fmv/methodology/">How it works</a></div>
-  </section>
-
-  <section id="contact">
-    <div class="eyebrow">About the company</div>
-    <h2>Pear Digitals LLC</h2>
-    <p>Pear Digitals LLC is an independent software company and the developer of Options Ledger for iPhone.</p>
-    <p>Questions or support: <a href="mailto:support@peardigitals.com">support@peardigitals.com</a></p>
   </section>
 </div>
 
 <footer>
   <div class="wrap">
     <div class="row">
-      <div>&copy; 2026 Pear Digitals LLC. All rights reserved.</div>
-      <div class="footlinks"><a href="/options-ledger/privacy.html">Privacy Policy</a><a href="/fmv/">FMV</a><a href="mailto:support@peardigitals.com">Contact</a></div>
+      <div>&copy; 2026 Pear Digitals LLC</div>
+      <div class="footlinks"><a href="/fmv/">FMV</a><a href="/fmv/methodology/">Methodology</a><a href="/fmv/privacy.html">Privacy</a><a href="/fmv/terms.html">Terms</a><a href="https://pearinvestments.substack.com/" target="_blank" rel="noopener">Blog</a><a href="mailto:support@peardigitals.com">Contact</a></div>
     </div>
-    <p class="note" style="margin-top:16px">Options Ledger is a journaling tool and does not provide investment advice. Options involve risk and are not suitable for all investors. FMV analysis is for informational purposes only.</p>
+    <p class="note" style="margin-top:16px">Fair values are estimates for informational purposes only, not investment advice. Investing involves risk, including loss of principal.</p>
   </div>
 </footer>
+
+<script>
+(() => {
+  const BASE = "https://exzkanvrboytydrvwcwv.supabase.co", KEY = "sb_publishable_i1mvt6QvDAsxIbOidUvCmg_XrVaizj4";
+  const $ = id => document.getElementById(id);
+  const money = n => "$" + Math.round(n).toLocaleString("en-US");
+
+  // The hero card shows Apple's live published fair value (same public data as the app); the defaults stay if it fails.
+  const get = p => fetch(BASE + "/rest/v1/" + p, {headers: {apikey: KEY}}).then(r => r.ok ? r.json() : Promise.reject(r.status));
+  Promise.all([
+    get("vintages_free?select=date,bear,base,bull,weighted&ticker=eq.AAPL&order=date.desc&limit=1"),
+    get("prices_free?select=date,c&symbol=eq.AAPL&order=date.desc&limit=1"),
+  ]).then(([[v], [p]]) => {
+    if (!v || !p || !(v.base > 0)) return;
+    const fair = v.weighted || v.base, px = +p.c, diff = (px / fair - 1) * 100;
+    $('mpx').textContent = "$" + px.toFixed(2);
+    $('mbear').textContent = money(v.bear); $('mbase').textContent = money(v.base); $('mbull').textContent = money(v.bull);
+    const tag = $('mtag');
+    if (diff > 0.5) { tag.textContent = `${Math.round(diff)}% above FMV`; tag.style.background = diff > 25 ? "var(--red)" : "var(--amber)"; }
+    else { tag.textContent = diff < -0.5 ? `${Math.round(-diff)}% below FMV` : "At fair value"; tag.style.background = "var(--accent)"; }
+    // Pin position across bear -> bull, with a little room either side.
+    const lo = v.bear * 0.9, hi = v.bull * 1.1;
+    $('mpin').style.left = Math.max(3, Math.min(97, (px - lo) / (hi - lo) * 100)) + "%";
+    document.querySelector('.why').innerHTML = `<b>Why ${money(v.base)}?</b> Revenue growth, margins and the multiple behind each scenario are written out, so you can check the reasoning, not just the number.`;
+  }).catch(() => {});
+
+  // Launch waitlist (same list as the app's Join waitlist).
+  $('joinform').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('joingo'), msg = $('joinmsg');
+    btn.disabled = true; btn.textContent = "Joining…"; msg.textContent = ""; msg.style.color = "";
+    try {
+      const r = await fetch(BASE + "/functions/v1/fmv-waitlist", {method: "POST",
+        headers: {"content-type": "application/json", apikey: KEY}, body: JSON.stringify({email: $('joinemail').value.trim(), source: "landing"})});
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || "Couldn't join right now. Try again.");
+      $('joinform').hidden = true;
+      msg.style.color = "var(--green)"; msg.textContent = "You're on the list. We'll email you when Pear FMV opens.";
+      if (window.gtag) gtag('event', 'join_waitlist', {source: 'landing'});
+    } catch (err) { msg.style.color = "#a15c00"; msg.textContent = err.message; btn.textContent = "Join the waitlist"; }
+    btn.disabled = false;
+  });
+})();
+</script>
 </body>
 </html>

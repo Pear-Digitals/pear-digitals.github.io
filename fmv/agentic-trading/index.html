@@ -453,6 +453,17 @@
   </form>
 </dialog>
 
+<dialog id="joindlg">
+  <form id="joinform">
+    <button type="button" class="xbtn" id="joinclose" aria-label="Close">&times;</button>
+    <h2>Join the waitlist</h2>
+    <p class="authnote" id="joinnote">Pear FMV opens to everyone soon. We'll email you when it does.</p>
+    <input class="field" id="joinemail" type="email" placeholder="Email" autocomplete="email" required>
+    <div class="msgline" id="joinmsg" role="status"></div>
+    <button type="submit" class="pill wide" id="joingo">Join waitlist</button>
+  </form>
+</dialog>
+
 <button type="button" id="chatfab" aria-label="Open chat" aria-expanded="false">
   <svg class="i-open" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
   <svg class="i-close" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4L13.4 12 19 6.4 17.6 5 12 10.6z"/></svg>
@@ -830,8 +841,26 @@ function draw() {
   }
 
   // ---- log in / sign up (the only entry point is the nav) ----
+  // Before launch, new accounts are closed (also turned off in Supabase): visitors get "Join waitlist" everywhere an
+  // account would be offered. Log in stays available at /fmv/?login, and a browser that has logged in keeps it.
+  const SIGNUPS_OPEN = false;
+  if (new URLSearchParams(location.search).has("login")) {
+    try { localStorage.setItem("fmv-login", "1"); } catch (e) {}
+    const q = new URLSearchParams(location.search); q.delete("login");
+    history.replaceState(history.state, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+    setTimeout(() => { if (!USER && !userLoading) openAuthDlg("in"); }, 0);
+  }
+  const canLogin = () => { try { return SIGNUPS_OPEN || localStorage.getItem("fmv-login") === "1"; } catch (e) { return SIGNUPS_OPEN; } };
+  const JOIN = SIGNUPS_OPEN ? "Sign up free" : "Join waitlist";
   const dlg = $('authdlg'), authMsg = $('authmsg');
+  // Every "sign up" prompt goes through here; before launch it opens the waitlist instead (note = where they came from).
   function openAuth(mode, note) {
+    // Notes that are sentences are shown in the dialog; short tags ("paywall COST") only label the waitlist source.
+    if (SIGNUPS_OPEN || (mode === "in" && canLogin())) openAuthDlg(mode, /\.$/.test(note || "") ? note : ""); else openJoin(note || mode);
+  }
+  function openAuthDlg(mode, note) {
+    if (!SIGNUPS_OPEN) mode = "in";
+    $('authq').parentNode.hidden = !SIGNUPS_OPEN;
     setAuthMode(mode || "in"); authMsg.textContent = "";
     $('authnote').textContent = note || ""; $('authnote').hidden = !note;
     if (!dlg.open) dlg.showModal(); $('authemail').focus();
@@ -845,7 +874,33 @@ function draw() {
     $('authpw').autocomplete = m === "in" ? "current-password" : "new-password";
     $('authpw').placeholder = m === "in" ? "Password" : "Password (8+ characters)";
   }
-  window.openAuth = openAuth;
+  window.openAuth = openAuth; window.SIGNUP_LABEL = SIGNUPS_OPEN ? "Sign up" : "Join waitlist";
+  const joinDlg = $('joindlg'), joinMsg = $('joinmsg');
+  let joinSource = "nav";
+  function openJoin(source) {
+    joinSource = String(source || "nav").slice(0, 40);
+    $('joinform').querySelectorAll('input, #joingo').forEach(x => x.hidden = false);
+    $('joingo').textContent = "Join waitlist"; $('joingo').disabled = false;
+    $('joinnote').textContent = "Pear FMV opens to everyone soon. We'll email you when it does.";
+    joinMsg.textContent = "";
+    if (!joinDlg.open) joinDlg.showModal(); $('joinemail').focus();
+  }
+  $('joinclose').onclick = () => joinDlg.close();
+  $('joinform').addEventListener('submit', async e => {
+    e.preventDefault();
+    if ($('joinemail').hidden) { joinDlg.close(); return; }   // "Done" after joining
+    const email = $('joinemail').value.trim();
+    $('joingo').disabled = true; $('joingo').textContent = "Joining\u2026"; joinMsg.textContent = "";
+    try {
+      const res = await fetch(BASE_URL + "/functions/v1/fmv-waitlist", {method: "POST",
+        headers: {"content-type": "application/json", apikey: ANON_KEY}, body: JSON.stringify({email, source: joinSource})});
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Couldn't join right now. Try again.");
+      $('joinnote').textContent = "You're on the list. We'll email you when Pear FMV opens.";
+      $('joinemail').hidden = true; $('joinemail').value = ""; $('joingo').textContent = "Done";
+    } catch (err) { joinMsg.textContent = err.message; $('joingo').textContent = "Join waitlist"; }
+    $('joingo').disabled = false;
+  });
   $('authswitch').onclick = () => { setAuthMode(authMode === "in" ? "up" : "in"); authMsg.textContent = ""; };
   $('authclose').onclick = () => dlg.close();
   // Google / Apple buttons appear once the provider is enabled in Supabase; no site change needed.
@@ -889,8 +944,8 @@ function draw() {
       nav.appendChild(av); return;
     }
     if (!USER) {
-      nav.appendChild(button("Log in", "pill ghost", () => openAuth("in")));
-      nav.appendChild(button("Sign up", "pill", () => openAuth("up")));
+      if (canLogin()) nav.appendChild(button("Log in", "pill ghost", () => openAuthDlg("in")));
+      nav.appendChild(button(SIGNUPS_OPEN ? "Sign up" : "Join waitlist", "pill", () => openAuth("up", "nav")));
       return;
     }
     const av = button((USER.email || "?")[0].toUpperCase(), "avatar");
@@ -1249,9 +1304,10 @@ function draw() {
     const pp = $('payprice'); pp.textContent = "";
     if (st === "free") {   // signed out: S&P 500 stocks need a free account
       $('paytitle').textContent = `${t} is free with an account`;
-      $('paytext').textContent = `Sign up free to see ${name || t} and every S&P 500 stock: fair values, charts and Quill.`;
-      acts.appendChild(button("Sign up free", "pill", () => { pay.close(); openAuth("up"); }));
-      acts.appendChild(button("Log in", "pill light", () => { pay.close(); openAuth("in"); }));
+      $('paytext').textContent = SIGNUPS_OPEN ? `Sign up free to see ${name || t} and every S&P 500 stock: fair values, charts and Quill.`
+        : `Free accounts open soon, with ${name || t} and every S&P 500 stock: fair values, charts and Quill. Join the waitlist to hear when.`;
+      acts.appendChild(button(JOIN, "pill", () => { pay.close(); openAuth("up", "paywall " + t); }));
+      if (canLogin()) acts.appendChild(button("Log in", "pill light", () => { pay.close(); openAuth("in"); }));
     } else if (st === "soon") {
       $('paytitle').textContent = `${t} is coming soon`;
       $('paytext').textContent = `${name || t} is included in your plan. We're adding its fair value soon.`;
@@ -1294,7 +1350,7 @@ function draw() {
       c.appendChild(el('div', 'stocks', pl.stocks));
       const ul = el('ul'); pl.items.forEach(i => ul.appendChild(el('li', null, i))); c.appendChild(ul);
       if (pl.id === current) c.appendChild(el('div', 'state', "Current plan"));
-      else if (pl.id === "free") { if (!USER) c.appendChild(button("Sign up free", "pill light", () => { plansDlg.close(); openAuth("up"); })); }
+      else if (pl.id === "free") { if (!USER) c.appendChild(button(JOIN, "pill light", () => { plansDlg.close(); openAuth("up", "plans"); })); }
       else if (current && RANK[current] > RANK[pl.id]) c.appendChild(el('div', 'state', "Included"));
       else if (waitTier === pl.id) {
         c.appendChild(el('div', 'state', "\u2713 On waitlist"));
@@ -1355,9 +1411,10 @@ function draw() {
     if (!USER && RANGE_DAYS[label] <= PLAN_DAYS.free) {   // 1M: just needs a free account
       const acts = $('payacts'); acts.textContent = ""; $('payprice').textContent = "";
       $('paytitle').textContent = `${label} history is free with an account`;
-      $('paytext').textContent = "Sign up free to see 1M of historical data, save your own fair values and keep a watchlist.";
-      acts.appendChild(button("Sign up free", "pill", () => { pay.close(); openAuth("up"); }));
-      acts.appendChild(button("Log in", "pill light", () => { pay.close(); openAuth("in"); }));
+      $('paytext').textContent = SIGNUPS_OPEN ? "Sign up free to see 1M of historical data, save your own fair values and keep a watchlist."
+        : "Free accounts open soon, with 1M of historical data, your own fair values and a watchlist. Join the waitlist to hear when.";
+      acts.appendChild(button(JOIN, "pill", () => { pay.close(); openAuth("up", "history " + label); }));
+      if (canLogin()) acts.appendChild(button("Log in", "pill light", () => { pay.close(); openAuth("in"); }));
       pay.showModal(); return;
     }
     const tier = RANGE_DAYS[label] <= PLAN_DAYS.premium ? "premium" : "pro";
@@ -1496,6 +1553,7 @@ function draw() {
       renderNav(); if (!$('app').hidden) draw(); else renderSide();
     }
     USER = session ? session.user : null;
+    if (USER) try { localStorage.setItem("fmv-login", "1"); } catch (e) {}
     if (!USER && window.chatReset) window.chatReset();
     setTimeout(refresh, 0);        // don't await supabase calls inside this callback
   });
@@ -1525,9 +1583,9 @@ function draw() {
     const title = el('div', 't', ""); card.appendChild(title);
     const body = el('div'); card.appendChild(body);
     if (!USER) {
-      title.textContent = `Sign up to save this as your ${name} fair value`;
+      title.textContent = SIGNUPS_OPEN ? `Sign up to save this as your ${name} fair value` : `Saving your own ${name} fair value comes with an account. Accounts open soon.`;
       const acts = el('div', 'acts'); card.appendChild(acts);
-      acts.appendChild(button("Sign up", "pill", () => openAuth("up", "Sign up to save your own fair value.")));
+      acts.appendChild(button(SIGNUPS_OPEN ? "Sign up" : "Join waitlist", "pill", () => openAuth("up", SIGNUPS_OPEN ? "Sign up to save your own fair value." : "quill save")));
       return card;
     }
     // Nothing is saved until the user taps Save: preview runs the analysis and keeps it as a draft on the server;
@@ -2047,7 +2105,7 @@ function draw() {
       card.appendChild(el('p', null, "Agentic Trading is available on Premium and Pro."));
       if (!USER) {
         const acts = el('div', 'acts');
-        acts.appendChild(button("Sign up", "pill", () => openAuth("up", "Sign up, then join the Premium or Pro waitlist.")));
+        acts.appendChild(button(SIGNUPS_OPEN ? "Sign up" : "Join waitlist", "pill", () => openAuth("up", SIGNUPS_OPEN ? "Sign up, then join the Premium or Pro waitlist." : "agentic")));
         acts.appendChild(button("Compare plans", "pill ghost", () => openPlans()));
         card.appendChild(acts);
       } else {
@@ -2191,8 +2249,8 @@ function draw() {
         bot.textContent = await res.text(); hist.pop(); btn.disabled = false;
         if (!USER) {
           const acts = document.createElement('div'); acts.className = 'acts'; acts.style.marginTop = "10px";
-          const b = document.createElement('button'); b.type = "button"; b.className = "pill"; b.textContent = "Sign up";
-          b.onclick = () => window.openAuth("up", "Sign up for more messages with Quill."); acts.appendChild(b); bot.appendChild(acts);
+          const b = document.createElement('button'); b.type = "button"; b.className = "pill"; b.textContent = window.SIGNUP_LABEL || "Sign up";
+          b.onclick = () => window.openAuth("up", window.SIGNUP_LABEL === "Join waitlist" ? "quill limit" : "Sign up for more messages with Quill."); acts.appendChild(b); bot.appendChild(acts);
         } else if (/Premium/.test(bot.textContent) && window.waitlistNote) bot.appendChild(window.waitlistNote("chat_limit"));
         return;
       }

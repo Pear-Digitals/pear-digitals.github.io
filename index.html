@@ -115,8 +115,10 @@
   .join input:focus { outline:2px solid var(--green); outline-offset:1px; }
   .joinmsg { min-height:1.5em; margin-top:12px; font-size:.95rem; }
 
-  .ledger { display:grid; grid-template-columns:1fr auto; gap:24px; align-items:center; }
-  .ledger p { color:var(--muted); margin:0; }
+  .shots { display:flex; gap:20px; overflow-x:auto; padding:8px 24px 20px; margin:28px -24px 0; scroll-snap-type:x mandatory; }
+  .shot { flex:0 0 240px; scroll-snap-align:start; margin:0; }
+  .shot img { width:100%; height:auto; display:block; border-radius:26px; border:1px solid var(--line); box-shadow:0 8px 24px rgba(15,31,23,.08); }
+  .shot figcaption { font-size:.88rem; color:var(--muted); margin-top:10px; text-align:center; }
 
   footer { border-top:1px solid var(--line); padding:32px 0 48px; color:var(--muted); font-size:.9rem; }
   footer .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
@@ -128,7 +130,6 @@
     .hero { padding-top:36px; }
     .cards, .steps { grid-template-columns:1fr; }
     nav .links a:not(.btn) { display:none; }
-    .ledger { grid-template-columns:1fr; }
   }
   @media (max-width:640px) {   /* phones: centered, at most 3 links per row */
     footer .row { flex-direction:column; align-items:center; text-align:center; }
@@ -146,6 +147,7 @@
     <div class="links">
       <a href="#how">How it works</a>
       <a href="/fmv/methodology/">Methodology</a>
+      <a href="#options-ledger">Options Ledger</a>
       <a class="btn primary sm" href="/fmv/">Open the app</a>
     </div>
   </nav>
@@ -239,14 +241,23 @@
   </section>
 
   <section id="options-ledger">
-    <div class="ledger">
-      <div>
-        <div class="eyebrow">Also from Pear Digitals</div>
-        <h2 style="font-size:1.5rem">Options Ledger for iPhone</h2>
-        <p>A private journal for options traders. Record contracts, partial closes and fees, then see income, returns and cash flow over time.</p>
-      </div>
-      <a class="btn ghost" href="/options-ledger/privacy.html">Privacy Policy</a>
+    <div class="eyebrow">Also from Pear Digitals</div>
+    <h2>Options Ledger for iPhone</h2>
+    <p class="sub">A private, manual journal for options traders. Record contracts, partial closes and fees, then see income, returns and cash flow over time.</p>
+    <div class="shots" aria-label="Options Ledger screenshots">
+      <figure class="shot"><img src="assets/options-ledger/01-open-positions.jpg" alt="Open positions list" loading="lazy"><figcaption>Your open positions</figcaption></figure>
+      <figure class="shot"><img src="assets/options-ledger/02-position-detail.jpg" alt="Position detail with contracts and notes" loading="lazy"><figcaption>Contracts, shares and notes</figcaption></figure>
+      <figure class="shot"><img src="assets/options-ledger/03-quill-chat.jpg" alt="Quill portfolio review chat" loading="lazy"><figcaption>Quill, on-device assistant</figcaption></figure>
+      <figure class="shot"><img src="assets/options-ledger/04-trade-journal.jpg" alt="Trade journal of openings and closings" loading="lazy"><figcaption>Openings, partial closes and fees</figcaption></figure>
+      <figure class="shot"><img src="assets/options-ledger/05-performance.jpg" alt="Performance statistics and charts" loading="lazy"><figcaption>Income, returns and cash flow</figcaption></figure>
     </div>
+    <p class="note">Screenshots show a sample portfolio with synthetic data.</p>
+    <div class="cards">
+      <div class="card"><h3>Track every contract</h3><p>Log openings, partial closes and fees across all your positions.</p></div>
+      <div class="card"><h3>Understand performance</h3><p>Charts and statistics for income, returns and cash flow.</p></div>
+      <div class="card"><h3>Ask Quill</h3><p>An on-device assistant powered by Apple Intelligence to review your portfolio.</p></div>
+    </div>
+    <div class="btns"><a class="btn ghost" href="/options-ledger/privacy.html">Privacy Policy</a></div>
   </section>
 </div>
 

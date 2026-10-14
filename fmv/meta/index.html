@@ -539,6 +539,10 @@ function zoneOf(px, fm) {
   return [pct.toFixed(0) + "% above FMV", pct > 25 ? "#FF5000" : "#b7791f"];
 }
 let D = {}, LATEST = {}, FULL = {};
+// The Mag 7's public fair values (the EDGAR version). Paid plans get the full version from the server instead;
+// these come back on sign-out or a plan change (docs/FMV_BASIS.md in pear-backend).
+const PUBLIC_V = {};
+const syncLatest = t => { const J = D[t]; if (J && J.v.length && J.p.length) LATEST[t] = {fm: J.v[J.v.length-1][4], px: J.p[J.p.length-1][1], pxd: J.p[J.p.length-1][0]}; };
 // [label, trading days shown, sample every N days] -- coarser sampling for longer ranges
 const RANGES = [["1W",5,1],["1M",21,2],["3M",63,3],["6M",126,5],["1Y",252,5],["ALL",1e9,0]];
 let curRange = "1W";
@@ -595,7 +599,9 @@ function loadFull(t) {
       .then(({prices, vintages}) => {
         D[t].p = priceRows(prices);
         if (vintages && vintages.length) D[t].v = vintRows(vintages);
+        else if (!vintages && PUBLIC_V[t]) D[t].v = PUBLIC_V[t];   // signed out: the public (EDGAR) values
         D[t].full = true;
+        if (LATEST[t]) syncLatest(t);
       });
   }
   return FULL[t];
@@ -614,7 +620,7 @@ async function init() {
     ]);
     const vByT = {};
     vintages.forEach(r => { (vByT[r.ticker] = vByT[r.ticker] || []).push(r); });
-    Object.keys(vByT).forEach(t => { (D[t] = D[t] || {v: [], p: []}).v = vintRows(vByT[t]); });
+    Object.keys(vByT).forEach(t => { (D[t] = D[t] || {v: [], p: []}).v = PUBLIC_V[t] = vintRows(vByT[t]); });
     week.forEach(r => {
       if (isWeekend(r.date)) return;
       (D[r.symbol] = D[r.symbol] || {v: [], p: []}).p.push([r.date, r.c]);

@@ -107,15 +107,6 @@
   .screen { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
   .chip { background:var(--card); border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-size:.88rem; font-weight:600; }
 
-  .plans { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:32px; }
-  .plan { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:24px; display:flex; flex-direction:column; }
-  .plan.hl { border:2px solid var(--green); }
-  .plan h3 { margin:0; font-size:1.1rem; }
-  .plan .price { font-size:1.9rem; font-weight:700; letter-spacing:-.02em; margin:6px 0 0; }
-  .plan .price span { font-size:.9rem; color:var(--muted); font-weight:500; }
-  .plan .stocks { color:var(--green); font-weight:600; font-size:.92rem; margin:4px 0 14px; }
-  .plan ul { margin:0; padding-left:1.1rem; color:var(--muted); font-size:.94rem; }
-  .plan li { margin:.3rem 0; }
 
   .cta { text-align:center; }
   .cta .sub { margin:0 auto; }
@@ -135,7 +126,7 @@
   @media (max-width:900px) {
     .hero, .demo { grid-template-columns:1fr; gap:36px; }
     .hero { padding-top:36px; }
-    .cards, .steps, .plans { grid-template-columns:1fr; }
+    .cards, .steps { grid-template-columns:1fr; }
     nav .links a:not(.btn) { display:none; }
     .ledger { grid-template-columns:1fr; }
   }
@@ -154,7 +145,6 @@
     <a class="brand" href="/"><img src="/assets/logo.svg" alt="" width="22" height="29">Pear FMV</a>
     <div class="links">
       <a href="#how">How it works</a>
-      <a href="#pricing">Pricing</a>
       <a href="/fmv/methodology/">Methodology</a>
       <a class="btn primary sm" href="/fmv/">Open the app</a>
     </div>
@@ -235,20 +225,6 @@
     </div>
     <div class="screen" aria-label="Example screen">
       <span class="chip">Sector: Technology</span><span class="chip">At or below Pear fair value</span><span class="chip">Above 50-day average</span><span class="chip">P/E under 30</span>
-    </div>
-  </section>
-
-  <section id="pricing">
-    <div class="eyebrow">Pricing</div>
-    <h2>Start free.</h2>
-    <p class="sub">Accounts open soon. Join the waitlist and we'll email you on launch day.</p>
-    <div class="plans">
-      <div class="plan"><h3>Free</h3><div class="price">$0</div><div class="stocks">S&amp;P 500</div>
-        <ul><li>Pear fair values and charts</li><li>Your own custom fair values</li><li>Re-valued after earnings and big news</li><li>Stock screener</li><li>50 Quill messages a day</li></ul></div>
-      <div class="plan hl"><h3>Premium</h3><div class="price">$49<span>/yr or $4.99/mo</span></div><div class="stocks">NYSE &amp; Nasdaq</div>
-        <ul><li>Everything in Free</li><li>2,500 Quill messages a month</li><li>Daily Fair Buy email alerts</li><li>1 year of history</li><li>Agentic Trading</li></ul></div>
-      <div class="plan"><h3>Pro</h3><div class="price">$249<span>/yr or $29/mo</span></div><div class="stocks">NYSE, Nasdaq, &amp; OTC</div>
-        <ul><li>Everything in Premium</li><li>Unlimited Quill messages</li><li>Real-time email and text alerts</li><li>Backfilled fair value history</li><li>10+ years of history</li></ul></div>
     </div>
   </section>
 

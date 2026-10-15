@@ -1821,12 +1821,10 @@ function draw() {
   function renderScMain() {
     scMain.textContent = "";
     const form = el('form', 'scform'), input = el('input', 'field');
-    input.placeholder = scLocked() ? "Build your own screen with a free account"
-      : sc.active ? "Refine this screen, e.g. only ones with dividends" : "Describe a screen, e.g. cheap tech stocks starting to move";
+    input.placeholder = sc.active ? "Refine this screen, e.g. only ones with dividends" : "Describe a screen, e.g. cheap tech stocks starting to move";
     input.setAttribute("aria-label", "Describe a screen");
     form.appendChild(input); form.appendChild(button("Screen", "pill")); form.lastChild.type = "submit";
     form.onsubmit = e => { e.preventDefault(); if (scLocked()) { scSignup(); return; } if (input.value.trim()) scQuery(input.value.trim()); };
-    if (scLocked()) { input.readOnly = true; input.onclick = scSignup; }
     scMain.appendChild(form);
 
     const chips = el('div', 'schips');
@@ -1871,11 +1869,7 @@ function draw() {
     if (sc.picking === "cols") cw.appendChild(columnMenu());
     bar.appendChild(cw);
     scMain.appendChild(bar);
-    if (sc.err) {
-      const w = el('div', 'warn', sc.err + " ");
-      if (scLocked()) w.appendChild(button(window.SIGNUP_LABEL || "Sign up", "linkbtn", scSignup));
-      scMain.appendChild(w);
-    }
+    if (sc.err && !scLocked()) scMain.appendChild(el('div', 'warn', sc.err));   // signed out: the Screen button asks them to join instead
     else if (sc.locked) scMain.appendChild(pegNote());
 
     scMain.appendChild(resultsTable());

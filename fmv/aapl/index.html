@@ -12,16 +12,16 @@
 </script>
 <!--seo:head-->
 <title>Apple (AAPL) Fair Value: Bear, Base &amp; Bull | Pear Digitals</title>
-<meta name="description" content="Apple (AAPL) fair value: $270 base case, $206 bear, $326 bull (Oct 14, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta name="description" content="Apple (AAPL) fair value: $293 base case, $190 bear, $360 bull (Oct 14, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
 <link rel="canonical" href="https://peardigitals.com/fmv/aapl/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pear Digitals">
 <meta property="og:title" content="Apple (AAPL) Fair Value: Bear, Base &amp; Bull | Pear Digitals">
-<meta property="og:description" content="Apple (AAPL) fair value: $270 base case, $206 bear, $326 bull (Oct 14, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta property="og:description" content="Apple (AAPL) fair value: $293 base case, $190 bear, $360 bull (Oct 14, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
 <meta property="og:url" content="https://peardigitals.com/fmv/aapl/">
 <meta property="og:image" content="https://peardigitals.com/assets/og/aapl.png">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Apple (AAPL) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/aapl/", "description": "Apple (AAPL) fair value: $270 base case, $206 bear, $326 bull (Oct 14, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-14", "about": {"@type": "Corporation", "name": "Apple Inc.", "tickerSymbol": "NASDAQ:AAPL"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Apple (AAPL) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/aapl/", "description": "Apple (AAPL) fair value: $293 base case, $190 bear, $360 bull (Oct 14, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-14", "about": {"@type": "Corporation", "name": "Apple Inc.", "tickerSymbol": "NASDAQ:AAPL"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
 <!--/seo:head-->
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
@@ -563,11 +563,11 @@ const vintRows = rows => {
 };
 const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
 
-// History limits by plan (calendar days): Free 30, Premium 1 year, Pro everything. Enforced by the server;
+// History limits by plan (calendar days): Free 1 year, Premium and Pro everything. Enforced by the server;
 // the range tabs just lock what the plan can't load.
 const RANGE_DAYS = {"1W": 7, "1M": 31, "3M": 92, "6M": 183, "1Y": 366, "ALL": Infinity};
-// "anon" = signed out (1 week, public views); "free" = signed-in Free (1 month, from the server).
-const PLAN_DAYS = {anon: 7, free: 31, premium: 366, pro: Infinity};
+// "anon" = signed out (1 year, public views); "free" = signed-in Free (1 year, from the server).
+const PLAN_DAYS = {anon: 366, free: 366, premium: Infinity, pro: Infinity};
 const planNow = () => (window.currentPlan && window.currentPlan()) || "anon";
 const rangeAllowed = label => RANGE_DAYS[label] <= PLAN_DAYS[planNow()];
 function renderRanges() {
@@ -594,8 +594,10 @@ function syncUrl() {
 function loadFull(t) {
   if (!FULL[t]) {
     const signedIn = window.chartData && window.chartData(t);   // signed in: server returns the plan's window
-    FULL[t] = (signedIn || get(`/prices_free?select=symbol,date,c&symbol=eq.${t}&order=date&limit=1000`)
-        .then(rows => ({prices: rows, vintages: null})))
+    FULL[t] = (signedIn || Promise.all([
+        get(`/prices_free?select=symbol,date,c&symbol=eq.${t}&order=date&limit=1000`),
+        get(`/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&ticker=eq.${t}&order=date&limit=1000`).catch(() => [])
+      ]).then(([rows, v]) => { if (v.length) PUBLIC_V[t] = vintRows(v); return {prices: rows, vintages: null}; }))
       .then(({prices, vintages}) => {
         D[t].p = priceRows(prices);
         if (vintages && vintages.length) D[t].v = vintRows(vintages);
@@ -612,9 +614,9 @@ async function init() {
     // First paint needs only the last ~week of prices plus the FMV vintages.
     const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
     const [vintages, week] = await Promise.all([
-      // Mag 7 fair value history for the last 30 days (vintages_free); longer history comes per plan from fmv-user.
-      get("/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")
-        .catch(() => get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")),
+      // Mag 7 fair values, recent only (vintages_free); the rest of the history loads per stock in loadFull.
+      get(`/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&date=gte.${since}&order=ticker,date`)
+        .catch(() => get(`/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&date=gte.${since}&order=ticker,date`)),
       get(`/prices_free?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`)
         .catch(() => get(`/prices_public?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`))
     ]);
@@ -1302,7 +1304,7 @@ function draw() {
 
   // One sentence per paid plan, used on every paywall.
   const PLAN_BLURB = {
-    premium: "The Premium Plan covers every NYSE and Nasdaq stock with fair values, 1Y historical data, daily email alerts, Agentic Trading, and 2,500 Quill messages a month.",
+    premium: "The Premium Plan covers every NYSE and Nasdaq stock with fair values, 10Y+ of historical data, daily email alerts, Agentic Trading, and 2,500 Quill messages a month.",
     pro: "The Pro Plan covers every NYSE, Nasdaq and OTC stock with fair values, 10Y+ of historical data, real-time email and text alerts, Agentic Trading, and unlimited Quill.",
   };
   const priceOf = id => { const pl = PLANS.find(x => x.id === id); return pl ? pl.price : ""; };
@@ -1345,11 +1347,11 @@ function draw() {
   const PLANS = [
     {id: "free", name: "Free", price: "$0", stocks: "S&P 500",
      items: ["Pear Recommended Fair Values & Charts", "Customized Fair Values", "Auto re-ratings after earnings & other significant events",
-             "Stock Screener", "50 Quill messages a day", "1M of Historical Data"]},
+             "Stock Screener", "50 Quill messages a day", "1Y of Historical Data"]},
     {id: "premium", name: "Premium", price: "$49/yr", alt: "or $4.99/mo", stocks: "NYSE & Nasdaq",
-     items: ["Everything in Free", "Agentic Trading", "2,500 Quill messages a month", "Daily Fair Buy Email Alerts", "1Y of Historical Data"]},
+     items: ["Everything in Free", "Agentic Trading", "2,500 Quill messages a month", "Daily Fair Buy Email Alerts", "10Y+ of Historical Data"]},
     {id: "pro", name: "Pro", price: "$249/yr", alt: "or $29/mo", stocks: "NYSE, Nasdaq, & OTC",
-     items: ["Everything in Premium", "Unlimited Quill messages", "Real-time Fair Buy Email & Text Alerts", "Backfilled Pear Recommended and Custom Fair Values", "10Y+ of Historical Data"]},
+     items: ["Everything in Premium", "Unlimited Quill messages", "Real-time Fair Buy Email & Text Alerts", "Backfilled Pear Recommended and Custom Fair Values"]},
   ];
   function openPlans() {
     const g = $('plansgrid'); g.textContent = "";
@@ -1416,22 +1418,13 @@ function draw() {
   }
 
   window.currentPlan = () => USER ? (plan || "free") : "anon";
-  // Signed in: chart history comes from the server, limited to the plan's window. Signed out: public 1-week views.
+  // Signed in: chart history comes from the server, limited to the plan's window. Signed out: public 1-year views.
   window.chartData = t => (USER && plan) ? api('chart', {ticker: t}) : null;
   window.openRangePaywall = label => {
-    if (!USER && RANGE_DAYS[label] <= PLAN_DAYS.free) {   // 1M: just needs a free account
-      const acts = $('payacts'); acts.textContent = ""; $('payprice').textContent = "";
-      $('paytitle').textContent = `${label} history is free with an account`;
-      $('paytext').textContent = SIGNUPS_OPEN ? "Sign up free to see 1M of historical data, save your own fair values and keep a watchlist."
-        : "Free accounts open soon, with 1M of historical data, your own fair values and a watchlist. Join the waitlist to hear when.";
-      acts.appendChild(button(JOIN, "pill", () => { pay.close(); openAuth("up", "history " + label); }));
-      if (canLogin()) acts.appendChild(button("Log in", "pill light", () => { pay.close(); openAuth("in"); }));
-      pay.showModal(); return;
-    }
     const tier = RANGE_DAYS[label] <= PLAN_DAYS.premium ? "premium" : "pro";
     const pl = PLANS.find(x => x.id === tier), acts = $('payacts'), pp = $('payprice');
     acts.textContent = ""; pp.textContent = pl.price; pp.appendChild(el('span', null, ` ${pl.alt} \u00b7 at launch`));
-    $('paytitle').textContent = label === "ALL" ? "10Y+ history is a Pro feature" : `${label} history is a Premium feature`;
+    $('paytitle').textContent = `${label === "ALL" ? "10Y+" : label} history is a Premium feature`;
     $('paytext').textContent = PLAN_BLURB[tier];
     if (waitTier === tier) acts.appendChild(el('div', 'paytext', joinedText(tier)));
     else acts.appendChild(button(`Join the ${PLAN_NAME[tier]} waitlist`, "pill", async ev => {

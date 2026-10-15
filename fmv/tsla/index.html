@@ -1769,6 +1769,10 @@ function draw() {
     {name: "Near 52-week lows", spec: {filters: [{field: "dist_52w_high_pct", op: "lte", num: -30, label: "30%+ below 52-week high"}], sort: {field: "dist_52w_high_pct", dir: "asc"}}},
   ].map(x => ({...x, starter: true}));
   const DEFAULT_SORT = {field: "px_vs_fmv_pct", dir: "asc"};
+  // Signed out: only the starter screens (re-sorting them is fine); building or editing a screen needs a free account.
+  // fmv-screen enforces the same rule.
+  const scLocked = () => !userView();
+  const scSignup = () => openAuth("up", SIGNUPS_OPEN ? "Sign up free to build your own screens." : "screener");
   // sc.active: the screen loaded from the list (saved or starter), if any; edits to it can be saved back.
   let sc = {spec: {filters: [], sort: DEFAULT_SORT}, rows: [], count: 0, busy: false, err: "", loaded: false, active: null, naming: null, sectors: [], picking: false};
   let savedScreens = [], scMenu = null, scRenaming = null, scDeleting = null;
@@ -1807,26 +1811,34 @@ function draw() {
   // Tap a screen to load it; tap the selected one again to unselect it (back to all stocks).
   const loadScreen = x => {
     sc.naming = null; scMenu = scRenaming = scDeleting = null;
-    if (sc.active && (sc.active.id || sc.active.name) === (x.id || x.name)) { sc.active = null; scSet({filters: [], sort: DEFAULT_SORT}); return; }
+    if (sc.active && (sc.active.id || sc.active.name) === (x.id || x.name)) {
+      if (scLocked()) return;   // signed out there's no "all stocks" view to go back to
+      sc.active = null; scSet({filters: [], sort: DEFAULT_SORT}); return;
+    }
     sc.active = x; scSet(x.spec);
   };
 
   function renderScMain() {
     scMain.textContent = "";
     const form = el('form', 'scform'), input = el('input', 'field');
-    input.placeholder = sc.active ? "Refine this screen, e.g. only ones with dividends" : "Describe a screen, e.g. cheap tech stocks starting to move";
+    input.placeholder = scLocked() ? "Build your own screen with a free account"
+      : sc.active ? "Refine this screen, e.g. only ones with dividends" : "Describe a screen, e.g. cheap tech stocks starting to move";
     input.setAttribute("aria-label", "Describe a screen");
     form.appendChild(input); form.appendChild(button("Screen", "pill")); form.lastChild.type = "submit";
-    form.onsubmit = e => { e.preventDefault(); if (input.value.trim()) scQuery(input.value.trim()); };
+    form.onsubmit = e => { e.preventDefault(); if (scLocked()) { scSignup(); return; } if (input.value.trim()) scQuery(input.value.trim()); };
+    if (scLocked()) { input.readOnly = true; input.onclick = scSignup; }
     scMain.appendChild(form);
 
     const chips = el('div', 'schips');
     sc.spec.filters.forEach((f, i) => {
       const c = el('span', 'schip', f.label);
-      const x = button("×", null, () => scSet({filters: sc.spec.filters.filter((_, j) => j !== i), sort: sc.spec.sort}));
-      x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x); chips.appendChild(c);
+      if (!scLocked()) {
+        const x = button("×", null, () => scSet({filters: sc.spec.filters.filter((_, j) => j !== i), sort: sc.spec.sort}));
+        x.setAttribute("aria-label", "Remove " + f.label); c.appendChild(x);
+      }
+      chips.appendChild(c);
     });
-    chips.appendChild(button("+ Filter", "schip add", () => { sc.picking = sc.picking === "filter" ? false : "filter"; renderScMain(); }));
+    chips.appendChild(button("+ Filter", "schip add", () => { if (scLocked()) { scSignup(); return; } sc.picking = sc.picking === "filter" ? false : "filter"; renderScMain(); }));
     scMain.appendChild(chips);
     if (sc.picking === "filter") scMain.appendChild(filterPicker());
 
@@ -1844,7 +1856,7 @@ function draw() {
       sv.appendChild(button("Save", "linkbtn", needAccount(() => { sc.naming = "new"; renderScMain(); })));
     }
     if (sc.spec.filters.length || sc.active) sv.appendChild(button("Clear", "linkbtn", () => { sc.active = null; scSet({filters: [], sort: DEFAULT_SORT}); }));
-    if (sv.children.length) scMain.appendChild(sv);
+    if (sv.children.length && !scLocked()) scMain.appendChild(sv);
     if (sc.naming) scMain.appendChild(nameForm());
 
     const bar = el('div', 'scbar');
@@ -1859,7 +1871,11 @@ function draw() {
     if (sc.picking === "cols") cw.appendChild(columnMenu());
     bar.appendChild(cw);
     scMain.appendChild(bar);
-    if (sc.err) scMain.appendChild(el('div', 'warn', sc.err));
+    if (sc.err) {
+      const w = el('div', 'warn', sc.err + " ");
+      if (scLocked()) w.appendChild(button(window.SIGNUP_LABEL || "Sign up", "linkbtn", scSignup));
+      scMain.appendChild(w);
+    }
     else if (sc.locked) scMain.appendChild(pegNote());
 
     scMain.appendChild(resultsTable());
@@ -2162,7 +2178,9 @@ function draw() {
     if (push && location.pathname !== "/fmv/screener/") history.pushState({screener: true}, "", "/fmv/screener/");
     document.title = "Stock Screener | Pear Digitals";
     showView("screener"); window.scrollTo({top: 0});
-    if (spec) { sc.active = null; scSet(spec); } else if (!sc.loaded && !sc.busy) scSet(sc.spec); else renderScMain();
+    if (spec) { sc.active = null; scSet(spec); }
+    else if (scLocked() && !sc.active) { sc.active = STARTERS[0]; scSet(STARTERS[0].spec); }   // signed out: open on a starter
+    else if (!sc.loaded && !sc.busy) scSet(sc.spec); else renderScMain();
     loadSaved();
   }
   window.openScreener = openScreener;

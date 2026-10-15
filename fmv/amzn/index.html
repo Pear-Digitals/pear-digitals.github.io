@@ -12,16 +12,16 @@
 </script>
 <!--seo:head-->
 <title>Amazon (AMZN) Fair Value: Bear, Base &amp; Bull | Pear Digitals</title>
-<meta name="description" content="Amazon (AMZN) fair value: $285 base case, $195 bear, $360 bull (Oct 14, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta name="description" content="Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 14, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
 <link rel="canonical" href="https://peardigitals.com/fmv/amzn/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pear Digitals">
 <meta property="og:title" content="Amazon (AMZN) Fair Value: Bear, Base &amp; Bull | Pear Digitals">
-<meta property="og:description" content="Amazon (AMZN) fair value: $285 base case, $195 bear, $360 bull (Oct 14, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta property="og:description" content="Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 14, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
 <meta property="og:url" content="https://peardigitals.com/fmv/amzn/">
 <meta property="og:image" content="https://peardigitals.com/assets/og/amzn.png">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Amazon (AMZN) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/amzn/", "description": "Amazon (AMZN) fair value: $285 base case, $195 bear, $360 bull (Oct 14, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-14", "about": {"@type": "Corporation", "name": "Amazon.com, Inc.", "tickerSymbol": "NASDAQ:AMZN"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Amazon (AMZN) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/amzn/", "description": "Amazon (AMZN) fair value: $275 base case, $160 bear, $400 bull (Oct 14, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-14", "about": {"@type": "Corporation", "name": "Amazon.com, Inc.", "tickerSymbol": "NASDAQ:AMZN"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
 <!--/seo:head-->
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
@@ -204,6 +204,16 @@
   .msg.bot code { background:#fff; padding:1px 5px; border-radius:4px; font-size:.88em; }
   .msg.user { align-self:flex-end; background:var(--ink); color:#fff; border-bottom-right-radius:4px; }
   .msg.bot { align-self:flex-start; background:var(--soft); border-bottom-left-radius:4px; }
+  /* thumbs up / down under Quill replies: faint until hovered or chosen */
+  .fb { align-self:flex-start; display:flex; align-items:center; gap:2px; margin:-6px 0 0 6px; }
+  .fb button { border:0; background:none; padding:4px; border-radius:6px; color:var(--muted); opacity:.5; cursor:pointer; display:flex; }
+  .fb button:hover, .fb button.on { opacity:1; } .fb button.on { color:var(--ink); }
+  .fb button.down svg { transform:rotate(180deg); }
+  .fb .thx { font-size:.78rem; color:var(--muted); margin-left:6px; }
+  .fbform { align-self:stretch; display:flex; gap:6px; margin:-4px 0 0; }
+  .fbform input { flex:1; min-width:0; border:1px solid var(--line); border-radius:999px; padding:7px 12px; font:inherit; font-size:.85rem; outline:none; }
+  .fbform input:focus { border-color:var(--ink); }
+  .fbform button { border:0; background:var(--soft); border-radius:999px; padding:7px 12px; font:inherit; font-size:.85rem; cursor:pointer; }
   .chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
   .chips button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; font-size:.82rem; cursor:pointer; }
   .chips button:hover { border-color:var(--ink); }
@@ -2237,16 +2247,51 @@ function draw() {
     return html;
   }
   const add = (cls, text) => { const d = document.createElement('div'); d.className = 'msg ' + cls; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
+  // Thumbs up / down under each reply; a thumbs down offers an optional comment. Saved by fmv-chat, never required.
+  const THUMB = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>';
+  function feedbackRow(question, reply, ticker) {
+    const id = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+    const send = async (rating, comment) => {
+      try {
+        await fetch(CHAT_URL, {method: "POST", headers: {"content-type": "application/json", apikey: ANON_KEY, authorization: "Bearer " + await authToken()},
+          body: JSON.stringify({feedback: {id, rating, comment, question, reply, ticker}})});
+      } catch (e) {}
+    };
+    const row = document.createElement('div'); row.className = 'fb';
+    const mk = (rating, label) => { const b = document.createElement('button'); b.type = "button"; b.className = rating; b.title = label;
+      b.setAttribute('aria-label', label); b.setAttribute('aria-pressed', "false"); b.innerHTML = THUMB; row.appendChild(b); return b; };
+    const up = mk("up", "Good response"), down = mk("down", "Bad response");
+    const thx = document.createElement('span'); thx.className = 'thx'; thx.setAttribute('role', 'status'); row.appendChild(thx);
+    let form = null;
+    const pick = rating => {
+      for (const [b, r] of [[up, "up"], [down, "down"]]) { b.classList.toggle('on', r === rating); b.setAttribute('aria-pressed', r === rating); }
+      send(rating);
+      if (form) { form.remove(); form = null; }
+      thx.textContent = rating === "up" ? "Thanks for the feedback" : "";
+      if (rating === "down") {
+        form = document.createElement('form'); form.className = 'fbform';
+        const inp = document.createElement('input'); inp.placeholder = "What could be better? (optional)"; inp.maxLength = 1000; inp.setAttribute('aria-label', "What could be better?");
+        const ok = document.createElement('button'); ok.textContent = "Send";
+        form.append(inp, ok);
+        form.onsubmit = e => { e.preventDefault(); if (inp.value.trim()) send("down", inp.value.trim()); form.remove(); form = null; thx.textContent = "Thanks for the feedback"; };
+        row.after(form); if (!matchMedia("(pointer:coarse)").matches) inp.focus();
+        if (form.nextElementSibling === null) log.scrollTop = log.scrollHeight;
+      }
+    };
+    up.onclick = () => pick("up"); down.onclick = () => pick("down");
+    return row;
+  }
   async function ask(q) {
     q = q.trim(); if (!q) return;
     hist.push({role: "user", content: q});
     add('user', q); input.value = ""; btn.disabled = true; chips.hidden = true;   // shortcuts only before the chat starts
     const bot = add('bot', "Thinking…");
+    const onStock = document.getElementById('screener').hidden ? sel.value : null;
     try {
       const res = await fetch(CHAT_URL, {
         method: "POST",
         headers: {"content-type": "application/json", apikey: ANON_KEY, authorization: "Bearer " + await authToken()},
-        body: JSON.stringify({messages: hist.slice(-12), ticker: document.getElementById('screener').hidden ? sel.value : null,
+        body: JSON.stringify({messages: hist.slice(-12), ticker: onStock,
           screen: window.screenContext ? window.screenContext() : null})
       });
       if (res.status === 429) {   // daily limit
@@ -2277,6 +2322,8 @@ function draw() {
       if (wch.length) bot.appendChild(window.watchCard(wch));
       const scr = window.screenParse(out);
       if (scr) bot.appendChild(window.screenCard(scr));
+      bot.after(feedbackRow(q, clean, onStock));
+      log.scrollTop = log.scrollHeight;
     } catch (e) {
       bot.textContent = "Sorry, that didn't go through. Try again in a moment.";
       hist.pop();

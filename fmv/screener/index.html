@@ -553,9 +553,9 @@ let D = {}, LATEST = {}, FULL = {};
 const PUBLIC_V = {};
 const syncLatest = t => { const J = D[t]; if (J && J.v.length && J.p.length) LATEST[t] = {fm: J.v[J.v.length-1][4], px: J.p[J.p.length-1][1], pxd: J.p[J.p.length-1][0]}; };
 // [label, trading days shown, sample every N days] -- coarser sampling for longer ranges
-const RANGES = [["1W",5,1],["1M",21,2],["3M",63,3],["6M",126,5],["1Y",252,5],["ALL",1e9,0]];
-let curRange = "1W";
-const RANGE_WORDS = {"1W": "Past week", "1M": "Past month", "3M": "Past 3 months", "6M": "Past 6 months", "1Y": "Past year", "ALL": "All time"};
+const RANGES = [["1M",21,1],["3M",63,3],["6M",126,5],["1Y",252,5],["ALL",1e9,0]];
+let curRange = "1M";
+const RANGE_WORDS = {"1M": "Past month", "3M": "Past 3 months", "6M": "Past 6 months", "1Y": "Past year", "ALL": "All time"};
 
 const priceRows = rows => rows.filter(r => !isWeekend(r.date)).map(r => [r.date, r.c]);
 // Fair values dated on a weekend (e.g. published on a Sunday) count from the previous Friday, the last trading day;
@@ -574,7 +574,7 @@ const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10)
 
 // History limits by plan (calendar days): Free 1 year, Premium and Pro everything. Enforced by the server;
 // the range tabs just lock what the plan can't load.
-const RANGE_DAYS = {"1W": 7, "1M": 31, "3M": 92, "6M": 183, "1Y": 366, "ALL": Infinity};
+const RANGE_DAYS = {"1M": 31, "3M": 92, "6M": 183, "1Y": 366, "ALL": Infinity};
 // "anon" = signed out (1 year, public views); "free" = signed-in Free (1 year, from the server).
 const PLAN_DAYS = {anon: 366, free: 366, premium: Infinity, pro: Infinity};
 const planNow = () => (window.currentPlan && window.currentPlan()) || "anon";
@@ -620,8 +620,8 @@ function loadFull(t) {
 
 async function init() {
   try {
-    // First paint needs only the last ~week of prices plus the FMV vintages.
-    const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
+    // First paint needs only the last month of prices (the default 1M chart) plus the FMV vintages.
+    const since = new Date(Date.now() - 40 * 864e5).toISOString().slice(0, 10);
     const [vintages, week] = await Promise.all([
       // Mag 7 fair values, recent only (vintages_free); the rest of the history loads per stock in loadFull.
       get(`/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&date=gte.${since}&order=ticker,date`)
@@ -637,7 +637,7 @@ async function init() {
       (D[r.symbol] = D[r.symbol] || {v: [], p: []}).p.push([r.date, r.c]);
     });
     Object.keys(D).forEach(t => {
-      const J = D[t]; J.p = J.p.slice(-5);
+      const J = D[t]; J.p = J.p.slice(-21);
       if (J.v.length && J.p.length) LATEST[t] = {fm: J.v[J.v.length-1][4], px: J.p[J.p.length-1][1], pxd: J.p[J.p.length-1][0]};
     });
   } catch (e) {
@@ -713,7 +713,7 @@ function draw() {
   if (document.getElementById('app').classList.contains('pending')) return;   // a stock is opening; it draws when its data arrives
   const t = sel.value, J = D[t];
   const n = RANGES.find(r => r[0] === curRange)[1];
-  if (n > 5 && !J.full) {   // longer ranges wait for the background load
+  if (J.p.length < n && !J.full) {   // longer ranges wait for the background load
     msgEl.hidden = false; msgEl.textContent = "Loading " + curRange + "…";
     loadFull(t).then(() => { if (sel.value === t) draw(); })
       .catch(() => { if (sel.value === t) msgEl.textContent = "Could not load history."; });
@@ -861,7 +861,8 @@ function draw() {
   const SC = ["bear", "base", "bull"], CAP = {bear: "Bear", base: "Base", bull: "Bull"};
   let rows = {}, authMode = "in", plan = null, fullHistory = false, onWaitlist = false, waitTier = null, alertsOn = true;
   const PLAN_NAME = {free: "Free", premium: "Premium", pro: "Pro"};
-  // Access levels: signed out 0 (Mag 7), Free 1 (+ S&P 500), Premium 2 (every NYSE / Nasdaq stock), Pro 3 (+ OTC).
+  // Access levels: signed out 0, Free 1, Premium 2 (every NYSE / Nasdaq stock), Pro 3 (+ OTC). The Mag 7 and the S&P 500
+  // (tiers 0 and 1) need no account; the account adds the watchlist, custom fair values and more Quill.
   const RANK = {free: 1, premium: 2, pro: 3};
   const myRank = () => userView() ? RANK[plan || "free"] : 0;
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
@@ -1024,12 +1025,12 @@ function draw() {
   let UNIVERSE = null, universeLoading = null;
   const loadUniverse = () => universeLoading || (universeLoading = fetch("/fmv/universe.json").then(r => r.json())
     .then(d => { UNIVERSE = d; if (!qres.hidden) renderSearch(); }).catch(() => { universeLoading = null; }));
-  // What a stock tier needs: Mag 7 nothing, S&P 500 a free account, other NYSE / Nasdaq stocks Premium.
+  // What a stock tier needs: Mag 7 and S&P 500 nothing, other NYSE / Nasdaq stocks Premium.
   const TIER_PLAN = ["free", "free", "premium"];
   // Search priority of each stock tier (index = tier), per plan. Pro has none: best match wins.
   const TIER_ORDER = [[0, 1, 2], [1, 0, 2], null, null];   // by access level: signed out, Free, Premium, Pro
   // What tapping a search result does: open it, show the paywall, or say it's coming.
-  const statusOf = (t, tier) => myRank() < tier ? TIER_PLAN[tier] : LATEST[t] ? "ok" : USER && tier > 0 ? "load" : "soon";
+  const statusOf = (t, tier) => Math.max(myRank(), 1) < tier ? TIER_PLAN[tier] : LATEST[t] ? "ok" : tier > 0 ? "load" : "soon";
   function renderSearch() {
     const raw = q.value.trim(), term = raw.toLowerCase();
     const covered = [...sel.options].filter(o => MAG7.includes(o.value)).map(o => [o.value, NAMES[o.value] || "", 0]);
@@ -1476,13 +1477,13 @@ function draw() {
     } catch (e) { console.error(e); }
   }
 
-  // Paid stocks (S&P 500 for Premium, any NYSE/Nasdaq for Pro) aren't in the public data, so they're loaded on
-  // demand from fmv-user (which checks the plan) and added to the page like the Mag 7. Resolves false if the
-  // stock isn't in the plan or has no published fair value yet.
+  // Stocks beyond the Mag 7 (S&P 500 for everyone, signed in or not; any NYSE/Nasdaq for Premium / Pro) aren't in the
+  // public data, so they're loaded on demand from fmv-user (which checks the plan) and added to the page like the
+  // Mag 7. Resolves false if the stock isn't in the plan or has no published fair value yet.
   const stockLoads = {}, noData = new Set();   // noData: paid stocks with nothing to show yet (or not in the plan)
   const ensureStock = t => {
     if (LATEST[t]) return Promise.resolve(true);
-    if (!USER || !plan) return Promise.resolve(false);
+    if (USER && !plan) return Promise.resolve(false);   // signed in, plan still loading
     return stockLoads[t] || (stockLoads[t] = (async () => {
       try {
         const [{prices, vintages}] = await Promise.all([api('chart', {ticker: t}), loadUniverse()]);
@@ -1561,7 +1562,7 @@ function draw() {
       if (window.screenerReload) setTimeout(window.screenerReload, 0);   // results depend on the plan
       Object.keys(FULL).forEach(k => delete FULL[k]);
       Object.values(D).forEach(J => { J.full = false; });
-      if (!rangeAllowed(curRange)) { curRange = "1W"; [...rangesEl.children].forEach(x => x.classList.toggle('on', x.dataset.r === "1W")); }
+      if (!rangeAllowed(curRange)) { curRange = "1M"; [...rangesEl.children].forEach(x => x.classList.toggle('on', x.dataset.r === "1M")); }
       [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)].forEach(t => { if (D[t]) loadFull(t).catch(() => {}); });
     }
     renderRanges(); onWaitlist = next.onWaitlist; waitTier = next.waitTier || null; alertsOn = next.alertsOn !== false;

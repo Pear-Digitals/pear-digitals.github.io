@@ -565,8 +565,8 @@ const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10)
 // History limits by plan (calendar days): Free 30, Premium 1 year, Pro everything. Enforced by the server;
 // the range tabs just lock what the plan can't load.
 const RANGE_DAYS = {"1W": 7, "1M": 31, "3M": 92, "6M": 183, "1Y": 366, "ALL": Infinity};
-// "anon" = signed out (1 week, public views); "free" = signed-in Free (1 month, from the server).
-const PLAN_DAYS = {anon: 7, free: 31, premium: 366, pro: Infinity};
+// "anon" = signed out (1 year, public views); "free" = signed-in Free (1 month, from the server).
+const PLAN_DAYS = {anon: 366, free: 31, premium: 366, pro: Infinity};
 const planNow = () => (window.currentPlan && window.currentPlan()) || "anon";
 const rangeAllowed = label => RANGE_DAYS[label] <= PLAN_DAYS[planNow()];
 function renderRanges() {
@@ -593,8 +593,10 @@ function syncUrl() {
 function loadFull(t) {
   if (!FULL[t]) {
     const signedIn = window.chartData && window.chartData(t);   // signed in: server returns the plan's window
-    FULL[t] = (signedIn || get(`/prices_free?select=symbol,date,c&symbol=eq.${t}&order=date&limit=1000`)
-        .then(rows => ({prices: rows, vintages: null})))
+    FULL[t] = (signedIn || Promise.all([
+        get(`/prices_free?select=symbol,date,c&symbol=eq.${t}&order=date&limit=1000`),
+        get(`/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&ticker=eq.${t}&order=date&limit=1000`).catch(() => [])
+      ]).then(([rows, v]) => { if (v.length) PUBLIC_V[t] = vintRows(v); return {prices: rows, vintages: null}; }))
       .then(({prices, vintages}) => {
         D[t].p = priceRows(prices);
         if (vintages && vintages.length) D[t].v = vintRows(vintages);
@@ -611,9 +613,9 @@ async function init() {
     // First paint needs only the last ~week of prices plus the FMV vintages.
     const since = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);
     const [vintages, week] = await Promise.all([
-      // Mag 7 fair value history for the last 30 days (vintages_free); longer history comes per plan from fmv-user.
-      get("/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")
-        .catch(() => get("/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&order=ticker,date")),
+      // Mag 7 fair values, recent only (vintages_free); the rest of the history loads per stock in loadFull.
+      get(`/vintages_free?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&date=gte.${since}&order=ticker,date`)
+        .catch(() => get(`/vintages_public?select=ticker,date,bear,base,bull,weighted,sb_below,fb_lo,fb_hi&date=gte.${since}&order=ticker,date`)),
       get(`/prices_free?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`)
         .catch(() => get(`/prices_public?select=symbol,date,c&date=gte.${since}&order=symbol,date&limit=1000`))
     ]);

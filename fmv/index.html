@@ -1208,7 +1208,7 @@ function draw() {
   document.addEventListener('click', e => { if (!sortMenu.hidden && !e.target.closest('#sortmenu')) { sortMenu.hidden = true; sortBtn.setAttribute("aria-expanded", "false"); } });
 
   function renderSide() {
-    // The watchlist panel shows for everyone; signed out it's just the hint (the star asks them to sign up).
+    // The watchlist panel shows for everyone; signed out it lists the Mag 7 (the star asks them to sign up).
     const side = $('side'), grid = $('app');
     side.hidden = false; grid.classList.add('with-side');
     fillWatch($('wl'), true);
@@ -1234,8 +1234,9 @@ function draw() {
     wl.textContent = "";
     if (main) sortBtn.hidden = true;
     const hint = () => wl.appendChild(el('div', 'empty', "Press \u2606 to add stocks to your watchlist."));
-    if (!signedIn) { hint(); return; }
-    if (userLoading) {
+    // Signed out: a fixed Mag 7 list (front end only; their watchlist starts empty once they have an account).
+    const watched = signedIn ? [...WATCH] : MAG7;
+    if (signedIn && userLoading) {
       for (let i = 0; i < 3; i++) {
         const r = el('div', 'wrow skrow');
         r.appendChild(el('span', 'sk', "\u00a0")); r.appendChild(el('span', 'sk', "\u00a0"));
@@ -1248,7 +1249,7 @@ function draw() {
     // so the list doesn't show the Mag 7 first and then reshuffle.
     const loadingPaid = t => !LATEST[t] && !noData.has(t) && !MAG7.includes(t) && !!plan;
     const soon = t => !LATEST[t] && noData.has(t) && !MAG7.includes(t);   // watched, but no fair value published yet
-    const list = sortWatch([...WATCH].filter(t => LATEST[t] || loadingPaid(t) || soon(t)));
+    const list = sortWatch(watched.filter(t => LATEST[t] || loadingPaid(t) || soon(t)));
     if (!list.length) { hint(); return; }
     if (main) sortBtn.hidden = list.length < 2;   // nothing to sort with one stock
     list.forEach(t => {
@@ -2353,11 +2354,10 @@ function draw() {
   // Starters for the stock on screen, plus a general one; all hidden once the chat starts.
   const chip = (cls) => { const b = document.createElement('button'); b.type = "button"; if (cls) b.className = cls;
     b.addEventListener('click', () => ask(b.textContent)); chips.appendChild(b); return b; };
-  const shortcut = chip("shortcut"), cases = chip(), dcf = chip();
-  dcf.textContent = "What is a DCF?";
-  window.setChatStock = t => { shortcut.textContent = `Change ${t}'s fair value`; cases.textContent = `What are ${t}'s bear, base and bull cases?`; dcf.textContent = "What is a DCF?"; };
+  const shortcut = chip("shortcut"), cases = chip(), why = chip();
+  window.setChatStock = t => { shortcut.textContent = `Change ${t}'s fair value`; cases.textContent = `What are ${t}'s bear, base and bull cases?`; why.textContent = `Why did ${t}'s valuation change?`; };
   // On the Screener the starters are about screening.
-  window.setChatScreener = () => { shortcut.textContent = "Find undervalued dividend stocks"; cases.textContent = "Which of these looks cheapest?"; dcf.textContent = "What can I filter on?"; };
+  window.setChatScreener = () => { shortcut.textContent = "Find undervalued dividend stocks"; cases.textContent = "Which of these looks cheapest?"; why.textContent = "What can I filter on?"; };
   window.setChatStock(sel.value || "AAPL");
 })();
 init();

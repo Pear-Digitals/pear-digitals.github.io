@@ -96,6 +96,9 @@
   .msg.bot ul, .msg.bot ol { margin:4px 0 8px; padding-left:20px; } .msg.bot li { margin:2px 0; }
   .msg.bot h4 { margin:10px 0 4px; font-size:.95rem; }
   .msg.bot code { background:#fff; padding:1px 5px; border-radius:4px; font-size:.88em; }
+  .msg.bot table { border-collapse:collapse; margin:4px 0 8px; font-size:.88rem; font-variant-numeric:tabular-nums; }
+  .msg.bot th, .msg.bot td { padding:3px 10px 3px 0; text-align:left; border-bottom:1px solid var(--line); }
+  .msg.bot th { font-weight:600; }
   @media (max-width:560px) {
     #chatpop { top:0; left:0; right:0; bottom:auto; width:auto; height:100vh; height:100dvh; border-radius:0; }
     body.chatting { overflow:hidden; }
@@ -266,12 +269,20 @@
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
       .replace(/__([^_]+)__/g, "<strong>$1</strong>")
       .replace(/(^|[^*\w])\*(?!\s)([^*]+?)\*(?!\w)/g, "$1<em>$2</em>");
-    let html = "", para = [], list = null;
-    const flushP = () => { if (para.length) { html += "<p>" + para.map(inline).join("<br>") + "</p>"; para = []; } };
+    let html = "", para = [], list = null, table = null;
+    const cells = line => line.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+    const flushT = () => { if (table) { html += "<table>" + table.map((r, i) => "<tr>" + r.map(c => i ? `<td>${inline(c)}</td>` : `<th>${inline(c)}</th>`).join("") + "</tr>").join("") + "</table>"; table = null; } };
+    const flushP = () => { flushT(); if (para.length) { html += "<p>" + para.map(inline).join("<br>") + "</p>"; para = []; } };
     const flushL = () => { if (list) { html += `<${list.t}>` + list.items.map(i => "<li>" + inline(i) + "</li>").join("") + `</${list.t}>`; list = null; } };
     for (const raw of src.split("\n")) {
       const line = raw.trimEnd(); let m;
       if (!line.trim()) { flushP(); flushL(); continue; }
+      if (/^\s*\|.*\|\s*$/.test(line)) {   // Markdown table row; the |---| separator row is skipped
+        if (!table) { flushP(); flushL(); table = []; }
+        if (!/^[\s|:-]+$/.test(line)) table.push(cells(line));
+        continue;
+      }
+      flushT();
       if ((m = line.match(/^\s*#{1,6}\s+(.*)/))) { flushP(); flushL(); html += "<h4>" + inline(m[1]) + "</h4>"; continue; }
       if ((m = line.match(/^\s*[-*•]\s+(.*)/))) { flushP(); if (!list || list.t !== "ul") { flushL(); list = {t: "ul", items: []}; } list.items.push(m[1]); continue; }
       if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (!list || list.t !== "ol") { flushL(); list = {t: "ol", items: []}; } list.items.push(m[1]); continue; }

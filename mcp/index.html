@@ -56,8 +56,10 @@
 
   details { margin-top:24px; }
   summary { cursor:pointer; font-weight:600; color:var(--green); }
-  .tools { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
-  .tools code { background:var(--card); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:.85rem; }
+  .tools { display:grid; grid-template-columns:max-content 1fr; gap:10px 20px; margin:16px 0 0; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px 24px; }
+  .tools dt { font-size:.88rem; }
+  .tools dd { margin:0; color:var(--muted); font-size:.95rem; }
+  @media (max-width:640px) { .tools { grid-template-columns:1fr; gap:2px; } .tools dd { margin-bottom:10px; } }
 
   .cta { text-align:center; }
   .cta .sub { margin:0 auto; }
@@ -107,11 +109,24 @@
     </div>
     <details>
       <summary>See the tools</summary>
-      <div class="tools">
-        <code>edgar_company</code><code>edgar_search</code><code>edgar_screen</code><code>edgar_trends</code><code>edgar_compare</code>
-        <code>edgar_metrics</code><code>edgar_risk_factors</code><code>edgar_text_search</code><code>edgar_filing</code><code>edgar_read</code>
-        <code>edgar_notes</code><code>edgar_proxy</code><code>edgar_ownership</code><code>edgar_fund</code><code>edgar_monitor</code>
-      </div>
+      <dl class="tools">
+        <dt><code>edgar_company</code></dt><dd>A company's profile, financials and recent filings.</dd>
+        <dt><code>edgar_search</code></dt><dd>Find a company by name or ticker, or list its filings by form.</dd>
+        <dt><code>edgar_screen</code></dt><dd>Companies by industry, exchange or state.</dd>
+        <dt><code>edgar_trends</code></dt><dd>Revenue, income and EPS over time, with growth rates.</dd>
+        <dt><code>edgar_compare</code></dt><dd>Companies side by side on financial metrics.</dd>
+        <dt><code>edgar_metrics</code></dt><dd>Figures from filing tables: KPIs, guidance, non-GAAP and reported line items.</dd>
+        <dt><code>edgar_risk_factors</code></dt><dd>A 10-K's risk factors, each compared with the prior year's.</dd>
+        <dt><code>edgar_text_search</code></dt><dd>Search filing text by words and meaning; returns the best passages.</dd>
+        <dt><code>edgar_filing</code></dt><dd>One filing's overview, by accession number or the latest of a form.</dd>
+        <dt><code>edgar_read</code></dt><dd>A filing's sections: business, risk factors, MD&amp;A, press releases and more.</dd>
+        <dt><code>edgar_notes</code></dt><dd>Notes to the financial statements in a 10-K or 10-Q.</dd>
+        <dt><code>edgar_proxy</code></dt><dd>Executive pay, pay vs performance and governance from the proxy statement.</dd>
+        <dt><code>edgar_ownership</code></dt><dd>Insider trades (Forms 3, 4, 5) and 13F fund manager holdings.</dd>
+        <dt><code>edgar_fund</code></dt><dd>Mutual funds and ETFs: lookup, search and latest holdings.</dd>
+        <dt><code>edgar_monitor</code></dt><dd>The latest filings across all SEC filers.</dd>
+      </dl>
+      <p class="note">Every tool takes an <code>as_of</code> date and sees only filings made on or before it.</p>
     </details>
   </section>
 

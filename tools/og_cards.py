@@ -2,7 +2,7 @@
 """Render the 1200x630 link-preview cards in assets/og/ with headless Chrome (run locally, commit the PNGs).
 
 Cards carry no prices or fair values, so they never go stale and only need re-running if the design changes.
-Usage: python3 tools/og_cards.py
+Usage: python3 tools/og_cards.py [slug ...]    # all cards, or just these
 """
 import html, os, subprocess, sys, tempfile, time
 
@@ -13,6 +13,7 @@ CARDS = {
     "fmv": ("Fair Market Value", "US stocks"),
     "aapl": ("AAPL", "Apple"), "amzn": ("AMZN", "Amazon"), "googl": ("GOOGL", "Alphabet"), "meta": ("META", "Meta"),
     "msft": ("MSFT", "Microsoft"), "nvda": ("NVDA", "NVIDIA"), "tsla": ("TSLA", "Tesla"),
+    "mcp": ("SEC Filings MCP", "For AI agents &middot; $0.001 per tool call"),
 }
 
 TEMPLATE = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
@@ -30,21 +31,27 @@ TEMPLATE = """<!DOCTYPE html><html><head><meta charset="utf-8"><style>
   .tags {{ position:absolute; right:80px; top:72px; font-size:28px; color:#4a5650; }}
 </style></head><body><div class="card">
   <div class="brand"><img src="{logo}" alt="Pear Digitals"></div>
-  <div class="tags">Bear &middot; Base &middot; Bull</div>
+  <div class="tags">{tags}</div>
   <h1>{title}</h1>
   <div class="sub">{sub}</div>
-  <div class="lines"><div class="line bull"></div><div class="line base"></div><div class="line bear"></div></div>
+  {lines}
 </div></body></html>"""
+LINES = '<div class="lines"><div class="line bull"></div><div class="line base"></div><div class="line bear"></div></div>'
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         for slug, (title, name) in CARDS.items():
-            sub = f"{name} fair value" if slug != "fmv" else "Bear, base &amp; bull fair values for US stocks"
+            if sys.argv[1:] and slug not in sys.argv[1:]:
+                continue
+            sub = name if slug == "mcp" else f"{name} fair value" if slug != "fmv" else "Bear, base &amp; bull fair values for US stocks"
+            fmv = slug != "mcp"   # the MCP card has form names instead of the bear / base / bull lines
             page = os.path.join(tmp, f"{slug}.html")
             with open(page, "w") as f:
-                f.write(TEMPLATE.format(title=html.escape(title), sub=sub, size=150 if slug != "fmv" else 104,
+                f.write(TEMPLATE.format(title=html.escape(title), sub=sub, size=104 if slug in ("fmv", "mcp") else 150,
+                                        tags="Bear &middot; Base &middot; Bull" if fmv else "10-K &middot; 10-Q &middot; 8-K",
+                                        lines=LINES if fmv else "",
                                         logo="file://" + os.path.join(ROOT, "assets", "logo.svg")))
             png = os.path.join(OUT, f"{slug}.png")
             if os.path.exists(png):

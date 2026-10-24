@@ -14,15 +14,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-<title>SEC Filings MCP | Pear Digitals</title>
-<meta name="description" content="SEC filings for your AI agent over MCP. Filings from 2020 onward, pay as you go at $0.001 per tool call.">
+<title>SEC EDGAR MCP Server for AI Agents | Pear Digitals</title>
+<meta name="description" content="An MCP server for SEC EDGAR filings: 10-K, 10-Q, 8-K and proxy data from 2020 for Claude, ChatGPT and any AI agent. Pay as you go, $0.001 per tool call.">
 <link rel="canonical" href="https://peardigitals.com/mcp/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Pear SEC Filings MCP">
-<meta property="og:description" content="SEC filings for your AI agent. $0.001 per tool call.">
+<meta property="og:site_name" content="Pear Digitals">
+<meta property="og:title" content="SEC EDGAR MCP Server for AI Agents">
+<meta property="og:description" content="10-K, 10-Q, 8-K and proxy data from 2020 for your AI agent. $0.001 per tool call.">
 <meta property="og:url" content="https://peardigitals.com/mcp/">
-<meta property="og:image" content="https://peardigitals.com/assets/og/fmv.png">
+<meta property="og:image" content="https://peardigitals.com/assets/og/mcp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pear SEC Filings MCP">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SEC EDGAR MCP Server for AI Agents">
+<meta name="twitter:description" content="10-K, 10-Q, 8-K and proxy data from 2020 for your AI agent. $0.001 per tool call.">
+<meta name="twitter:image" content="https://peardigitals.com/assets/og/mcp.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebAPI",
+  "name": "Pear SEC Filings MCP",
+  "url": "https://peardigitals.com/mcp/",
+  "description": "A Model Context Protocol (MCP) server that gives AI agents SEC EDGAR filings: 10-K, 10-Q, 8-K and proxy statements from 2020, with financials, filing text, risk factors and insider trades.",
+  "documentation": "https://peardigitals.com/mcp/",
+  "provider": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com/", "logo": "https://peardigitals.com/assets/logo.svg"},
+  "offers": {"@type": "Offer", "price": "0.001", "priceCurrency": "USD", "description": "Pay as you go, per tool call. $5 minimum top-up."}
+}
+</script>
 <style>
   :root { --ink:#0f1f17; --muted:#5b6660; --bg:#f7f8f5; --card:#fff; --line:#e2e4e0; --green:#14532d; }
   * { box-sizing:border-box; }
@@ -43,7 +62,45 @@
   .eyebrow { color:var(--green); font-weight:600; font-size:.82rem; letter-spacing:.08em; text-transform:uppercase; }
   h1 { font-size:clamp(2.2rem,5vw,3.3rem); line-height:1.08; letter-spacing:-.035em; margin:.35em 0 .4em; }
   .lead { font-size:1.18rem; color:var(--muted); margin:0; }
-  .btns { margin-top:28px; }
+  .btns { margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; }
+  .btn.ghost { border:1px solid var(--line); color:var(--ink); background:var(--card); }
+
+  /* Quill chat pop-up (same as the FMV app's) */
+  :root { --soft:#f4f6f3; --edge:max(24px, calc((100vw - 1120px) / 2 + 24px)); }
+  #chatfab { position:fixed; right:var(--edge); bottom:24px; width:58px; height:58px; border-radius:50%; border:0; background:var(--green); color:#fff; cursor:pointer; z-index:40;
+             display:flex; align-items:center; justify-content:center; box-shadow:0 10px 28px rgba(15,31,23,.28); transition:transform .15s; }
+  #chatfab:hover { transform:scale(1.05); }
+  #chatfab .i-close, #chatfab.open .i-open { display:none; }
+  #chatfab.open .i-close { display:block; }
+  #chatpop { position:fixed; right:var(--edge); bottom:96px; width:min(400px, calc(100vw - 32px)); height:min(620px, calc(100vh - 130px)); z-index:40;
+             background:#fff; border-radius:20px; box-shadow:0 24px 64px rgba(15,31,23,.28); display:flex; flex-direction:column; overflow:hidden; }
+  #chatpop[hidden] { display:none; }
+  #chatpop header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 14px 20px; border-bottom:1px solid var(--line); }
+  .xbtn { border:0; background:var(--soft); width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1.1rem; }
+  #chatlog { flex:1; display:flex; flex-direction:column; gap:10px; overflow-y:auto; padding:16px; }
+  #chatlog:empty::before { content:attr(data-empty); color:var(--muted); font-size:.9rem; margin:auto 8px; text-align:center; }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; padding:0 16px; margin:0 0 10px; }
+  .chips[hidden] { display:none; }
+  .chips button { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; font:inherit; font-size:.82rem; cursor:pointer; }
+  .chips button:hover { border-color:var(--ink); }
+  .chips button.shortcut { border-color:var(--green); color:var(--green); font-weight:600; }
+  .chips button.shortcut:hover { background:var(--green); color:#fff; }
+  #chatform { display:flex; align-items:center; gap:8px; background:var(--soft); border-radius:999px; padding:5px 5px 5px 16px; margin:0 12px 12px; }
+  #chatin { flex:1; border:0; background:none; font:inherit; font-size:.95rem; outline:none; min-width:0; }
+  #chatform button { width:36px; height:36px; border-radius:50%; border:0; background:var(--green); color:#fff; font-size:1.1rem; cursor:pointer; flex:none; }
+  #chatform button:disabled { opacity:.4; }
+  .msg { padding:10px 14px; border-radius:16px; font-size:.95rem; max-width:88%; }
+  .msg.user { align-self:flex-end; background:var(--ink); color:#fff; border-bottom-right-radius:4px; white-space:pre-wrap; }
+  .msg.bot { align-self:flex-start; background:var(--soft); border-bottom-left-radius:4px; }
+  .msg.bot p { margin:0 0 8px; } .msg.bot > :last-child { margin-bottom:0; }
+  .msg.bot ul, .msg.bot ol { margin:4px 0 8px; padding-left:20px; } .msg.bot li { margin:2px 0; }
+  .msg.bot h4 { margin:10px 0 4px; font-size:.95rem; }
+  .msg.bot code { background:#fff; padding:1px 5px; border-radius:4px; font-size:.88em; }
+  @media (max-width:560px) {
+    #chatpop { top:0; left:0; right:0; bottom:auto; width:auto; height:100vh; height:100dvh; border-radius:0; }
+    body.chatting { overflow:hidden; }
+    #chatfab.open { display:none; }
+  }
 
   section { padding:56px 0; border-top:1px solid var(--line); }
   h2 { font-size:clamp(1.5rem,3.2vw,2.1rem); letter-spacing:-.025em; line-height:1.15; margin:.3em 0 .5em; }
@@ -93,10 +150,10 @@
   </nav>
 
   <header>
-    <div class="eyebrow">Pear MCP</div>
+    <div class="eyebrow">SEC EDGAR MCP server</div>
     <h1>SEC filings for your AI agent.</h1>
-    <p class="lead">Financials, filing text, risk factors, insider trades and more, served over MCP.</p>
-    <div class="btns"><a class="btn primary" href="#join">Join the waitlist</a></div>
+    <p class="lead">10-K, 10-Q, 8-K and proxy filings for Claude, ChatGPT or any AI agent: financials, filing text, risk factors and insider trades.</p>
+    <div class="btns"><a class="btn primary" href="#join">Join the waitlist</a><button type="button" class="btn ghost" id="trybtn">Try it today</button></div>
   </header>
 
   <section>
@@ -134,6 +191,17 @@
   </section>
 </div>
 
+<button type="button" id="chatfab" aria-label="Open chat" aria-expanded="false">
+  <svg class="i-open" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+  <svg class="i-close" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19l5.6-5.6 5.6 5.6 1.4-1.4L13.4 12 19 6.4 17.6 5 12 10.6z"/></svg>
+</button>
+<div id="chatpop" role="dialog" aria-labelledby="chattitle" hidden>
+  <header><b id="chattitle">Ask Quill</b><button type="button" class="xbtn" id="chatclose" aria-label="Close chat">&times;</button></header>
+  <div id="chatlog" data-empty="Ask about any company's SEC filings. Quill answers using the MCP tools."></div>
+  <div class="chips" id="chips"></div>
+  <form id="chatform"><input id="chatin" maxlength="2000" placeholder="Ask about SEC filings" autocomplete="off" aria-label="Message"><button type="submit" aria-label="Send">&#8593;</button></form>
+</div>
+
 <footer>
   <div class="wrap">
     <div class="row">
@@ -165,6 +233,88 @@
     } catch (err) { msg.style.color = "#a15c00"; msg.textContent = err.message; btn.textContent = "Join the waitlist"; }
     btn.disabled = false;
   });
+
+  // ---- Quill demo: thin client for the mcp-chat edge function (the model and the MCP calls live on the backend) ----
+  const CHAT_URL = BASE + "/functions/v1/mcp-chat";
+  const log = $('chatlog'), form = $('chatform'), input = $('chatin'), chips = $('chips'), send = form.querySelector('button');
+  const pop = $('chatpop'), fab = $('chatfab'), hist = [];
+  const smallScreen = () => matchMedia("(max-width:560px)").matches;
+  // On phones the chat fills the visible area, which shrinks when the keyboard opens (iOS doesn't resize fixed elements).
+  const fitToViewport = () => {
+    const vv = window.visualViewport;
+    if (pop.hidden || !smallScreen() || !vv) { pop.style.height = ""; pop.style.top = ""; return; }
+    pop.style.height = vv.height + "px"; pop.style.top = vv.offsetTop + "px";
+    log.scrollTop = log.scrollHeight;
+  };
+  if (window.visualViewport) { visualViewport.addEventListener('resize', fitToViewport); visualViewport.addEventListener('scroll', fitToViewport); }
+  const setOpen = open => {
+    pop.hidden = !open; fab.classList.toggle('open', open);
+    fab.setAttribute('aria-expanded', open); fab.setAttribute('aria-label', open ? "Close chat" : "Open chat");
+    document.body.classList.toggle('chatting', open && smallScreen());
+    fitToViewport();
+    if (open) { if (!matchMedia("(pointer:coarse)").matches) input.focus(); log.scrollTop = log.scrollHeight; } else fab.focus();
+  };
+  fab.onclick = () => setOpen(pop.hidden);
+  $('trybtn').onclick = () => { setOpen(true); if (window.gtag) gtag('event', 'mcp_try'); };
+  $('chatclose').onclick = () => setOpen(false);
+  document.addEventListener('keydown', e => { if (e.key === "Escape" && !pop.hidden) setOpen(false); });
+  // Minimal, safe Markdown: text is HTML-escaped first, so only the tags added here can appear.
+  function md(src) {
+    const esc = x => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const inline = x => esc(x)
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/__([^_]+)__/g, "<strong>$1</strong>")
+      .replace(/(^|[^*\w])\*(?!\s)([^*]+?)\*(?!\w)/g, "$1<em>$2</em>");
+    let html = "", para = [], list = null;
+    const flushP = () => { if (para.length) { html += "<p>" + para.map(inline).join("<br>") + "</p>"; para = []; } };
+    const flushL = () => { if (list) { html += `<${list.t}>` + list.items.map(i => "<li>" + inline(i) + "</li>").join("") + `</${list.t}>`; list = null; } };
+    for (const raw of src.split("\n")) {
+      const line = raw.trimEnd(); let m;
+      if (!line.trim()) { flushP(); flushL(); continue; }
+      if ((m = line.match(/^\s*#{1,6}\s+(.*)/))) { flushP(); flushL(); html += "<h4>" + inline(m[1]) + "</h4>"; continue; }
+      if ((m = line.match(/^\s*[-*•]\s+(.*)/))) { flushP(); if (!list || list.t !== "ul") { flushL(); list = {t: "ul", items: []}; } list.items.push(m[1]); continue; }
+      if ((m = line.match(/^\s*\d+[.)]\s+(.*)/))) { flushP(); if (!list || list.t !== "ol") { flushL(); list = {t: "ol", items: []}; } list.items.push(m[1]); continue; }
+      if (list && /^\s{2,}\S/.test(raw)) { list.items[list.items.length - 1] += " " + line.trim(); continue; }
+      flushL(); para.push(line);
+    }
+    flushP(); flushL();
+    return html;
+  }
+  const add = (cls, text) => { const d = document.createElement('div'); d.className = 'msg ' + cls; d.textContent = text; log.appendChild(d); log.scrollTop = log.scrollHeight; return d; };
+  async function ask(q) {
+    q = q.trim(); if (!q) return;
+    hist.push({role: "user", content: q});
+    add('user', q); input.value = ""; send.disabled = true; chips.hidden = true;   // shortcuts only before the chat starts
+    const bot = add('bot', "Thinking…");
+    try {
+      const res = await fetch(CHAT_URL, {method: "POST",
+        headers: {"content-type": "application/json", apikey: KEY, authorization: "Bearer " + KEY},
+        body: JSON.stringify({messages: hist.slice(-12)})});
+      if (res.status === 429) { bot.textContent = await res.text(); hist.pop(); send.disabled = false; return; }   // daily limit
+      if (!res.ok || !res.body) throw new Error("chat " + res.status);
+      const rd = res.body.getReader(), dec = new TextDecoder();
+      let out = "";
+      for (;;) {
+        const {done, value} = await rd.read(); if (done) break;
+        out += dec.decode(value, {stream: true}); bot.innerHTML = md(out); log.scrollTop = log.scrollHeight;
+      }
+      if (!out.trim()) throw new Error("empty");
+      hist.push({role: "assistant", content: out.trim()});
+      bot.innerHTML = md(out.trim());
+    } catch (e) {
+      bot.textContent = "Sorry, that didn't go through. Try again in a moment.";
+      hist.pop();
+    }
+    send.disabled = false; if (!matchMedia("(pointer:coarse)").matches) input.focus();
+  }
+  form.addEventListener('submit', e => { e.preventDefault(); ask(input.value); });
+  for (const [text, cls] of [["How has Apple's revenue grown since 2020?", "shortcut"],
+                             ["What new risks did Nvidia add in its latest 10-K?"],
+                             ["Compare Microsoft and Alphabet's operating margins"]]) {
+    const b = document.createElement('button'); b.type = "button"; b.textContent = text; if (cls) b.className = cls;
+    b.addEventListener('click', () => ask(text)); chips.appendChild(b);
+  }
 })();
 </script>
 </body>

@@ -1,6 +1,6 @@
 # Pear Digitals
 
-> Earnings press releases of every US-listed company, from SEC EDGAR, and fair values for the Magnificent 7. Not investment advice.
+> Earnings press releases of every US-listed company, from SEC EDGAR, and fair values for S&P 500 stocks. Not investment advice.
 
 ## Earnings releases
 
@@ -13,5 +13,5 @@ Each company's results press release (8-K Item 2.02 / 6-K Exhibit 99.1) is on th
 
 ## Fair value
 
-- [Fair values](https://peardigitals.com/fmv/): bear, base and bull per share for AAPL, AMZN, GOOGL, META, MSFT, NVDA and TSLA
+- [Fair values](https://peardigitals.com/fmv/): bear, base and bull per share for S&P 500 stocks
 - [MCP server](https://peardigitals.com/mcp/)

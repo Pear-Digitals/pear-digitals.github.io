@@ -233,11 +233,34 @@
   .news { max-width:680px; padding:28px 0 64px; }
   .news .sctitle { margin-bottom:8px; }
   .nitem { display:block; padding:14px 0; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none; }
+  .nbar { display:flex; gap:8px; margin:4px 0 8px; }
+  .nbar input { font:inherit; font-size:.92rem; padding:8px 14px; border:1px solid var(--line); border-radius:999px; background:var(--soft); color:var(--ink); min-width:0; }
+  .nbar input:focus { outline:none; background:#fff; border-color:var(--ink); }
+  .nbar .nq { flex:1; } .nbar .nd { flex:none; }
   .nitem .hl { font-weight:600; line-height:1.35; }
   .nitem .src { font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:2px; }
   .nitem:hover .hl { color:var(--green); }
   .news .more { margin:20px 0 0; }
-  .news .empty { color:var(--muted); padding:40px 0; }
+  .news .empty, .earn .empty { color:var(--muted); padding:40px 0; }
+  /* one earnings release (its HTML from the server: _shared/earnings_page.ts and earnings_analysis.ts) */
+  .earn { max-width:760px; padding:12px 0 64px; overflow-wrap:anywhere; line-height:1.55; }
+  .earn h1 { font-size:1.7rem; letter-spacing:-.02em; line-height:1.2; margin:16px 0 8px; }
+  .earn .meta { color:var(--muted); font-size:.85rem; margin:0 0 16px; } .earn .meta a { color:var(--muted); }
+  .earn .verdict { font-size:1.1rem; margin:0 0 8px; }
+  .earn h2 { font-size:1.15rem; margin:36px 0 8px; } .earn h3 { font-size:1rem; margin:24px 0 8px; } .earn h4 { font-size:.95rem; margin:20px 0 8px; }
+  .earn ul { padding-left:20px; margin:8px 0; } .earn li { margin:4px 0; }
+  .earn .scroll { overflow-x:auto; }
+  .earn .note { color:var(--muted); font-size:.85rem; margin:-4px 0 8px; }
+  .earn details { margin:36px 0 0; border-top:1px solid var(--line); padding-top:16px; }
+  .earn summary { cursor:pointer; font-weight:600; color:var(--green); }
+  .earn table { border-collapse:collapse; font-size:.85rem; width:100%; overflow-wrap:normal; }
+  .earn th, .earn td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  .earn thead th { color:var(--muted); font-weight:500; } .earn tbody th { font-weight:400; }
+  .earn th.n, .earn td.n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .earn .earlier ul { list-style:none; padding:0; }
+  .earn .earlier li { display:flex; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); margin:0; }
+  .earn .earlier time { color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .earn .efoot { color:var(--muted); font-size:.75rem; margin-top:40px; } .earn .efoot a { color:var(--muted); }
   .agbadge { display:inline-block; background:var(--soft); color:var(--green); font-weight:700; font-size:.78rem; padding:4px 10px; border-radius:999px; }
   .navlink:hover, .navlink.on { color:var(--green); }
   #screener { row-gap:16px; }
@@ -436,6 +459,7 @@
   </div>
   <div id="agentic" hidden></div>
   <div class="news" id="news" hidden></div>
+  <div class="earn" id="earn" hidden></div>
 </div>
 
 <dialog id="paydlg">
@@ -656,7 +680,7 @@ async function init() {
     return;
   }
   document.getElementById('loading').hidden = true;
-  document.getElementById('app').hidden = false;
+  document.getElementById('app').hidden = /^\/earnings\//.test(location.pathname);   // a release page shows its own view
 
   Object.keys(D).sort().forEach(t => {
     if (!LATEST[t]) return;
@@ -684,6 +708,7 @@ async function init() {
     if (/^\/fmv\/screener\/?$/.test(location.pathname)) { if (window.openScreener) window.openScreener(false); return; }
     if (/^\/fmv\/agentic-trading\/?$/.test(location.pathname)) { if (window.openAgentic) window.openAgentic(false); return; }
     if (/^\/fmv\/news\/?$/.test(location.pathname)) { if (window.openNews) window.openNews(false); return; }
+    if (/^\/earnings\//.test(location.pathname)) { if (window.openEarn) window.openEarn(location.pathname, false); return; }
     if (window.showStockView) window.showStockView();
     const s = stockInUrl();
     if (s && s !== sel.value && window.openStockFromUrl) { window.openStockFromUrl(s); return; }
@@ -696,6 +721,7 @@ async function init() {
   if (/^\/fmv\/screener\/?$/.test(location.pathname) && window.openScreener) window.openScreener(false);
   if (/^\/fmv\/agentic-trading\/?$/.test(location.pathname) && window.openAgentic) window.openAgentic(false);
   if (/^\/fmv\/news\/?$/.test(location.pathname) && window.openNews) window.openNews(false);
+  if (/^\/earnings\//.test(location.pathname) && window.openEarn) window.openEarn(location.pathname, false);
 
   // Everything else loads asynchronously, selected ticker first.
   const order = [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)];
@@ -2129,12 +2155,12 @@ function draw() {
   }
 
   // Switch between the stock view and the screener (same page, own URL).
-  // Tabs: "stock" (FMV), "screener", "agentic", "news". One page, own URL each.
+  // Tabs: "stock" (FMV), "screener", "agentic", "news" (Earnings), and "earn", one release. One page, own URL each.
   let curView = "stock";
   function showView(view) {
     curView = view;
     const screener = view === "screener";
-    scWrap.hidden = !screener; $('agentic').hidden = view !== "agentic"; $('news').hidden = view !== "news";
+    scWrap.hidden = !screener; $('agentic').hidden = view !== "agentic"; $('news').hidden = view !== "news"; $('earn').hidden = view !== "earn";
     // Move the one watchlist panel (not a copy) so its sort and state carry across.
     const ww = $('wwrap'), home = screener ? scSide : $('side');
     if (ww.parentNode !== home) home.appendChild(ww);
@@ -2143,8 +2169,8 @@ function draw() {
     $('navfmv').classList.toggle('on', view === "stock");
     $('navscreen').classList.toggle('on', screener);
     $('navagentic').classList.toggle('on', view === "agentic");
-    $('navnews').classList.toggle('on', view === "news");
-    if (screener) { if (window.setChatScreener) window.setChatScreener(); } else if (window.setChatStock) window.setChatStock(sel.value);
+    $('navnews').classList.toggle('on', view === "news" || view === "earn");
+    if (screener) { if (window.setChatScreener) window.setChatScreener(); } else if (view !== "earn" && window.setChatStock) window.setChatStock(sel.value);   // a release's starters: openEarn
     document.querySelectorAll('.seo').forEach(x => { x.hidden = view !== "stock" || !!userView(); });
   }
 
@@ -2180,9 +2206,10 @@ function draw() {
   window.openAgentic = openAgentic;
   window.agenticReload = () => { if (curView === "agentic") renderAgentic(); };
   $('navagentic').onclick = e => { e.preventDefault(); openAgentic(true); };
-  // News: every company's earnings releases, newest first, each linking to its page under /earnings/.
-  const NEWS_PAGE = 30;
-  let newsRows = null;
+  // Earnings (the News tab): every company's earnings releases, newest first, searchable by ticker or company and
+  // filterable by date. Each opens its page under /earnings/ in this same app (the Earnings view below).
+  const NEWS_PAGE = 10;
+  let newsRows = null, newsSeq = 0;
   const newsTime = iso => {
     const d = new Date(iso), ny = {timeZone: "America/New_York"};
     const day = x => x.toLocaleDateString("en-US", ny);
@@ -2191,7 +2218,7 @@ function draw() {
   };
   // SEC's name for the company: "RUSH ENTERPRISES INC \\TX\\" -> "Rush Enterprises Inc".
   const companyName = c => {
-    const s = (c || "").replace(/\s*[\\/][A-Z]{2,3}[\\/]\s*$/, "").trim();
+    const s = (c || "").replace(/\s*[\\/][A-Z]{2,3}[\\/]?\s*$/, "").trim();
     return s === s.toUpperCase() ? s.toLowerCase().replace(/(^|[\s(&-])([a-z])/g, (_, p, x) => p + x.toUpperCase()) : s;
   };
   // The quarter as "Q3 FY2026", as earnings_analysis.ts period() writes it on the page; "" without a quarter number.
@@ -2207,32 +2234,83 @@ function draw() {
   function newsItem(r) {
     const a = el('a', 'nitem'); a.href = "/earnings/" + r.ticker.toLowerCase() + "/" + r.filed + "/";
     a.appendChild(el('div', 'hl', companyName(r.company) || r.ticker));
-    a.appendChild(el('div', 'src', [r.ticker, newsPeriod(r.quarter, r.fy), r.accepted ? newsTime(r.accepted) : r.filed].filter(Boolean).join(" · ")));
+    a.appendChild(el('div', 'src', [r.ticker, newsPeriod(r.quarter, r.fy), r.accepted ? newsTime(r.accepted) : r.filed].filter(Boolean).join(" \u00b7 ")));
+    a.onclick = e => { if (!e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); openEarn(a.pathname, true); } };
     return a;
   }
+  // The header, search box and date picker are built once; the list under them reloads as they change.
+  const newsQ = Object.assign(el('input', 'nq'), {type: "search", placeholder: "Ticker or company", autocomplete: "off", spellcheck: false});
+  const newsDate = Object.assign(el('input', 'nd'), {type: "date"});
+  newsQ.setAttribute('aria-label', "Search earnings by ticker or company"); newsDate.setAttribute('aria-label', "Filed on");
+  const newsBar = el('div', 'nbar'); newsBar.append(newsQ, newsDate);
+  const newsList = el('div', 'nlist');
+  $('news').append(el('h2', 'sctitle', "Earnings"), newsBar, newsList);
+  let newsTimer;
+  newsQ.oninput = () => { clearTimeout(newsTimer); newsTimer = setTimeout(() => loadNews(false).catch(newsFailed), 250); };
+  newsDate.onchange = () => loadNews(false).catch(newsFailed);
+  function newsFilter() {
+    const q = newsQ.value.replace(/[^A-Za-z0-9 .&'-]/g, " ").trim(), f = [];
+    if (q) f.push("or=(ticker.ilike." + encodeURIComponent(q) + "*,company.ilike.*" + encodeURIComponent(q.replace(/\s+/g, "*")) + "*)");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(newsDate.value)) f.push("filed=eq." + newsDate.value);
+    return f.map(x => "&" + x).join("");
+  }
   async function loadNews(more) {
-    const box = $('news');
+    const seq = ++newsSeq;
     const rows = await get("/earnings_releases?select=ticker,company,filed,accepted,quarter:analysis->>quarter,fy:analysis->>fiscal_year&release=is.true" +
-      "&order=accepted.desc.nullslast,filed.desc&limit=" + NEWS_PAGE + "&offset=" + (more ? newsRows.length : 0));
+      newsFilter() + "&order=accepted.desc.nullslast,filed.desc&limit=" + NEWS_PAGE + "&offset=" + (more ? newsRows.length : 0));
+    if (seq !== newsSeq) return;   // a newer search is on its way
     newsRows = more ? newsRows.concat(rows) : rows;
-    box.textContent = "";
-    box.appendChild(el('h2', 'sctitle', "News"));
-    if (!newsRows.length) { box.appendChild(el('p', 'empty', "No earnings releases yet.")); return; }
-    newsRows.forEach(r => box.appendChild(newsItem(r)));
+    newsList.textContent = "";
+    if (!newsRows.length) { newsList.appendChild(el('p', 'empty', newsFilter() ? "No releases match." : "No earnings releases yet.")); return; }
+    newsRows.forEach(r => newsList.appendChild(newsItem(r)));
     if (rows.length === NEWS_PAGE) {
       const b = button("Show more", "pill ghost more", () => { b.disabled = true; loadNews(true).catch(() => { b.disabled = false; }); });
-      box.appendChild(b);
+      newsList.appendChild(b);
     }
   }
+  const newsFailed = () => { if (!newsRows) newsList.replaceChildren(el('p', 'empty', "Couldn't load earnings. Try again soon.")); };
   function openNews(push) {
     if (push && location.pathname !== "/fmv/news/") history.pushState({news: true}, "", "/fmv/news/");
-    document.title = "Earnings News | Pear Digitals";
+    document.title = "Earnings | Pear Digitals";
     showView("news"); window.scrollTo({top: 0});
-    if (!newsRows) $('news').replaceChildren(el('h2', 'sctitle', "News"), el('p', 'empty', "Loading\u2026"));
-    loadNews(false).catch(() => { if (!newsRows) $('news').replaceChildren(el('h2', 'sctitle', "News"), el('p', 'empty', "Couldn't load the news. Try again soon.")); });
+    if (!newsRows) { newsList.replaceChildren(el('p', 'empty', "Loading\u2026")); loadNews(false).catch(newsFailed); }
   }
   window.openNews = openNews;
   $('navnews').onclick = e => { e.preventDefault(); openNews(true); };
+
+  // One release (/earnings/<t>/<filed>/): opened from the server it's already in #earn (the Worker puts it there);
+  // from the list it's fetched as that page and its article taken out.
+  async function openEarn(path, push) {
+    const box = $('earn');
+    if (push) history.pushState({earn: true}, "", path);
+    showView("earn"); window.scrollTo({top: 0});
+    if (box.dataset.path !== path && !(box.dataset.path == null && box.querySelector('article') && !push)) {
+      box.replaceChildren(el('p', 'empty', "Loading\u2026"));
+      try {
+        const res = await fetch(path);
+        if (!res.ok && res.status !== 404) throw new Error(res.status);
+        const doc = new DOMParser().parseFromString(await res.text(), "text/html"), got = doc.getElementById('earn');
+        if (!got) throw new Error("no article");
+        if (location.pathname !== path) return;   // moved on meanwhile
+        box.innerHTML = got.innerHTML; document.title = doc.title;
+      } catch (e) { location.href = path; return; }
+    }
+    box.dataset.path = path;
+    const art = box.querySelector('article');
+    if (art && window.setChatEarnings) window.setChatEarnings(art.dataset.ticker);
+  }
+  window.openEarn = openEarn;
+  // The company's other releases, linked from the page, open here too.
+  $('earn').addEventListener('click', e => {
+    const a = e.target.closest('a[href^="/earnings/"]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || /\.md$/.test(a.pathname)) return;
+    e.preventDefault(); openEarn(a.pathname, true);
+  });
+  // What Quill sees on a release page: which release it is (the chat reads it itself).
+  window.earnOnScreen = () => {
+    const art = curView === "earn" && $('earn').querySelector('article');
+    return art ? {ticker: art.dataset.ticker, filed: art.dataset.filed} : null;
+  };
   function openScreener(push, spec) {
     if (push && location.pathname !== "/fmv/screener/") history.pushState({screener: true}, "", "/fmv/screener/");
     document.title = "Stock Screener | Pear Digitals";
@@ -2385,13 +2463,14 @@ function draw() {
     hist.push({role: "user", content: q});
     add('user', q); input.value = ""; btn.disabled = true; chips.hidden = true;   // shortcuts only before the chat starts
     const bot = add('bot', "Thinking…");
-    const onStock = document.getElementById('screener').hidden ? sel.value : null;
+    const onEarn = window.earnOnScreen ? window.earnOnScreen() : null;
+    const onStock = onEarn ? onEarn.ticker : document.getElementById('screener').hidden ? sel.value : null;
     try {
       const res = await fetch(CHAT_URL, {
         method: "POST",
         headers: {"content-type": "application/json", apikey: ANON_KEY, authorization: "Bearer " + await authToken()},
         body: JSON.stringify({messages: hist.slice(-12), ticker: onStock,
-          screen: window.screenContext ? window.screenContext() : null})
+          screen: window.screenContext ? window.screenContext() : null, earnings: onEarn})
       });
       if (res.status === 429) {   // daily limit
         bot.textContent = await res.text(); hist.pop(); btn.disabled = false;
@@ -2437,6 +2516,8 @@ function draw() {
   window.setChatStock = t => { shortcut.textContent = `Change ${t}'s fair value`; cases.textContent = `What are ${t}'s bear, base and bull cases?`; why.textContent = `Why did ${t}'s valuation change?`; };
   // On the Screener the starters are about screening.
   window.setChatScreener = () => { shortcut.textContent = "Find undervalued dividend stocks"; cases.textContent = "Which of these looks cheapest?"; why.textContent = "What can I filter on?"; };
+  // On a release page the starters are about the release.
+  window.setChatEarnings = t => { shortcut.textContent = `Summarize ${t}'s quarter`; cases.textContent = `What drove ${t}'s results?`; why.textContent = `What did ${t} say about guidance?`; };
   window.setChatStock(sel.value || "AAPL");
 })();
 init();

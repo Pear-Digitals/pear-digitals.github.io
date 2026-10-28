@@ -240,7 +240,12 @@
   .nbar { display:flex; gap:8px; margin:4px 0 8px; }
   .nbar input { font:inherit; font-size:.92rem; padding:8px 14px; border:1px solid var(--line); border-radius:999px; background:var(--soft); color:var(--ink); min-width:0; }
   .nbar input:focus { outline:none; background:#fff; border-color:var(--ink); }
-  .nbar .nq { flex:1; } .nbar .nd { flex:none; }
+  .nbar .nq { flex:1; }
+  /* the date filter: a pill that opens the browser's date picker (the input itself stays out of sight) */
+  .nbar .nd { position:relative; flex:none; display:flex; align-items:center; gap:6px; font:inherit; font-size:.92rem; padding:8px 14px; border:1px solid var(--line); border-radius:999px; background:var(--soft); color:var(--muted); cursor:pointer; white-space:nowrap; }
+  .nbar .nd.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+  .nbar .nd input { position:absolute; left:0; bottom:0; width:100%; height:0; padding:0; border:0; opacity:0; pointer-events:none; }
+  .nbar .nd .x { font-size:1rem; line-height:1; opacity:.8; }
   .nitem .hl { font-weight:600; line-height:1.35; }
   .nitem .src { font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:2px; }
   .nitem:hover .hl { color:var(--green); }
@@ -2244,14 +2249,27 @@ function draw() {
   }
   // The header, search box and date picker are built once; the list under them reloads as they change.
   const newsQ = Object.assign(el('input', 'nq'), {type: "search", placeholder: "Ticker or company", autocomplete: "off", spellcheck: false});
-  const newsDate = Object.assign(el('input', 'nd'), {type: "date"});
-  newsQ.setAttribute('aria-label', "Search earnings by ticker or company"); newsDate.setAttribute('aria-label', "Filed on");
-  const newsBar = el('div', 'nbar'); newsBar.append(newsQ, newsDate);
+  // The date: a pill reading "Date", or the day picked ("Oct 27") with an x to clear it.
+  const newsDate = Object.assign(el('input'), {type: "date", tabIndex: -1});
+  const newsDay = el('button', 'nd'); newsDay.type = "button"; newsDay.setAttribute('aria-label', "Filed on");
+  const drawDay = () => {
+    const d = newsDate.value;
+    newsDay.classList.toggle('on', !!d);
+    newsDay.replaceChildren(el('span', '', d ? new Date(d + "T12:00").toLocaleDateString("en-US", {month: "short", day: "numeric", year: d.slice(0, 4) === String(new Date().getFullYear()) ? undefined : "numeric"}) : "Date"), newsDate);
+    if (d) newsDay.appendChild(el('span', 'x', "\u00d7"));
+  };
+  newsDay.onclick = e => {
+    if (newsDate.value && e.target.classList.contains('x')) { newsDate.value = ""; newsDate.onchange(); return; }
+    try { newsDate.showPicker(); } catch (_) { newsDate.focus(); }
+  };
+  drawDay();
+  newsQ.setAttribute('aria-label', "Search earnings by ticker or company");
+  const newsBar = el('div', 'nbar'); newsBar.append(newsQ, newsDay);
   const newsList = el('div', 'nlist');
   $('news').append(el('h2', 'sctitle', "Earnings"), newsBar, newsList);
   let newsTimer;
   newsQ.oninput = () => { clearTimeout(newsTimer); newsTimer = setTimeout(() => loadNews(false).catch(newsFailed), 250); };
-  newsDate.onchange = () => loadNews(false).catch(newsFailed);
+  newsDate.onchange = () => { drawDay(); loadNews(false).catch(newsFailed); };
   function newsFilter() {
     const q = newsQ.value.replace(/[^A-Za-z0-9 .&'-]/g, " ").trim(), f = [];
     if (q) f.push("or=(ticker.ilike." + encodeURIComponent(q) + "*,company.ilike.*" + encodeURIComponent(q.replace(/\s+/g, "*")) + "*)");

@@ -12,16 +12,16 @@
 </script>
 <!--seo:head-->
 <title>Apple (AAPL) Fair Value: Bear, Base &amp; Bull | Pear Digitals</title>
-<meta name="description" content="Apple (AAPL) fair value: $284 base case, $197 bear, $361 bull (Oct 26, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta name="description" content="Apple (AAPL) fair value: $284 base case, $197 bear, $361 bull (Oct 27, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
 <link rel="canonical" href="https://peardigitals.com/fmv/aapl/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pear Digitals">
 <meta property="og:title" content="Apple (AAPL) Fair Value: Bear, Base &amp; Bull | Pear Digitals">
-<meta property="og:description" content="Apple (AAPL) fair value: $284 base case, $197 bear, $361 bull (Oct 26, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
+<meta property="og:description" content="Apple (AAPL) fair value: $284 base case, $197 bear, $361 bull (Oct 27, 2026). Pear Digitals&#x27; fair market value analysis, re-rated after earnings.">
 <meta property="og:url" content="https://peardigitals.com/fmv/aapl/">
 <meta property="og:image" content="https://peardigitals.com/assets/og/aapl.png">
 <meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Apple (AAPL) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/aapl/", "description": "Apple (AAPL) fair value: $284 base case, $197 bear, $361 bull (Oct 26, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-26", "about": {"@type": "Corporation", "name": "Apple Inc.", "tickerSymbol": "NASDAQ:AAPL"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebPage", "name": "Apple (AAPL) Fair Value: Bear, Base & Bull | Pear Digitals", "url": "https://peardigitals.com/fmv/aapl/", "description": "Apple (AAPL) fair value: $284 base case, $197 bear, $361 bull (Oct 27, 2026). Pear Digitals' fair market value analysis, re-rated after earnings.", "dateModified": "2026-10-27", "about": {"@type": "Corporation", "name": "Apple Inc.", "tickerSymbol": "NASDAQ:AAPL"}, "publisher": {"@type": "Organization", "name": "Pear Digitals LLC", "url": "https://peardigitals.com"}}</script>
 <!--/seo:head-->
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
@@ -228,12 +228,21 @@
   .card .pill { padding:7px 14px; font-size:.85rem; }
   /* top nav link + screener screen */
   .navlink { color:var(--ink); text-decoration:none; font-weight:600; font-size:.92rem; white-space:nowrap; }
-  #navfmv + #navscreen, #navscreen + #navagentic { margin-left:-6px; }
+  #navfmv + #navscreen, #navscreen + #navagentic, #navagentic + #navnews { margin-left:-6px; }
   .agcard { max-width:560px; margin:48px auto; text-align:center; padding:32px 28px; border:1px solid var(--line); border-radius:20px; }
   .agcard h2 { font-size:1.5rem; letter-spacing:-.02em; margin:10px 0 6px; }
   .agcard p { color:var(--muted); margin:0 0 18px; }
   .agcard .agico { color:var(--green); }
   .agcard .acts { justify-content:center; flex-wrap:wrap; }
+  /* news: every company's latest earnings releases */
+  .news { max-width:680px; padding:28px 0 64px; }
+  .news .sctitle { margin-bottom:8px; }
+  .nitem { display:block; padding:14px 0; border-bottom:1px solid var(--line); color:var(--ink); text-decoration:none; }
+  .nitem .hl { font-weight:600; line-height:1.35; }
+  .nitem .src { font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:2px; }
+  .nitem:hover .hl { color:var(--green); }
+  .news .more { margin:20px 0 0; }
+  .news .empty { color:var(--muted); padding:40px 0; }
   .agbadge { display:inline-block; background:var(--soft); color:var(--green); font-weight:700; font-size:.78rem; padding:4px 10px; border-radius:999px; }
   .navlink:hover, .navlink.on { color:var(--green); }
   #screener { row-gap:16px; }
@@ -372,7 +381,9 @@
   }
   @media (max-width:900px) { .grid.with-side { grid-template-columns:minmax(0,1fr); } aside { position:relative; top:0; } }
   @media (max-width:760px) { .wrap { padding:0 var(--pad); } nav { gap:12px; } .stats .v { font-size:1.05rem; } }
-</style></head><body>
+  @media (max-width:480px) { nav { gap:10px; } .search { min-width:0; } .search input { min-width:0; width:100%; padding:9px 4px 9px 32px; background-position:10px center; } #navacct .pill { padding:8px 12px; font-size:.82rem; } }
+</style><script src="/assets/webmcp.js" defer></script>
+</head><body>
 <div class="wrap">
   <nav>
     <a class="brand" href="/fmv/" aria-label="Pear Digitals FMV home"><img src="/assets/logo.svg" alt="Pear Digitals" width="25" height="33" style="display:block"></a>
@@ -384,6 +395,7 @@
     <a class="navlink on" id="navfmv" href="/fmv/" aria-label="FMV"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><span>FMV</span></a>
     <a class="navlink" id="navscreen" href="/fmv/screener/" aria-label="Screener"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg><span>Screener</span></a>
     <a class="navlink" id="navagentic" href="/fmv/agentic-trading/" aria-label="Agentic Trading"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6L18 9.5l-4.2 1.9L12 16l-1.8-4.6L6 9.5l4.2-1.9z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span>Agentic Trading</span></a>
+    <a class="navlink" id="navnews" href="/fmv/news/" aria-label="News"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v10a2 2 0 0 1-2 2"/><path d="M8 8h5M8 12h5M8 16h3"/></svg><span>News</span></a>
     <div id="navacct"></div>
   </nav>
   <div id="loading">Loading&hellip;</div>
@@ -411,7 +423,7 @@
         <div id="fairmore"></div>
         <div class="fairacts" id="fairacts"><button type="button" class="pill light" id="explainbtn">Explain Why</button><button type="button" class="pill light" id="custbtn">Customize</button><button type="button" class="pill light" id="resetbtn" hidden>Reset</button></div>
         <p id="foot"></p>
-        <!--seo:summary--><p class="seo">Apple (AAPL) fair value: bear, base &amp; bull, re-rated after earnings. Not investment advice. · <a href="/fmv/aapl/" title="Apple fair value">AAPL</a> · <a href="/fmv/amzn/" title="Amazon fair value">AMZN</a> · <a href="/fmv/googl/" title="Alphabet fair value">GOOGL</a> · <a href="/fmv/meta/" title="Meta fair value">META</a> · <a href="/fmv/msft/" title="Microsoft fair value">MSFT</a> · <a href="/fmv/nvda/" title="NVIDIA fair value">NVDA</a> · <a href="/fmv/tsla/" title="Tesla fair value">TSLA</a></p><!--/seo:summary-->
+        <!--seo:summary--><p class="seo">Apple (AAPL) fair value: bear, base &amp; bull, re-rated after <a href="/earnings/aapl/">earnings</a>. Not investment advice. · <a href="/fmv/aapl/" title="Apple fair value">AAPL</a> · <a href="/fmv/amzn/" title="Amazon fair value">AMZN</a> · <a href="/fmv/googl/" title="Alphabet fair value">GOOGL</a> · <a href="/fmv/meta/" title="Meta fair value">META</a> · <a href="/fmv/msft/" title="Microsoft fair value">MSFT</a> · <a href="/fmv/nvda/" title="NVIDIA fair value">NVDA</a> · <a href="/fmv/tsla/" title="Tesla fair value">TSLA</a></p><!--/seo:summary-->
       </section>
     </main>
     <aside id="side" hidden>
@@ -428,6 +440,7 @@
     <aside id="scside"></aside>
   </div>
   <div id="agentic" hidden></div>
+  <div class="news" id="news" hidden></div>
 </div>
 
 <dialog id="paydlg">
@@ -675,6 +688,7 @@ async function init() {
   window.addEventListener('popstate', () => {
     if (/^\/fmv\/screener\/?$/.test(location.pathname)) { if (window.openScreener) window.openScreener(false); return; }
     if (/^\/fmv\/agentic-trading\/?$/.test(location.pathname)) { if (window.openAgentic) window.openAgentic(false); return; }
+    if (/^\/fmv\/news\/?$/.test(location.pathname)) { if (window.openNews) window.openNews(false); return; }
     if (window.showStockView) window.showStockView();
     const s = stockInUrl();
     if (s && s !== sel.value && window.openStockFromUrl) { window.openStockFromUrl(s); return; }
@@ -686,6 +700,7 @@ async function init() {
   if (window.onFmvReady) window.onFmvReady();
   if (/^\/fmv\/screener\/?$/.test(location.pathname) && window.openScreener) window.openScreener(false);
   if (/^\/fmv\/agentic-trading\/?$/.test(location.pathname) && window.openAgentic) window.openAgentic(false);
+  if (/^\/fmv\/news\/?$/.test(location.pathname) && window.openNews) window.openNews(false);
 
   // Everything else loads asynchronously, selected ticker first.
   const order = [sel.value, ...Object.keys(LATEST).filter(t => t !== sel.value)];
@@ -1015,6 +1030,7 @@ function draw() {
   // ---- stock header ----
   // ---- search: ticker or company name, keyboard friendly ----
   const q = $('q'), qres = $('qres');
+  if (matchMedia("(max-width:480px)").matches) q.placeholder = "Search";   // the full placeholder is cut off on phones
   let hits = [], hi = 0;
   const pick = t => {
     if (sel.value !== t) { sel.value = t; sel.dispatchEvent(new Event('change')); }
@@ -2118,12 +2134,12 @@ function draw() {
   }
 
   // Switch between the stock view and the screener (same page, own URL).
-  // Tabs: "stock" (FMV), "screener", "agentic". One page, own URL each.
+  // Tabs: "stock" (FMV), "screener", "agentic", "news". One page, own URL each.
   let curView = "stock";
   function showView(view) {
     curView = view;
     const screener = view === "screener";
-    scWrap.hidden = !screener; $('agentic').hidden = view !== "agentic";
+    scWrap.hidden = !screener; $('agentic').hidden = view !== "agentic"; $('news').hidden = view !== "news";
     // Move the one watchlist panel (not a copy) so its sort and state carry across.
     const ww = $('wwrap'), home = screener ? scSide : $('side');
     if (ww.parentNode !== home) home.appendChild(ww);
@@ -2132,6 +2148,7 @@ function draw() {
     $('navfmv').classList.toggle('on', view === "stock");
     $('navscreen').classList.toggle('on', screener);
     $('navagentic').classList.toggle('on', view === "agentic");
+    $('navnews').classList.toggle('on', view === "news");
     if (screener) { if (window.setChatScreener) window.setChatScreener(); } else if (window.setChatStock) window.setChatStock(sel.value);
     document.querySelectorAll('.seo').forEach(x => { x.hidden = view !== "stock" || !!userView(); });
   }
@@ -2168,6 +2185,59 @@ function draw() {
   window.openAgentic = openAgentic;
   window.agenticReload = () => { if (curView === "agentic") renderAgentic(); };
   $('navagentic').onclick = e => { e.preventDefault(); openAgentic(true); };
+  // News: every company's earnings releases, newest first, each linking to its page under /earnings/.
+  const NEWS_PAGE = 30;
+  let newsRows = null;
+  const newsTime = iso => {
+    const d = new Date(iso), ny = {timeZone: "America/New_York"};
+    const day = x => x.toLocaleDateString("en-US", ny);
+    return day(d) === day(new Date()) ? d.toLocaleTimeString("en-US", {...ny, hour: "numeric", minute: "2-digit"}) + " ET"
+      : d.toLocaleDateString("en-US", {...ny, month: "short", day: "numeric"});
+  };
+  // SEC's name for the company: "RUSH ENTERPRISES INC \\TX\\" -> "Rush Enterprises Inc".
+  const companyName = c => {
+    const s = (c || "").replace(/\s*[\\/][A-Z]{2,3}[\\/]\s*$/, "").trim();
+    return s === s.toUpperCase() ? s.toLowerCase().replace(/(^|[\s(&-])([a-z])/g, (_, p, x) => p + x.toUpperCase()) : s;
+  };
+  // The quarter as "Q3 FY2026", as earnings_analysis.ts period() writes it on the page; "" without a quarter number.
+  const newsPeriod = (q, fy) => {
+    q = q || ""; fy = fy || "";
+    const short = q.match(/\b([1-4])Q(\d{2})\b/i);
+    if (short) return "Q" + short[1] + " FY20" + short[2];
+    const ord = q.match(/\b(first|second|third|fourth)\s+quarter\b/i);
+    const n = (q.match(/\bQ([1-4])\b/i) || [])[1] || (ord && ["first", "second", "third", "fourth"].indexOf(ord[1].toLowerCase()) + 1);
+    const y = ((fy + " " + q).match(/\b(?:FY\s?)?(\d{4})\b/i) || [])[1];
+    return n ? "Q" + n + (y ? " FY" + y : "") : "";
+  };
+  function newsItem(r) {
+    const a = el('a', 'nitem'); a.href = "/earnings/" + r.ticker.toLowerCase() + "/" + r.filed + "/";
+    a.appendChild(el('div', 'hl', companyName(r.company) || r.ticker));
+    a.appendChild(el('div', 'src', [r.ticker, newsPeriod(r.quarter, r.fy), r.accepted ? newsTime(r.accepted) : r.filed].filter(Boolean).join(" · ")));
+    return a;
+  }
+  async function loadNews(more) {
+    const box = $('news');
+    const rows = await get("/earnings_releases?select=ticker,company,filed,accepted,quarter:analysis->>quarter,fy:analysis->>fiscal_year&release=is.true" +
+      "&order=accepted.desc.nullslast,filed.desc&limit=" + NEWS_PAGE + "&offset=" + (more ? newsRows.length : 0));
+    newsRows = more ? newsRows.concat(rows) : rows;
+    box.textContent = "";
+    box.appendChild(el('h2', 'sctitle', "News"));
+    if (!newsRows.length) { box.appendChild(el('p', 'empty', "No earnings releases yet.")); return; }
+    newsRows.forEach(r => box.appendChild(newsItem(r)));
+    if (rows.length === NEWS_PAGE) {
+      const b = button("Show more", "pill ghost more", () => { b.disabled = true; loadNews(true).catch(() => { b.disabled = false; }); });
+      box.appendChild(b);
+    }
+  }
+  function openNews(push) {
+    if (push && location.pathname !== "/fmv/news/") history.pushState({news: true}, "", "/fmv/news/");
+    document.title = "Earnings News | Pear Digitals";
+    showView("news"); window.scrollTo({top: 0});
+    if (!newsRows) $('news').replaceChildren(el('h2', 'sctitle', "News"), el('p', 'empty', "Loading\u2026"));
+    loadNews(false).catch(() => { if (!newsRows) $('news').replaceChildren(el('h2', 'sctitle', "News"), el('p', 'empty', "Couldn't load the news. Try again soon.")); });
+  }
+  window.openNews = openNews;
+  $('navnews').onclick = e => { e.preventDefault(); openNews(true); };
   function openScreener(push, spec) {
     if (push && location.pathname !== "/fmv/screener/") history.pushState({screener: true}, "", "/fmv/screener/");
     document.title = "Stock Screener | Pear Digitals";

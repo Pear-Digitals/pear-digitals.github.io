@@ -89,7 +89,8 @@ def main():
                 f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{SITE}/assets/og/{t.lower()}.png">\n'
                 f'<meta name="twitter:card" content="summary_large_image">\n'
                 f'<script type="application/ld+json">{json.dumps(jsonld)}</script>\n')
-        summary = (f'<p class="seo">{e(name)} ({t}) fair value: bear, base &amp; bull, re-rated after earnings. '
+        summary = (f'<p class="seo">{e(name)} ({t}) fair value: bear, base &amp; bull, re-rated after '
+                   f'<a href="/earnings/{t.lower()}/">earnings</a>. '
                    f"Not investment advice. · {links}</p>")
         page = replace_between(template, "seo:head", head)
         page = replace_between(page, "seo:summary", summary)
@@ -125,17 +126,30 @@ def main():
     if write_if_changed(os.path.join(ROOT, "fmv", "agentic-trading", "index.html"), page):
         changed.append("fmv/agentic-trading/")
 
+    # News tab: same app at /fmv/news/, listing every company's earnings releases (pages under /earnings/).
+    url = f"{SITE}/fmv/news/"
+    title, desc = "Earnings News | Pear Digitals", "Every US-listed company's earnings press release, from SEC EDGAR, as it's filed."
+    head = (f"\n<title>{e(title)}</title>\n<meta name=\"description\" content=\"{e(desc)}\">\n<link rel=\"canonical\" href=\"{url}\">\n"
+            f'<meta property="og:type" content="website">\n<meta property="og:site_name" content="Pear Digitals">\n'
+            f'<meta property="og:title" content="{e(title)}">\n<meta property="og:description" content="{e(desc)}">\n'
+            f'<meta property="og:url" content="{url}">\n<meta property="og:image" content="{SITE}/assets/og/fmv.png">\n'
+            f'<meta name="twitter:card" content="summary_large_image">\n')
+    page = replace_between(replace_between(template, "seo:head", head), "seo:summary",
+                           f'<p class="seo">{e(desc)} Not investment advice. · {links}</p>')
+    if write_if_changed(os.path.join(ROOT, "fmv", "news", "index.html"), page):
+        changed.append("fmv/news/")
+
     # lastmod only where we know a real date (the latest fair value), so the file only changes when data does.
     newest = max(latest[t]["date"] for t in tickers)
     urls = [(f"{SITE}/", None), (f"{SITE}/about/", None), (f"{SITE}/fmv/", newest)]
     urls += [(f"{SITE}/fmv/{t.lower()}/", latest[t]["date"]) for t in tickers]
-    urls += [(f"{SITE}/fmv/screener/", None), (f"{SITE}/fmv/methodology/", None), (f"{SITE}/fmv/privacy", None), (f"{SITE}/options-ledger/privacy", None)]
+    urls += [(f"{SITE}/fmv/screener/", None), (f"{SITE}/fmv/news/", None), (f"{SITE}/fmv/methodology/", None), (f"{SITE}/fmv/privacy", None), (f"{SITE}/options-ledger/privacy", None)]
     sitemap = ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
                + "".join(f"  <url><loc>{u}</loc>" + (f"<lastmod>{d}</lastmod>" if d else "") + "</url>\n" for u, d in urls)
                + "</urlset>\n")
     if write_if_changed(os.path.join(ROOT, "sitemap.xml"), sitemap):
         changed.append("sitemap.xml")
-    robots = f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\n"
+    robots = f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\nSitemap: {SITE}/earnings/sitemap.xml\n"
     if write_if_changed(os.path.join(ROOT, "robots.txt"), robots):
         changed.append("robots.txt")
     print(f"{len(tickers)} stock pages; changed: {', '.join(changed) or 'nothing'}")

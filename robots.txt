@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://peardigitals.com/sitemap.xml
+Sitemap: https://peardigitals.com/earnings/sitemap.xml

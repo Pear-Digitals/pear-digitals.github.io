@@ -1,6 +1,6 @@
 # Pear Digitals
 
-> Earnings press releases of every US-listed company, from SEC EDGAR, and fair values for S&P 500 stocks. Not investment advice.
+> Earnings press releases of every US-listed company, from SEC EDGAR, and fair values for NYSE and Nasdaq stocks. Not investment advice.
 
 ## Earnings releases
 

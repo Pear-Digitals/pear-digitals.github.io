@@ -40,7 +40,7 @@ def nice_date(iso):
 
 def replace_between(text, tag, new):
     pat = re.compile(rf"<!--{tag}-->.*?<!--/{tag}-->", re.S)
-    assert pat.search(text), f"marker {tag} missing in fmv/index.html"
+    assert pat.search(text), f"marker {tag} missing"
     return pat.sub(lambda _: f"<!--{tag}-->{new}<!--/{tag}-->", text, count=1)
 
 
@@ -51,6 +51,12 @@ def write_if_changed(path, content):
         open(path, "w").write(content)
         return True
     return False
+
+
+AI_BOTS = ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-SearchBot", "Claude-User", "anthropic-ai",
+           "PerplexityBot", "Perplexity-User", "Google-Extended", "Googlebot", "Bingbot", "Applebot", "Applebot-Extended",
+           "Amazonbot", "meta-externalagent", "meta-externalfetcher", "FacebookBot", "CCBot", "Bytespider", "Diffbot",
+           "DuckAssistBot", "MistralAI-User", "cohere-ai", "YouBot", "Grok", "xAI"]
 
 
 def main():
@@ -139,8 +145,21 @@ def main():
     if write_if_changed(os.path.join(ROOT, "fmv", "news", "index.html"), page):
         changed.append("fmv/news/")
 
-    # lastmod only where we know a real date (the latest fair value), so the file only changes when data does.
+    # Home page: WebSite + Organization structured data; dateModified is the newest fair value, so it moves with the data.
     newest = max(latest[t]["date"] for t in tickers)
+    org = {"@type": "Organization", "@id": f"{SITE}/#org", "name": "Pear Digitals LLC", "alternateName": "Pear Digitals",
+           "url": f"{SITE}/", "logo": f"{SITE}/assets/apple-touch-icon.png"}
+    ld = {"@context": "https://schema.org", "@graph": [
+        {"@type": "WebSite", "@id": f"{SITE}/#site", "name": "Pear Digitals", "url": f"{SITE}/", "publisher": {"@id": f"{SITE}/#org"}},
+        org,
+        {"@type": "WebPage", "name": "Pear Digitals: Investing for All", "url": f"{SITE}/", "isPartOf": {"@id": f"{SITE}/#site"},
+         "about": {"@id": f"{SITE}/#org"}, "dateModified": newest,
+         "description": "Bear, base and bull fair values for US stocks, and every US-listed company's earnings release from SEC EDGAR."}]}
+    home = os.path.join(ROOT, "index.html")
+    if write_if_changed(home, replace_between(open(home).read(), "seo:ld", f'<script type="application/ld+json">{json.dumps(ld)}</script>')):
+        changed.append("index.html (structured data)")
+
+    # lastmod only where we know a real date (the latest fair value), so the file only changes when data does.
     urls = [(f"{SITE}/", None), (f"{SITE}/about/", None), (f"{SITE}/fmv/", newest)]
     urls += [(f"{SITE}/fmv/{t.lower()}/", latest[t]["date"]) for t in tickers]
     urls += [(f"{SITE}/fmv/screener/", None), (f"{SITE}/fmv/news/", None), (f"{SITE}/fmv/methodology/", None), (f"{SITE}/fmv/privacy", None), (f"{SITE}/options-ledger/privacy", None)]
@@ -149,7 +168,9 @@ def main():
                + "</urlset>\n")
     if write_if_changed(os.path.join(ROOT, "sitemap.xml"), sitemap):
         changed.append("sitemap.xml")
-    robots = f"User-agent: *\nAllow: /\n\nSitemap: {SITE}/sitemap.xml\nSitemap: {SITE}/earnings/sitemap.xml\n"
+    # AI assistants' and search crawlers' agents named outright: some only read a group that names them.
+    robots = ("".join(f"User-agent: {b}\n" for b in AI_BOTS) + "Allow: /\n\nUser-agent: *\nAllow: /\n\n"
+              f"Sitemap: {SITE}/sitemap.xml\nSitemap: {SITE}/earnings/sitemap.xml\n")
     if write_if_changed(os.path.join(ROOT, "robots.txt"), robots):
         changed.append("robots.txt")
     print(f"{len(tickers)} stock pages; changed: {', '.join(changed) or 'nothing'}")

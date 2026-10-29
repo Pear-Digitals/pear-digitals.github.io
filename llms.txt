@@ -4,12 +4,14 @@
 
 ## Earnings releases
 
-Each company's results press release (8-K Item 2.02 / 6-K Exhibit 99.1) is on the site within about a minute of SEC accepting the filing. New releases get an analysis built from the filing alone (headline numbers, segments, margins, KPIs, guidance, what drove it); every release, back to 2016, has its full text and financial statements.
+Each company's results press release (8-K Item 2.02 / 6-K Exhibit 99.1) is on the site within a few minutes of SEC accepting the filing. New releases get an analysis built from the filing alone (headline numbers, segments, margins, KPIs, guidance, what drove it); every release, back to 2016, has its full text and financial statements.
 
-- [Latest release](https://peardigitals.com/earnings/aapl/): /earnings/<ticker>/, with the company's earlier releases listed
-- [As Markdown](https://peardigitals.com/earnings/aapl/index.md): add index.md to any earnings page
+- [Latest earnings](https://peardigitals.com/earnings/): every company's newest releases, newest first ([as Markdown](https://peardigitals.com/earnings/index.md))
+- [A company's earnings](https://peardigitals.com/earnings/aapl/): /earnings/<ticker>/, its latest release with the earlier ones listed
 - [One release](https://peardigitals.com/earnings/aapl/2025-10-30/): /earnings/<ticker>/<filed date>/
+- [As Markdown](https://peardigitals.com/earnings/aapl/index.md): add index.md to any earnings page
 - [Sitemap](https://peardigitals.com/earnings/sitemap.xml): every release page
+- [Full guide](https://peardigitals.com/llms-full.txt): what each page holds
 
 ## Fair value
 

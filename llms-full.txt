@@ -1,0 +1,40 @@
+# Pear Digitals
+
+> Earnings press releases of every US-listed company, from SEC EDGAR, and fair values for NYSE and Nasdaq stocks. Not investment advice.
+
+## Earnings releases
+
+Every company that files a results press release with the SEC (Form 8-K Item 2.02 with Exhibit 99.1, or a foreign issuer's Form 6-K) has it on the site within a few minutes of SEC accepting the filing. Filings SEC accepts after 5:30 pm ET are released by SEC at 6:00 am ET the next business day, and appear then. Releases go back to 2016.
+
+### Pages
+
+- https://peardigitals.com/earnings/ : the latest 100 releases of all companies, newest first, each with its company, ticker, quarter and time.
+- https://peardigitals.com/earnings/<ticker>/ : the company's latest release, then its earlier releases, linked by filing date. Example: https://peardigitals.com/earnings/amzn/
+- https://peardigitals.com/earnings/<ticker>/<filed>/ : one release, filed being the SEC filing date (YYYY-MM-DD). Example: https://peardigitals.com/earnings/amzn/2026-10-29/
+- Add index.md to any of these for the same content as Markdown, e.g. https://peardigitals.com/earnings/amzn/2026-10-29/index.md and https://peardigitals.com/earnings/index.md
+- https://peardigitals.com/earnings/sitemap.xml : every release page; https://peardigitals.com/earnings/sitemap-recent.xml : the last two days', with times.
+
+### What a release page holds
+
+Releases filed since the analysis began have it first, then the release:
+
+- Header: company, when it was reported (before the open, after the close, or during market hours, ET), the SEC accession number, and a one-line verdict.
+- Headline numbers: revenue, EPS (GAAP and adjusted), net income, adjusted EBITDA and margin, each with year-over-year and quarter-over-quarter change and where in the filing it is stated.
+- Revenue breakdown by segment, product or region; margins and costs; one-off items; the effective tax rate; the non-GAAP bridge.
+- KPIs the company reports, and guidance against the prior guide.
+- What drove revenue and EPS, the good, the bad and the ugly, and open questions.
+- The full release: its text and financial statements (income statement, balance sheet, cash flow). Statements a release leaves out are filled in from the quarter's 10-Q when it is filed, marked "From the 10-Q".
+
+Everything comes from the filing itself; "not stated in the 8-K" means the filing does not say. Nothing is estimated, and there are no consensus estimates or beat/miss calls. Each page links its SEC filing.
+
+The Markdown starts with front matter: company, ticker, form, filed, accepted, accession, source (the filing's SEC URL).
+
+## Fair value
+
+- https://peardigitals.com/fmv/ : bear, base and bull fair values per share for NYSE and Nasdaq stocks, re-rated after earnings and other significant events. Method: https://peardigitals.com/fmv/methodology/
+
+## For agents
+
+- https://peardigitals.com/mcp/ : an MCP server for SEC EDGAR filings (10-K, 10-Q, 8-K and proxy data from 2020).
+
+Pear Digitals LLC. Data from SEC EDGAR. Not investment advice.

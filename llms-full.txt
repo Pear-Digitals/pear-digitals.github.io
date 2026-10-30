@@ -23,7 +23,7 @@ Releases filed since the analysis began have it first, then the release:
 - Revenue breakdown by segment, product or region; margins and costs; one-off items; the effective tax rate; the non-GAAP bridge.
 - KPIs the company reports, and guidance against the prior guide.
 - What drove revenue and EPS, the good, the bad and the ugly, and open questions.
-- The full release: its text and financial statements (income statement, balance sheet, cash flow). Statements a release leaves out are filled in from the quarter's 10-Q when it is filed, marked "From the 10-Q".
+- The full release: its text and financial statements (income statement, balance sheet, cash flow). Statements a release leaves out are filled in from the quarter's 10-Q (or, for the fourth quarter, the year's 10-K) when it is filed, marked "From the 10-Q" or "From the 10-K".
 
 Everything comes from the filing itself; "not stated in the 8-K" means the filing does not say. Nothing is estimated, and there are no consensus estimates or beat/miss calls. Each page links its SEC filing.
 

@@ -148,7 +148,8 @@ def main():
     # Home page: WebSite + Organization structured data; dateModified is the newest fair value, so it moves with the data.
     newest = max(latest[t]["date"] for t in tickers)
     org = {"@type": "Organization", "@id": f"{SITE}/#org", "name": "Pear Digitals LLC", "alternateName": "Pear Digitals",
-           "url": f"{SITE}/", "logo": f"{SITE}/assets/apple-touch-icon.png"}
+           "url": f"{SITE}/", "logo": f"{SITE}/assets/apple-touch-icon.png",
+           "sameAs": ["https://pearinvestments.substack.com/"]}
     ld = {"@context": "https://schema.org", "@graph": [
         {"@type": "WebSite", "@id": f"{SITE}/#site", "name": "Pear Digitals", "url": f"{SITE}/", "publisher": {"@id": f"{SITE}/#org"}},
         org,

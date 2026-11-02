@@ -507,6 +507,7 @@
     <input class="field" id="authpw" type="password" placeholder="Password" autocomplete="current-password" minlength="8" required>
     <div class="msgline" id="authmsg" role="status"></div>
     <button type="submit" class="pill wide" id="authgo">Log in</button>
+    <p class="switch" id="forgotrow"><button type="button" id="authforgot">Forgot password?</button></p>
     <p class="switch"><span id="authq">New here?</span> <button type="button" id="authswitch">Create account</button></p>
   </form>
 </dialog>
@@ -956,14 +957,20 @@ function draw() {
     $('authnote').textContent = note || ""; $('authnote').hidden = !note;
     if (!dlg.open) dlg.showModal(); $('authemail').focus();
   }
+  // Modes: "in" log in, "up" create account, "reset" email a reset link, "new" set a new password from that link.
+  // A hidden field isn't required, or the browser would block the form on it.
   function setAuthMode(m) {
     authMode = m;
-    $('authtitle').textContent = m === "in" ? "Log in" : "Create account";
-    $('authgo').textContent = m === "in" ? "Log in" : "Create account";
+    const pw = m !== "reset", mail = m !== "new";
+    $('authpw').hidden = !pw; $('authpw').required = pw; $('authemail').hidden = !mail; $('authemail').required = mail;
+    $('forgotrow').hidden = m !== "in";
+    if (m === "reset" || m === "new") $('authq').parentNode.hidden = true;
+    $('authtitle').textContent = {in: "Log in", up: "Create account", reset: "Reset password", new: "Set a new password"}[m];
+    $('authgo').textContent = {in: "Log in", up: "Create account", reset: "Email me a link", new: "Save password"}[m];
     $('authq').textContent = m === "in" ? "New here?" : "Have an account?";
     $('authswitch').textContent = m === "in" ? "Create account" : "Log in";
     $('authpw').autocomplete = m === "in" ? "current-password" : "new-password";
-    $('authpw').placeholder = m === "in" ? "Password" : "Password (8+ characters)";
+    $('authpw').placeholder = m === "in" ? "Password" : m === "new" ? "New password (8+ characters)" : "Password (8+ characters)";
   }
   window.openAuth = openAuth; window.SIGNUP_LABEL = SIGNUPS_OPEN ? "Sign up" : "Join waitlist";
   const joinDlg = $('joindlg'), joinMsg = $('joinmsg');
@@ -1030,6 +1037,8 @@ function draw() {
   $('authform').addEventListener('submit', async e => {
     e.preventDefault();
     if (!sb) { authMsg.textContent = "Accounts are unavailable right now."; return; }
+    if (authMode === "reset") return requestReset();
+    if (authMode === "new") return saveNewPassword();
     const email = $('authemail').value.trim(), password = $('authpw').value;
     if (password.length < 8) { authMsg.textContent = "Use at least 8 characters."; return; }
     const goLabel = $('authgo').textContent;
@@ -1044,6 +1053,42 @@ function draw() {
     if (authMode === "up" && !data.session) { authMsg.style.color = "var(--ink)"; authMsg.textContent = "Check your email to confirm, then log in."; return; }
     $('authpw').value = ""; dlg.close();
   });
+  // Forgot password: fmv-reset emails a link to /fmv/?reset=<token>, which opens this dialog to set a new one.
+  let resetToken = null;
+  $('authforgot').onclick = () => { setAuthMode("reset"); authMsg.style.color = ""; authMsg.textContent = ""; $('authemail').focus(); };
+  async function requestReset() {
+    $('authgo').disabled = true; authMsg.style.color = ""; authMsg.textContent = "";
+    try {
+      const res = await fetch(BASE_URL + "/functions/v1/fmv-reset", {method: "POST",
+        headers: {"content-type": "application/json", apikey: ANON_KEY}, body: JSON.stringify({email: $('authemail').value.trim()})});
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Couldn't send the email right now. Try again.");
+      authMsg.style.color = "var(--ink)"; authMsg.textContent = "If there's an account for that email, we've sent a link to reset your password.";
+    } catch (err) { authMsg.textContent = err.message; }
+    $('authgo').disabled = false;
+  }
+  // The token is only spent here, on save, so a mail scanner opening the link doesn't use it up.
+  async function saveNewPassword() {
+    const password = $('authpw').value;
+    if (password.length < 8) { authMsg.textContent = "Use at least 8 characters."; return; }
+    $('authgo').disabled = true; $('authgo').textContent = "Saving\u2026"; authMsg.style.color = ""; authMsg.textContent = "";
+    let {error} = await sb.auth.verifyOtp({token_hash: resetToken, type: "recovery"});
+    if (!error) ({error} = await sb.auth.updateUser({password}));
+    $('authgo').disabled = false; $('authgo').textContent = "Save password";
+    if (error) {
+      if (/expired|invalid/i.test(error.message)) { setAuthMode("reset"); authMsg.textContent = "That link has expired. Enter your email for a new one."; }
+      else authMsg.textContent = error.message;
+      return;
+    }
+    resetToken = null; $('authpw').value = ""; dlg.close();
+  }
+  if (new URLSearchParams(location.search).has("reset")) {
+    const q = new URLSearchParams(location.search); resetToken = q.get("reset"); q.delete("reset");
+    history.replaceState(history.state, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+    try { localStorage.setItem("fmv-login", "1"); } catch (e) {}
+    setAuthMode("new"); authMsg.textContent = ""; $('authnote').hidden = true;
+    if (!dlg.open) dlg.showModal(); $('authpw').focus();
+  }
 
   const nav = $('navacct');
   document.addEventListener('click', () => { const m = nav.querySelector('.menu'); if (m) m.hidden = true; });

@@ -972,9 +972,10 @@ function draw() {
     if (!joinDlg.open) joinDlg.showModal(); $('joinemail').focus();
   }
   $('joinclose').onclick = () => joinDlg.close();
+  // "Done" after joining: close before the form checks the hidden, emptied (still required) email box.
+  $('joingo').addEventListener('click', e => { if ($('joinemail').hidden) { e.preventDefault(); joinDlg.close(); } });
   $('joinform').addEventListener('submit', async e => {
     e.preventDefault();
-    if ($('joinemail').hidden) { joinDlg.close(); return; }   // "Done" after joining
     const email = $('joinemail').value.trim();
     $('joingo').disabled = true; $('joingo').textContent = "Joining\u2026"; joinMsg.textContent = "";
     try {

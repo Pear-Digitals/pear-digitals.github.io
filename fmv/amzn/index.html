@@ -245,8 +245,9 @@
   /* the date filter: a pill that opens the browser's date picker (the input itself stays out of sight) */
   .nbar .nd { position:relative; flex:none; display:flex; align-items:center; gap:6px; font:inherit; font-size:.92rem; padding:8px 14px; border:1px solid var(--line); border-radius:999px; background:var(--soft); color:var(--muted); cursor:pointer; white-space:nowrap; }
   .nbar .nd.on { background:var(--ink); border-color:var(--ink); color:#fff; }
-  .nbar .nd input { position:absolute; left:0; bottom:0; width:100%; height:0; padding:0; border:0; opacity:0; pointer-events:none; }
-  .nbar .nd .x { font-size:1rem; line-height:1; opacity:.8; }
+  .nbar .nd input { position:absolute; inset:0; display:block; width:100%; height:100%; margin:0; padding:0; border:0; opacity:0; cursor:pointer; font-size:16px; -webkit-appearance:none; appearance:none; }
+  .nbar .nd .x { position:relative; z-index:1; font-size:1rem; line-height:1; opacity:.8; }
+  .nbar .nd:focus-within { outline:2px solid var(--ink); outline-offset:2px; }
   .nitem .hl { font-weight:600; line-height:1.35; }
   .nitem .src { font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:2px; }
   .nitem:hover .hl { color:var(--green); }
@@ -967,9 +968,9 @@ function draw() {
   }
   window.openAuth = openAuth; window.SIGNUP_LABEL = SIGNUPS_OPEN ? "Sign up" : "Join waitlist";
   const joinDlg = $('joindlg'), joinMsg = $('joinmsg');
-  let joinSource = "nav";
+  let joinSource = "nav", leaving = null;   // leaving: the token from a confirmation email's remove link
   function openJoin(source) {
-    joinSource = String(source || "nav").slice(0, 40);
+    joinSource = String(source || "nav").slice(0, 40); leaving = null; joinDlg.querySelector('h2').textContent = "Join the waitlist";
     $('joinform').querySelectorAll('input, #joingo').forEach(x => x.hidden = false);
     $('joingo').textContent = "Join waitlist"; $('joingo').disabled = false;
     $('joinnote').textContent = "Pear FMV opens to everyone soon. We'll email you when it does.";
@@ -978,9 +979,10 @@ function draw() {
   }
   $('joinclose').onclick = () => joinDlg.close();
   // "Done" after joining: close before the form checks the hidden, emptied (still required) email box.
-  $('joingo').addEventListener('click', e => { if ($('joinemail').hidden) { e.preventDefault(); joinDlg.close(); } });
+  $('joingo').addEventListener('click', e => { if ($('joinemail').hidden && !leaving) { e.preventDefault(); joinDlg.close(); } });
   $('joinform').addEventListener('submit', async e => {
     e.preventDefault();
+    if (leaving) return leaveWaitlist();
     const email = $('joinemail').value.trim();
     $('joingo').disabled = true; $('joingo').textContent = "Joining\u2026"; joinMsg.textContent = "";
     try {
@@ -988,11 +990,32 @@ function draw() {
         headers: {"content-type": "application/json", apikey: ANON_KEY}, body: JSON.stringify({email, source: joinSource})});
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Couldn't join right now. Try again.");
-      $('joinnote').textContent = "You're on the list. We'll email you when Pear FMV opens.";
+      $('joinnote').textContent = data.already ? "You're already on the waitlist. We've emailed you a link if you'd like to remove yourself."
+        : "You're on the list. We've sent a confirmation to your email.";
       $('joinemail').hidden = true; $('joinemail').value = ""; $('joingo').textContent = "Done";
     } catch (err) { joinMsg.textContent = err.message; $('joingo').textContent = "Join waitlist"; }
     $('joingo').disabled = false;
   });
+  // /fmv/?leave=<token>, the link in the confirmation email: ask first, so a mail scanner opening it removes no one.
+  async function leaveWaitlist() {
+    $('joingo').disabled = true; joinMsg.textContent = "";
+    try {
+      const res = await fetch(BASE_URL + "/functions/v1/fmv-waitlist", {method: "POST",
+        headers: {"content-type": "application/json", apikey: ANON_KEY}, body: JSON.stringify({leave: leaving})});
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Couldn't remove you right now. Try again.");
+      leaving = null; $('joinnote').textContent = "You're off the waitlist."; $('joingo').textContent = "Done";
+    } catch (err) { joinMsg.textContent = err.message; }
+    $('joingo').disabled = false;
+  }
+  if (new URLSearchParams(location.search).has("leave")) {
+    const q = new URLSearchParams(location.search); leaving = q.get("leave"); q.delete("leave");
+    history.replaceState(history.state, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+    $('joinemail').hidden = true; $('joingo').hidden = false; $('joingo').textContent = "Remove me";
+    joinDlg.querySelector('h2').textContent = "Leave the waitlist";
+    $('joinnote').textContent = "Remove yourself from the Pear FMV waitlist?"; joinMsg.textContent = "";
+    joinDlg.showModal();
+  }
   $('authswitch').onclick = () => { setAuthMode(authMode === "in" ? "up" : "in"); authMsg.textContent = ""; };
   $('authclose').onclick = () => dlg.close();
   // Google / Apple buttons appear once the provider is enabled in Supabase; no site change needed.
@@ -2252,19 +2275,18 @@ function draw() {
   }
   // The header, search box and date picker are built once; the list under them reloads as they change.
   const newsQ = Object.assign(el('input', 'nq'), {type: "search", placeholder: "Ticker or company", autocomplete: "off", spellcheck: false});
-  // The date: a pill reading "Date", or the day picked ("Oct 27") with an x to clear it.
-  const newsDate = Object.assign(el('input'), {type: "date", tabIndex: -1});
-  const newsDay = el('button', 'nd'); newsDay.type = "button"; newsDay.setAttribute('aria-label', "Filed on");
+  // The date: a pill reading "Date", or the day picked ("Oct 27") with an x to clear it. The real date input lies
+  // invisibly over the whole pill, so a tap opens the native picker on phones (iOS has no showPicker for dates).
+  const newsDate = Object.assign(el('input'), {type: "date"}); newsDate.setAttribute('aria-label', "Filed on");
+  const newsDay = el('div', 'nd');
   const drawDay = () => {
     const d = newsDate.value;
     newsDay.classList.toggle('on', !!d);
     newsDay.replaceChildren(el('span', '', d ? new Date(d + "T12:00").toLocaleDateString("en-US", {month: "short", day: "numeric", year: d.slice(0, 4) === String(new Date().getFullYear()) ? undefined : "numeric"}) : "Date"), newsDate);
     if (d) newsDay.appendChild(el('span', 'x', "\u00d7"));
   };
-  newsDay.onclick = e => {
-    if (newsDate.value && e.target.classList.contains('x')) { newsDate.value = ""; newsDate.onchange(); return; }
-    try { newsDate.showPicker(); } catch (_) { newsDate.focus(); }
-  };
+  newsDay.onclick = e => { if (e.target.classList.contains('x')) { newsDate.value = ""; newsDate.onchange(); } };
+  newsDate.onclick = () => { try { newsDate.showPicker(); } catch (_) { /* the tap opens it natively */ } };
   drawDay();
   newsQ.setAttribute('aria-label', "Search earnings by ticker or company");
   const newsBar = el('div', 'nbar'); newsBar.append(newsQ, newsDay);

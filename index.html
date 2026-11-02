@@ -309,7 +309,8 @@
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || "Couldn't join right now. Try again.");
       $('joinform').hidden = true;
-      msg.style.color = "var(--green)"; msg.textContent = "You're on the list. We'll email you when Pear FMV opens.";
+      msg.style.color = "var(--green)"; msg.textContent = d.already ? "You're already on the waitlist. We've emailed you a link if you'd like to remove yourself."
+        : "You're on the list. We've sent a confirmation to your email.";
       if (window.gtag) gtag('event', 'join_waitlist', {source: 'landing'});
     } catch (err) { msg.style.color = "#a15c00"; msg.textContent = err.message; btn.textContent = "Join the waitlist"; }
     btn.disabled = false;

@@ -257,6 +257,12 @@
   .nbar .nd:focus-within { outline:2px solid var(--ink); outline-offset:2px; }
   .nitem .hl { font-weight:600; line-height:1.35; }
   .nitem .src { font-size:.8rem; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:2px; }
+  /* News has two lists: Earnings and Insider buys, switched by their titles */
+  .ntabs { display:flex; gap:22px; margin:0 0 8px; }
+  .ntab { font:inherit; font-size:1.6rem; font-weight:700; letter-spacing:-.02em; padding:0; border:0; background:none; color:var(--muted); cursor:pointer; }
+  .ntab.on { color:var(--ink); }
+  .nlab { font-size:.78rem; font-weight:600; color:var(--muted); padding:18px 0 0; }
+  @media (max-width:760px) { .ntab { font-size:1.3rem; } }
   .nitem:hover .hl { color:var(--green); }
   .news .more { margin:20px 0 0; }
   .news .empty, .earn .empty { color:var(--muted); padding:40px 0; }
@@ -2386,7 +2392,57 @@ function draw() {
   newsQ.setAttribute('aria-label', "Search earnings by ticker or company");
   const newsBar = el('div', 'nbar'); newsBar.append(newsQ, newsDay);
   const newsList = el('div', 'nlist');
-  $('news').append(el('h2', 'sctitle', "Earnings"), newsBar, newsList);
+  // Insider buys, the News tab's other list: open-market Form 4 purchases in the last 30 days, one row per stock.
+  // Two or more insiders buying the same stock come first (biggest total first), then the rest, newest first.
+  const insList = el('div', 'nlist'), newsTabs = el('div', 'ntabs');
+  const NEWS_TABS = {earnings: "Earnings", insiders: "Insider buys"};
+  let newsTab = "earnings", insRows = null;
+  Object.entries(NEWS_TABS).forEach(([k, label]) => { const b = button(label, "ntab", () => setNewsTab(k)); b.dataset.tab = k; newsTabs.appendChild(b); });
+  function setNewsTab(k) {
+    newsTab = k;
+    history.replaceState(history.state, "", "/fmv/news/" + (k === "insiders" ? "?tab=insiders" : ""));
+    document.title = (k === "insiders" ? "Insider Buys" : "Earnings") + " | Pear Digitals";
+    newsTabs.querySelectorAll('.ntab').forEach(b => { b.classList.toggle('on', b.dataset.tab === k); b.setAttribute('aria-pressed', String(b.dataset.tab === k)); });
+    newsBar.hidden = newsList.hidden = k !== "earnings"; insList.hidden = k !== "insiders";
+    if (k === "earnings" && !newsRows) { newsList.replaceChildren(el('p', 'empty', "Loading\u2026")); loadNews(false).catch(newsFailed); }
+    if (k === "insiders" && !insRows) { insList.replaceChildren(el('p', 'empty', "Loading\u2026")); loadInsiders().catch(() => { if (!insRows) insList.replaceChildren(el('p', 'empty', "Couldn't load insider buys. Try again soon.")); }); }
+  }
+  async function loadInsiders() {
+    const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+    const [rows] = await Promise.all([get("/insider_buys?select=ticker,trade_date,insider,role,value&trade_date=gte." + since +
+      "&order=trade_date.desc,value.desc&limit=1000"), loadUniverse()]);
+    const by = new Map(), seen = new Set();
+    rows.forEach(r => {
+      const k = r.ticker + "|" + r.trade_date + "|" + Math.round(r.value);   // one buy filed by several owners shows once
+      if (seen.has(k)) return; seen.add(k);
+      if (!by.has(r.ticker)) by.set(r.ticker, []);
+      by.get(r.ticker).push(r);
+    });
+    const names = new Map((UNIVERSE || []).map(x => [x[0], x[1]]));
+    insRows = [...by].map(([t, b]) => ({t, b, who: new Set(b.map(x => x.insider)).size, total: b.reduce((s, x) => s + +x.value, 0),
+      last: b[0].trade_date, name: NAMES[t] || (names.get(t) || t).replace(/,?\s+(Inc\.?|Incorporated|Corporation|Corp\.?|Co\.?|Ltd\.?|plc)$/i, "")}));
+    const many = insRows.filter(x => x.who >= 2).sort((a, b) => b.total - a.total);
+    const rest = insRows.filter(x => x.who < 2).sort((a, b) => b.last.localeCompare(a.last) || b.total - a.total);
+    insList.textContent = "";
+    if (!insRows.length) { insList.appendChild(el('p', 'empty', "No insider buys in the last 30 days.")); return; }
+    if (many.length) insList.appendChild(el('div', 'nlab', "Several insiders buying"));
+    many.forEach(x => insList.appendChild(insItem(x)));
+    if (many.length && rest.length) insList.appendChild(el('div', 'nlab', "Latest"));
+    rest.forEach(x => insList.appendChild(insItem(x)));
+  }
+  function insItem(x) {
+    const top = x.b.reduce((a, r) => +r.value > +a.value ? r : a);
+    const a = el('a', 'nitem'); a.href = "/fmv/?s=" + encodeURIComponent(x.t);
+    a.appendChild(el('div', 'hl', x.name));
+    a.appendChild(el('div', 'src', [x.t, (x.who >= 2 ? x.who + " insiders" : ROLE[top.role] || "Insider") + " bought " + short$(x.total), day(x.last)].join(" \u00b7 ")));
+    a.onclick = e => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault(); history.pushState({}, "", a.pathname + a.search);
+      window.showStockView(); openStockFromUrl(x.t);
+    };
+    return a;
+  }
+  $('news').append(newsTabs, newsBar, newsList, insList);
   let newsTimer;
   newsQ.oninput = () => { clearTimeout(newsTimer); newsTimer = setTimeout(() => loadNews(false).catch(newsFailed), 250); };
   newsDate.onchange = () => { drawDay(); loadNews(false).catch(newsFailed); };
@@ -2413,9 +2469,8 @@ function draw() {
   const newsFailed = () => { if (!newsRows) newsList.replaceChildren(el('p', 'empty', "Couldn't load earnings. Try again soon.")); };
   function openNews(push) {
     if (push && location.pathname !== "/fmv/news/") history.pushState({news: true}, "", "/fmv/news/");
-    document.title = "Earnings | Pear Digitals";
     showView("news"); window.scrollTo({top: 0});
-    if (!newsRows) { newsList.replaceChildren(el('p', 'empty', "Loading\u2026")); loadNews(false).catch(newsFailed); }
+    setNewsTab(new URLSearchParams(location.search).get("tab") === "insiders" ? "insiders" : "earnings");
   }
   window.openNews = openNews;
   $('navnews').onclick = e => { e.preventDefault(); openNews(true); };

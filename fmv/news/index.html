@@ -109,6 +109,18 @@
   #px { font-size:clamp(2.2rem,7vw,2.8rem); font-weight:700; letter-spacing:-.03em; line-height:1.15; margin-top:6px; }
   #chg { font-size:.95rem; font-weight:600; margin:2px 0 14px; }
   #chg .when { color:var(--muted); font-weight:400; }
+  #ins { margin:-8px 0 14px; font-size:.88rem; }
+  #ins[hidden] { display:none; }
+  #insline { border:0; background:none; padding:0; font:inherit; color:var(--ink); cursor:pointer; display:inline-flex; align-items:center; gap:7px; text-align:left; }
+  #insline::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--up); flex:none; }
+  #insline::after { content:"\203A"; color:var(--muted); font-size:1.1em; transition:transform .15s; }
+  #insline[aria-expanded="true"]::after { transform:rotate(90deg); }
+  #inslist { list-style:none; margin:8px 0 0; padding:0; border-top:1px solid var(--line); }
+  #inslist[hidden] { display:none; }
+  #inslist li { display:flex; gap:10px; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--line); }
+  #inslist .d { color:var(--muted); width:52px; flex:none; }
+  #inslist .w { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #inslist a { color:var(--ink); font-weight:600; text-decoration:none; }
 
   #chart { position:relative; width:100%; }
   #chart svg { width:100%; height:auto; display:block; touch-action:pan-y; user-select:none; -webkit-user-select:none; }
@@ -435,6 +447,7 @@
       <div class="titlerow"><h1 id="title"></h1><button type="button" id="starbtn" aria-label="Add to watchlist">&#9734;</button></div>
       <div id="px">&mdash;</div>
       <div id="chg">&mdash;</div>
+      <div id="ins" hidden><button type="button" id="insline" aria-expanded="false"></button><ul id="inslist" hidden></ul></div>
       <div id="chart"><svg id="svg"></svg><div id="tip"></div><div id="cmsg" hidden>Loading&hellip;</div></div>
       <div class="under">
         <div class="ranges" id="ranges"></div>
@@ -1710,7 +1723,49 @@ function draw() {
     setTimeout(refresh, 0);        // don't await supabase calls inside this callback
   });
   window.onFmvReady = () => draw();
-  window.onDraw = t => { renderHeader(t); renderFair(t); renderSide(); };
+  // ---- insider buys: one line under the day's change ("CEO bought $2.1M · Oct 28"), each buy behind a tap ----
+  // Open-market Form 4 purchases in the last 90 days (insider-watch, docs/SIGNALS.md in pear-backend). One buy filed by
+  // several owners (a fund and its general partner) shows once.
+  const INS = {}, ROLE = {ceo: "CEO", cfo: "CFO", officer: "Officer", director: "Director", ten_percent: "10% owner"};
+  const short$ = v => v >= 1e9 ? "$" + (v / 1e9).toFixed(1) + "B" : v >= 1e6 ? "$" + (v / 1e6).toFixed(1) + "M"
+    : v >= 1e3 ? "$" + Math.round(v / 1e3) + "K" : "$" + Math.round(v);
+  const person = s => s === s.toUpperCase() ? s.toLowerCase().replace(/(^|[\s.'-])([a-z])/g, (_, p, x) => p + x.toUpperCase()) : s;
+  let insShown = null;
+  async function renderInsiders(t) {
+    const box = $('ins'), line = $('insline'), list = $('inslist');
+    if (insShown === t) return;
+    if (!(t in INS)) {
+      box.hidden = true; insShown = null;
+      const since = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);
+      try {
+        const rows = await get(`/insider_buys?select=accession,cik,trade_date,insider,title,role,value&ticker=eq.${encodeURIComponent(t)}` +
+          `&trade_date=gte.${since}&order=trade_date.desc,value.desc&limit=50`);
+        const seen = new Set();
+        INS[t] = rows.filter(r => { const k = r.trade_date + "|" + Math.round(r.value); return !seen.has(k) && seen.add(k); });
+      } catch (e) { console.error(e); return; }
+      if (sel.value !== t) return;   // they moved on to another stock meanwhile
+    }
+    insShown = t;
+    const b = INS[t];
+    box.hidden = !b.length;
+    if (!b.length) return;
+    const top = b.reduce((a, x) => +x.value > +a.value ? x : a), who = new Set(b.map(x => x.insider)).size;
+    line.textContent = who >= 3 ? `${who} insiders bought ${short$(b.reduce((s, x) => s + +x.value, 0))} in 90 days`
+      : `${ROLE[top.role] || "Insider"} bought ${short$(+top.value)} \u00b7 ${day(top.trade_date)}${b.length > 1 ? ` \u00b7 ${b.length - 1} more` : ""}`;
+    line.setAttribute("aria-expanded", "false"); list.hidden = true; list.textContent = "";
+    b.forEach(x => {
+      const li = el('li'), a = el('a', null, short$(+x.value));
+      a.href = `https://www.sec.gov/Archives/edgar/data/${+x.cik}/${x.accession.replace(/-/g, "")}/`;
+      a.target = "_blank"; a.rel = "noopener"; a.title = "Form 4 on SEC";
+      li.append(el('span', 'd', day(x.trade_date)), el('span', 'w', person(x.insider) + ", " + (x.title || ROLE[x.role] || "insider")), a);
+      list.appendChild(li);
+    });
+  }
+  $('insline').onclick = () => {
+    const open = $('insline').getAttribute("aria-expanded") !== "true";
+    $('insline').setAttribute("aria-expanded", String(open)); $('inslist').hidden = !open;
+  };
+  window.onDraw = t => { renderHeader(t); renderFair(t); renderSide(); renderInsiders(t); };
   renderNav();
 
   // ---- chat proposals: preferences or watchlist changes, confirmed by the user ----
